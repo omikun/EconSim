@@ -34,7 +34,7 @@ public class Trade
 	}
 	public void Print()
 	{
-		Debug.Log("Trade: " + price + ", " + quantity + ", ");
+		Debug.Log("Trade: " + price + ", " + quantity + ", " + agent.transform.gameObject.name);
 	}
 	public float price { get; private set; }
 	public float quantity { get; private set; }
@@ -101,9 +101,16 @@ public class AuctionHouse : MonoBehaviour {
 	public float maxStock = 10;
 	List<EconAgent> agents = new List<EconAgent>();
 	TradeTable askTable, bidTable;
+	//gmp = Graph Mean Price
+	GraphMe GMPWood, GMPFood, GMPOre, GMPMetal, GMPTool;
 	// Use this for initialization
 	void Start () {
 		int count = 0;
+		GMPFood = GameObject.Find("line1").GetComponent<GraphMe>();
+		GMPWood = GameObject.Find("line2").GetComponent<GraphMe>();
+		GMPOre = GameObject.Find("line3").GetComponent<GraphMe>();
+		GMPMetal = GameObject.Find("line4").GetComponent<GraphMe>();
+		GMPTool = GameObject.Find("line5").GetComponent<GraphMe>();
 		foreach (Transform tChild in transform)
 		{
 			GameObject child = tChild.gameObject;
@@ -166,12 +173,14 @@ public class AuctionHouse : MonoBehaviour {
 			//order trades
 			asks.Sort((x, y) => y.price.CompareTo(x.price));
 			bids.Sort((x, y) => -y.price.CompareTo(x.price));
+			//Debug.Log(commodity + " asks sorted: "); asks.Print();
+			//Debug.Log(commodity + " bids sorted: "); bids.Print();
             while (asks.Count > 0 && bids.Count > 0)
             {
                 //get highest bid and lowest ask
 				int askIndex = 0;
 				var ask = asks[askIndex];
-				int bidIndex = bids.Count - 1;
+				int bidIndex = 0;
 				var bid = bids[bidIndex];
 				//set price
 				var sellPrice = (bid.price + ask.price) / 2;
@@ -185,8 +194,18 @@ public class AuctionHouse : MonoBehaviour {
 				moneyExchanged += sellPrice * tradeQuantity;
 				goodsExchanged += tradeQuantity;
             }
-
 			var averagePrice = moneyExchanged/goodsExchanged;
+			SetGraph(commodity, goodsExchanged);
+            //reject the rest
+            foreach (var ask in asks)
+			{
+				ask.agent.RejectAsk(commodity, averagePrice);
+			}
+			foreach (var bid in bids)
+			{
+				bid.agent.RejectBid(commodity, averagePrice);
+			}
+
 			//calculate supply/demand
 			var excessDemand = asks.Sum(ask => ask.quantity);
 			var excessSupply = bids.Sum(bid => bid.quantity);
@@ -197,4 +216,12 @@ public class AuctionHouse : MonoBehaviour {
 		}
 		//record average prices, volume traded, demand for each commodity
 	}
+	void SetGraph(string commodity, float input)
+	{
+        if (commodity == "Wood") GMPWood.Tick(input);
+        if (commodity == "Food") GMPFood.Tick(input);
+        if (commodity == "Ore") GMPOre.Tick(input);
+        if (commodity == "Metal") GMPMetal.Tick(input);
+        if (commodity == "Tool") GMPTool.Tick(input);
+    }
 }

@@ -36,9 +36,11 @@ public class Recipe
 }
 public class Commodity
 {
+	const float defaultPrice = 1;
 	public Commodity(float p, Dependency d)
 	{
-		price = p;
+		production = p;
+		price = defaultPrice;
 		dep = d;
 		demand = 1;
 	}
@@ -50,6 +52,7 @@ public class Commodity
 	int debug = 0;
 	public float price { get; private set; } //market price
 	public float demand { get; private set; }
+	public float production { get; private set; }
 	public Dependency dep { get; private set; }
 }
 public class Dependency : Dictionary<string, float>
@@ -81,12 +84,12 @@ public class Commodities : MonoBehaviour
 		Init();
     }
 
-	bool Add(string name, float price, Dependency dep)
+	bool Add(string name, float production, Dependency dep)
 	{
 		if (com.ContainsKey(name)) { return false; }
 		Assert.IsNotNull(dep);
 
-		com.Add(name, new Commodity(price, dep));
+		com.Add(name, new Commodity(production, dep));
 		return true;
 	}
     void PrintStat()
@@ -106,14 +109,15 @@ public class Commodities : MonoBehaviour
 	}
     // Use this for initialization
     void Init () {
+		Debug.Log("Initializing commodities");
 		//replicate paper
 		Dependency foodDep = new Dependency();
 		foodDep.Add("Wood", 1);
 		Add("Food", 4, foodDep);
 
 		Dependency woodDep = new Dependency();
-		woodDep.Add("Food", 2);
-		woodDep.Add("Tool", 2);
+		woodDep.Add("Food", 3);
+		woodDep.Add("Tool", .1f);
 		Add("Wood", 3, woodDep);
 
 		Dependency oreDep = new Dependency();
@@ -121,12 +125,14 @@ public class Commodities : MonoBehaviour
 		Add("Ore", 2, oreDep);
 
 		Dependency metalDep = new Dependency();
-		metalDep.Add("Food", 4);
-		Add("Metal", 2, metalDep);
+		metalDep.Add("Food", 2);
+		metalDep.Add("Ore", 2);
+		Add("Metal", 1, metalDep);
 
 		Dependency toolDep = new Dependency();
-		toolDep.Add("Food", 4);
-		Add("Tool", 5, toolDep);
+		toolDep.Add("Food", 2);
+		toolDep.Add("Metal", 2);
+		Add("Tool", 1, toolDep);
 
 		PrintStat();
 		return;
