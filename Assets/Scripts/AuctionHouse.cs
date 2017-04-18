@@ -21,8 +21,9 @@ public static class IListExtensions {
 }
 public class Trade
 {
-	public Trade(float p, float q, EconAgent a)
+	public Trade(string c, float p, float q, EconAgent a)
 	{
+		commodity = c;
 		price = p;
 		quantity = q;
 		agent = a;
@@ -34,8 +35,9 @@ public class Trade
 	}
 	public void Print()
 	{
-		Debug.Log("Trade: " + price + ", " + quantity + ", " + agent.transform.gameObject.name);
+		Debug.Log(commodity + " trade: " + price + ", " + quantity + ", " + agent.transform.gameObject.name);
 	}
+	public string commodity { get; private set; }
 	public float price { get; private set; }
 	public float quantity { get; private set; }
 	public EconAgent agent{ get; private set; }
@@ -102,15 +104,35 @@ public class AuctionHouse : MonoBehaviour {
 	List<EconAgent> agents = new List<EconAgent>();
 	TradeTable askTable, bidTable;
 	//gmp = Graph Mean Price
-	GraphMe GMPWood, GMPFood, GMPOre, GMPMetal, GMPTool;
+	List<GraphMe> gMeanPrice = new List<GraphMe>();
+	List<GraphMe> gUnitsExchanged = new List<GraphMe>();
+	List<GraphMe> gProfessions = new List<GraphMe>();
+	float lastTick;
 	// Use this for initialization
 	void Start () {
+		lastTick = 0;
 		int count = 0;
-		GMPFood = GameObject.Find("line1").GetComponent<GraphMe>();
-		GMPWood = GameObject.Find("line2").GetComponent<GraphMe>();
-		GMPOre = GameObject.Find("line3").GetComponent<GraphMe>();
-		GMPMetal = GameObject.Find("line4").GetComponent<GraphMe>();
-		GMPTool = GameObject.Find("line5").GetComponent<GraphMe>();
+		var com = Commodities.Instance.com;
+        gMeanPrice = new List<GraphMe>(com.Count);
+        gUnitsExchanged = new List<GraphMe>(com.Count);
+        gProfessions = new List<GraphMe>(com.Count);
+
+		/* initialize graphs */
+		var gmp = GameObject.Find("AvgPriceGraph");
+		for (int i = 0; i < com.Count; i++) 
+		{
+			gMeanPrice.Add(gmp.transform.Find("line"+i).GetComponent<GraphMe>());
+		}
+		var gue = GameObject.Find("UnitsExchangedGraph");
+		for (int i = 0; i < com.Count; i++) {
+			gUnitsExchanged.Add(gue.transform.Find("line"+i).GetComponent<GraphMe>());
+		}
+		var gp = GameObject.Find("ProfessionsGraph");
+		for (int i = 0; i < com.Count; i++) {
+			gProfessions.Add(gp.transform.Find("line"+i).GetComponent<GraphMe>());
+		}
+
+		/* initialize agents */
 		foreach (Transform tChild in transform)
 		{
 			GameObject child = tChild.gameObject;
@@ -143,8 +165,14 @@ public class AuctionHouse : MonoBehaviour {
         agent.Init(initCash, buildables, initStock, maxStock);
 	}
 	// Update is called once per frame
-	void Update () {
-		Tick();
+	void FixedUpdate () {
+		//wait 1s before update
+		float tickInterval = .5f;
+		if (Time.time - lastTick > tickInterval)
+		{
+            Tick();
+			lastTick = Time.time;
+		}
 	}
 
 	Random rnd = new Random();
@@ -166,13 +194,14 @@ public class AuctionHouse : MonoBehaviour {
 			var commodity = entry.Key;
 			var asks = askTable[commodity];
             var bids = bidTable[commodity];
-            //shuffle trades
-            //var result = asks.OrderBy(item => Random.value);
+			var demand = bids.Count / Mathf.Max(.1f, (float)asks.Count);
+            
 			asks.Shuffle();
 			bids.Shuffle();
-			//order trades
-			asks.Sort((x, y) => y.price.CompareTo(x.price));
-			bids.Sort((x, y) => -y.price.CompareTo(x.price));
+			
+			asks.Sort((x, y) => x.price.CompareTo(y.price)); //inc
+			bids.Sort((x, y) => y.price.CompareTo(x.price)); //dec
+
 			//Debug.Log(commodity + " asks sorted: "); asks.Print();
 			//Debug.Log(commodity + " bids sorted: "); bids.Print();
             while (asks.Count > 0 && bids.Count > 0)
@@ -183,45 +212,87 @@ public class AuctionHouse : MonoBehaviour {
 				int bidIndex = 0;
 				var bid = bids[bidIndex];
 				//set price
-				var sellPrice = (bid.price + ask.price) / 2;
+				var clearingPrice = (bid.price + ask.price) / 2;
 				//trade
 				var tradeQuantity = Mathf.Min(bid.quantity, ask.quantity);
-				ask.agent.Sell(commodity, tradeQuantity, sellPrice);
-				bid.agent.Buy(commodity, tradeQuantity, sellPrice);
+				ask.agent.Sell(commodity, tradeQuantity, clearingPrice);
+				bid.agent.Buy(commodity, tradeQuantity, clearingPrice);
                 //remove ask/bid if fullfilled
                 if (ask.Reduce(tradeQuantity) == 0) { asks.RemoveAt(askIndex); }
 				if (bid.Reduce(tradeQuantity) == 0) { bids.RemoveAt(bidIndex); }
-				moneyExchanged += sellPrice * tradeQuantity;
+				moneyExchanged += clearingPrice * tradeQuantity;
 				goodsExchanged += tradeQuantity;
             }
+			if (goodsExchanged == 0)
+			{
+				goodsExchanged = 1;
+			} else if (goodsExchanged < 0)
+			{
+				Debug.Log("ERROR " + commodity + " had negative exchanges!?!?!");
+			}
+			
 			var averagePrice = moneyExchanged/goodsExchanged;
-			SetGraph(commodity, goodsExchanged);
+			if (float.IsNaN(averagePrice))
+			{
+				Debug.Log(commodity + ": average price is nan");
+			}
+			SetGraph(gMeanPrice, commodity, averagePrice);
+			SetGraph(gUnitsExchanged, commodity, goodsExchanged);
             //reject the rest
             foreach (var ask in asks)
 			{
 				ask.agent.RejectAsk(commodity, averagePrice);
 			}
+			asks.Clear();
 			foreach (var bid in bids)
 			{
 				bid.agent.RejectBid(commodity, averagePrice);
 			}
+			bids.Clear();
 
 			//calculate supply/demand
-			var excessDemand = asks.Sum(ask => ask.quantity);
-			var excessSupply = bids.Sum(bid => bid.quantity);
-			var demand = (goodsExchanged + excessDemand) 
-								 / (goodsExchanged + excessSupply);
+			//var excessDemand = asks.Sum(ask => ask.quantity);
+			//var excessSupply = bids.Sum(bid => bid.quantity);
+			//var demand = (goodsExchanged + excessDemand) 
+			//					 / (goodsExchanged + excessSupply);
 
             entry.Value.Update(averagePrice, demand);
 		}
-		//record average prices, volume traded, demand for each commodity
+        foreach (var agent in agents)
+        {
+            agent.Tick();
+        }
+		CountProfessions();
 	}
-	void SetGraph(string commodity, float input)
+	void CountProfessions()
 	{
-        if (commodity == "Wood") GMPWood.Tick(input);
-        if (commodity == "Food") GMPFood.Tick(input);
-        if (commodity == "Ore") GMPOre.Tick(input);
-        if (commodity == "Metal") GMPMetal.Tick(input);
-        if (commodity == "Tool") GMPTool.Tick(input);
+		var com = Commodities.Instance.com;
+		//count number of agents per professions
+		Dictionary<string, float> professions = new Dictionary<string, float>();
+		//initialize professions
+		foreach (var item in com)
+		{
+			var commodity = item.Key;
+			professions.Add(commodity, 0);
+		}
+		//bin professions
+        foreach (var agent in agents)
+        {
+			professions[agent.buildables[0]] += 1;
+        }
+
+		foreach (var entry in professions)
+		{
+			Debug.Log("Profession: " + entry.Key + ": " + entry.Value);
+			SetGraph(gProfessions, entry.Key, entry.Value);
+		}
+	}
+	void SetGraph(List<GraphMe> graphs, string commodity, float input)
+	{
+        if (commodity == "Food") graphs[0].Tick(input);
+        if (commodity == "Wood") graphs[1].Tick(input);
+        if (commodity == "Ore") graphs[2].Tick(input);
+        if (commodity == "Metal") graphs[3].Tick(input);
+        if (commodity == "Tool") graphs[4].Tick(input);
     }
 }

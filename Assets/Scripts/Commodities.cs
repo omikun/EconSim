@@ -134,7 +134,7 @@ public class Commodities : MonoBehaviour
 		toolDep.Add("Metal", 2);
 		Add("Tool", 1, toolDep);
 
-		PrintStat();
+		//PrintStat();
 		return;
 #if false
 		Add("Food", 4);

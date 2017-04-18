@@ -4,14 +4,16 @@ using UnityEngine;
 using UnityEngine.Assertions;
 
 public class CommodityStock {
+	public string commodityName { get; private set; }
 	const float significant = 0.25f;
 	const float sig_imbalance = .33f;
 	const float lowInventory = .1f;
 	const float highInventory = 2f;
 
-	public CommodityStock (float _quantity=1, float _maxQuantity=10, 
+	public CommodityStock (string _name, float _quantity=1, float _maxQuantity=10, 
 					float _meanPrice=1, float _production=1)
 	{
+		commodityName = _name;
 		quantity = _quantity;
 		maxQuantity = _maxQuantity;
 		minPriceBelief = _meanPrice / 2;
@@ -35,7 +37,9 @@ public class CommodityStock {
 	}
 	public float GetPrice()
 	{
-		return Random.Range(minPriceBelief, maxPriceBelief);
+		var p = Random.Range(minPriceBelief, maxPriceBelief);
+
+		return p;
 	}
 	public void updatePriceBelief(bool sell, float price, bool success=true)
 	{
@@ -70,7 +74,16 @@ public class CommodityStock {
 			maxPriceBelief += wobble * mean;
 		}
 		minPriceBelief = Mathf.Max(0.1f, minPriceBelief);
-		maxPriceBelief = Mathf.Max(0.1f, maxPriceBelief);
+		maxPriceBelief = Mathf.Max(1.1f, maxPriceBelief);
+		//set ceiling
+		minPriceBelief = Mathf.Min(900, minPriceBelief);
+		maxPriceBelief = Mathf.Min(1000, maxPriceBelief);
+		
+		var p = minPriceBelief;
+		if (float.IsNaN(p))
+		{
+			Debug.Log(commodityName + ": NaN! wobble" + wobble + " mean: " + mean + " sold price: " +price);
+		}
 	}
 	//TODO change quantity based on historical price ranges & deficit
 	public float Deficit() { return maxQuantity - quantity; }
@@ -94,7 +107,7 @@ public class EconAgent : MonoBehaviour {
 	Dictionary<string, float> stockPileCost = new Dictionary<string, float>(); //commodities stockpiled
 
 	//can produce a set of commodities
-	List<string> buildables;
+	public List<string> buildables { get; private set; }
 	//production has dependencies on commodities->populates stock
 	//production rate is limited by assembly lines (queues/event lists)
 	
@@ -102,8 +115,6 @@ public class EconAgent : MonoBehaviour {
 	//switching cost to produce new commodities - zero for now
 
 	//from the paper (base implementation)
-	float priceBound = 10; //price belief [median-priceBound, median+priceBound]
-	float selfPrice;
 	// Use this for initialization
 	Dictionary<string, Commodity> com {get; set;}
 	void Start () {
@@ -113,7 +124,7 @@ public class EconAgent : MonoBehaviour {
 		if (stockPile.ContainsKey(name))
 			return;
 
-        stockPile.Add(name, new CommodityStock(num, max, price, production));
+        stockPile.Add(name, new CommodityStock(name, num, max, price, production));
 
 		//book keeping
 		stockPileCost[name] = com[name].price * num;
@@ -144,19 +155,59 @@ public class EconAgent : MonoBehaviour {
 			}
 			AddToStockPile(buildable, 0, maxStock, com[buildable].price, com[buildable].production);
 		}
+    }
+    public void Tick()
+	{
+		bool starving = false;
+		if (stockPile.ContainsKey("Food"))
+		{
+            stockPile["Food"].quantity -= 1;
+            var food = stockPile["Food"].quantity;
+            starving = food < -15;
+		}
+		if (cash < bankruptcyThreshold || starving == true)
+		{
+			Debug.Log(name + " is bankrupt: $" + cash + " or starving " + starving);
+			ChangeProfession();
+		}
 	}
 
+	void ChangeProfession()
+	{
+		//find the most profession in demand
+		string mostDemand = "invalid";
+		float max = 0;
+		foreach (var item in com)
+		{
+			var c = item.Value;
+			if (max < c.demand)
+			{
+				max = c.demand;
+				mostDemand = item.Key;
+			}
+		}
+		Debug.Log("Most in demand: " + mostDemand + ": " + max);
+		
+		Assert.AreEqual(buildables.Count, 1);
+		buildables[0] = mostDemand;
+		stockPile.Clear();
+		List<string> b = new List<string>();
+		b.Add(mostDemand);
+		Init(500, b);
+	}
+	const float bankruptcyThreshold = -1000;
 	/*********** Trading ************/
 	public void Buy(string commodity, float quantity, float price)
 	{
 		stockPile[commodity].Buy(quantity, price);
+		Debug.Log(name + " has " + cash + " buying " + commodity + " " + price * quantity);
 		cash -= price * quantity;
 	}
 	public void Sell(string commodity, float quantity, float price)
 	{
-		quantity = -quantity;
-		stockPile[commodity].Sell(quantity, price);
-		cash -= price * quantity;
+		stockPile[commodity].Sell(-quantity, price);
+		Debug.Log(name + " has " + cash + " selling " + commodity + " " + price * quantity);
+		cash += price * quantity;
 	}
 	public void RejectAsk(string commodity, float price)
 	{
@@ -180,7 +231,9 @@ public class EconAgent : MonoBehaviour {
 			if (numBids > 0)
 			{
 				//maybe buy less if expensive?
-				bids.Add(stock.Key, new Trade(stock.Value.GetPrice(), numBids, this));
+				float buyPrice = stock.Value.GetPrice();
+				Assert.IsTrue(buyPrice > 0);
+				bids.Add(stock.Key, new Trade(stock.Value.commodityName, buyPrice, numBids, this));
 			}
         }
 				//adjust price believes
@@ -207,6 +260,7 @@ public class EconAgent : MonoBehaviour {
 				numProduced = Mathf.Min(numProduced, numAvail/numNeeded);
 				sStock += " " + numAvail + " " + dep.Key;
 			}
+			numProduced = Mathf.Max(0, numProduced);//sanity check
 			//can only build 1 at a time
 			numProduced = Mathf.Min(numProduced, stockPile[buildable].productionRate);
 			//build and add to stockpile
@@ -233,7 +287,9 @@ public class EconAgent : MonoBehaviour {
 			if (numProduced > 0)
 			{
 				var buildStock = stockPile[buildable];
-				asks.Add(buildable, new Trade(buildStock.GetPrice(), buildStock.quantity, this));
+				float sellPrice = buildStock.GetPrice();
+				Assert.IsTrue(sellPrice > 0);
+				asks.Add(buildable, new Trade(buildable, sellPrice, buildStock.quantity, this));
 			}
 		}
 
