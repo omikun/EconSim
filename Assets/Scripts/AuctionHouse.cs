@@ -98,9 +98,9 @@ public class TradeTable : Dictionary<string, Trades>
 }
 public class AuctionHouse : MonoBehaviour {
 
-	public float initCash = 500;
-	public float initStock = 5;
-	public float maxStock = 10;
+	public float initCash = 100;
+	public float initStock = 15;
+	public float maxStock = 20;
 	List<EconAgent> agents = new List<EconAgent>();
 	TradeTable askTable, bidTable;
 	//gmp = Graph Mean Price
@@ -165,11 +165,13 @@ public class AuctionHouse : MonoBehaviour {
         agent.Init(initCash, buildables, initStock, maxStock);
 	}
 	// Update is called once per frame
+	int roundNumber = 0;
 	void FixedUpdate () {
 		//wait 1s before update
 		float tickInterval = .5f;
 		if (Time.time - lastTick > tickInterval)
 		{
+			Debug.Log("Round: " + roundNumber++);
             Tick();
 			lastTick = Time.time;
 		}
@@ -196,7 +198,26 @@ public class AuctionHouse : MonoBehaviour {
             var bids = bidTable[commodity];
 			var demand = bids.Count / Mathf.Max(.1f, (float)asks.Count);
             
-			asks.Shuffle();
+			/******* debug */
+			if (bids.Count > 0)
+			{
+                Trade hTrade = bids[0];
+                foreach (var bid in bids)
+                {
+                    if (bid.price > hTrade.price)
+                    {
+                        hTrade = bid;
+                    }
+                }
+                if (hTrade.price > 1000)
+                    Debug.Log(hTrade.agent.name + " bid " + commodity + " more than $1000: " + hTrade.price);
+            }
+            /******* end debug */
+
+			entry.Value.bids.Add(bids.Count);
+			entry.Value.asks.Add(asks.Count);
+
+            asks.Shuffle();
 			bids.Shuffle();
 			
 			asks.Sort((x, y) => x.price.CompareTo(y.price)); //inc
@@ -213,6 +234,10 @@ public class AuctionHouse : MonoBehaviour {
 				var bid = bids[bidIndex];
 				//set price
 				var clearingPrice = (bid.price + ask.price) / 2;
+				if (clearingPrice < 0 || clearingPrice > 1000)
+				{
+					Debug.Log(commodity + " clearingPrice: " + clearingPrice + " ask: " + ask.price + " bid: " + bid.price);
+				}
 				//trade
 				var tradeQuantity = Mathf.Min(bid.quantity, ask.quantity);
 				ask.agent.Sell(commodity, tradeQuantity, clearingPrice);
@@ -238,6 +263,8 @@ public class AuctionHouse : MonoBehaviour {
 			}
 			SetGraph(gMeanPrice, commodity, averagePrice);
 			SetGraph(gUnitsExchanged, commodity, goodsExchanged);
+			entry.Value.trades.Add(goodsExchanged);
+			entry.Value.prices.Add(averagePrice);
             //reject the rest
             foreach (var ask in asks)
 			{

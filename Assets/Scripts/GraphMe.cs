@@ -13,6 +13,7 @@ public class GraphMe : MonoBehaviour {
 	GraphLead gl;
 		// Use this for initialization
 	void Start () {
+		inputs.Add(0);
 		gl = transform.parent.GetComponent<GraphLead>();
 
         lMin = Vector2.zero;
@@ -25,28 +26,32 @@ public class GraphMe : MonoBehaviour {
 	
 	// Update is called once per frame
 	public void Tick (float input) {
-		lMax.y = Mathf.Max(lMax.y, input);
-		lMin.y = Mathf.Min(lMin.y, input);
-		//update x bounds, remove last point
 		if (inputs.Count >= gl.maxPoints)
 		{
-			if (lMax.y == inputs[0])
-			{
-				//scan for max point
-				float newMax = inputs.Max();
-				gl.SetMaxY(newMax);
-			}
 			inputs.RemoveAt(0);
-			lMin.x += 1;
+            inputs.Add(input);
+            //scan for max point
+            lMax.y = inputs.Max();
+            lMin.y = inputs.Min();
+            gl.ResetYBounds();
+
+            lMin.x += 1;
             lMax.x += 1;
-		}
+		} else {
+            lMax.y = Mathf.Max(lMax.y, input);
+            lMin.y = Mathf.Min(lMin.y, input);
+            inputs.Add(input);
+        }
+		gl.UpdateLBounds(lMin, lMax);
+	}
+	public void LateUpdate() 
+	{
         for (int i = 0; i < inputs.Count; i++)
         {
             line.SetPosition(i, gl.L2PC_RelX(i, inputs[i]));
         }
-		inputs.Add(input);
         int x = inputs.Count-1;
-		var lastPos = gl.L2PC_RelX(x, input);
+		var lastPos = gl.L2PC_RelX(x, inputs[inputs.Count-1]);
         line.SetPosition(x, lastPos);
 		//set all points after
         for (int i = x + 1; i < gl.maxPoints; i++)
@@ -55,6 +60,5 @@ public class GraphMe : MonoBehaviour {
         }
 
 		//set text
-		gl.UpdateLBounds(lMin, lMax);
 	}
 }

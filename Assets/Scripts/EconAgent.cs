@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Assertions;
+using System.Linq;
 
 public class CommodityStock {
 	public string commodityName { get; private set; }
@@ -9,6 +10,7 @@ public class CommodityStock {
 	const float sig_imbalance = .33f;
 	const float lowInventory = .1f;
 	const float highInventory = 2f;
+	public List<float> priceHistory = new List<float>();
 
 	public CommodityStock (string _name, float _quantity=1, float _maxQuantity=10, 
 					float _meanPrice=1, float _production=1)
@@ -19,6 +21,7 @@ public class CommodityStock {
 		minPriceBelief = _meanPrice / 2;
 		maxPriceBelief = _meanPrice * 2;
 		meanCost = _meanPrice;
+		priceHistory.Add(_meanPrice);
 		production = _production;
 	}
 	public void Buy(float quant, float price)
@@ -37,34 +40,59 @@ public class CommodityStock {
 	}
 	public float GetPrice()
 	{
+		minPriceBelief = Mathf.Clamp(minPriceBelief, 0.1f, 900);
+		maxPriceBelief = Mathf.Clamp(maxPriceBelief, 1.1f, 1000);
 		var p = Random.Range(minPriceBelief, maxPriceBelief);
+		if (p > 1000f)
+		{
+            Assert.IsTrue(p <= 1000f);
+			Debug.Log("price beliefs: " + minPriceBelief + ", " + maxPriceBelief);
+		}
 
 		return p;
 	}
 	public void updatePriceBelief(bool sell, float price, bool success=true)
 	{
+		minPriceBelief = Mathf.Clamp(minPriceBelief, 0.1f, 900);
+		maxPriceBelief = Mathf.Clamp(maxPriceBelief, 1.1f, 1000);
+        Debug.Log(commodityName + " bounds: " + minPriceBelief + " < " + maxPriceBelief);
+		if (minPriceBelief > maxPriceBelief)
+		{
+            Assert.IsTrue(minPriceBelief < maxPriceBelief);
+			Debug.Log(commodityName + " ERROR " + minPriceBelief + " > "  + maxPriceBelief);
+		}
+
+		priceHistory.Add(price);
         var buy = !sell;
 		var mean = (minPriceBelief + maxPriceBelief) / 2;
 		var deltaMean = mean - price; //TODO or use auction house mean price?
+		Debug.Log("mean: $" + mean + " price $" + price + " dMean: $" + deltaMean);
 		if (success)
 		{
 			if ((sell && deltaMean < -significant * mean) //undersold
              || (buy  && deltaMean >  significant * mean))//overpaid
             {
-				minPriceBelief -= deltaMean / 2; 		//shift toward mean
-				maxPriceBelief -= deltaMean / 2;
+				minPriceBelief -= deltaMean / 4; 		//shift toward mean
+				maxPriceBelief -= deltaMean / 4;
             }
 			minPriceBelief += wobble * mean;
 			maxPriceBelief -= wobble * mean;
+			if (minPriceBelief > maxPriceBelief)
+			{
+				var avg = (minPriceBelief + maxPriceBelief) / 2f;
+				minPriceBelief = avg * (1 - wobble);
+				maxPriceBelief = avg * (1 + wobble);
+			}
+            wobble /= 2;
 		} else {
             minPriceBelief -= deltaMean / 2;        //shift toward mean
             maxPriceBelief -= deltaMean / 2;
 
 			//if low inventory and can't buy or high inventory and can't sell
-			if ((buy  && this.quantity < lowInventory)
-             || (sell && this.quantity > highInventory))
+			if ((buy  && this.quantity < maxQuantity * lowInventory)
+             || (sell && this.quantity > maxQuantity * highInventory))
             {
-                wobble *= 2;
+                wobble += 0.05f;
             } else {
 				//if too much demand or supply
 				//new mean might be 0%-200% of market rate 
@@ -73,14 +101,21 @@ public class CommodityStock {
 			minPriceBelief -= wobble * mean;
 			maxPriceBelief += wobble * mean;
 		}
-		minPriceBelief = Mathf.Max(0.1f, minPriceBelief);
-		maxPriceBelief = Mathf.Max(1.1f, maxPriceBelief);
-		//set ceiling
-		minPriceBelief = Mathf.Min(900, minPriceBelief);
-		maxPriceBelief = Mathf.Min(1000, maxPriceBelief);
+
+		//clamp to sane values
+		if (maxPriceBelief > 1000)
+			Debug.Log("ERROR " + maxPriceBelief + " > 1000");
+		if (maxPriceBelief < 0 || minPriceBelief < 0)
+			Debug.Log("ERROR negative " + minPriceBelief+ " " + maxPriceBelief );
+
+        if (minPriceBelief < maxPriceBelief)
+            minPriceBelief = maxPriceBelief / 2;
+		Assert.IsTrue(minPriceBelief < maxPriceBelief);
 		
-		var p = minPriceBelief;
-		if (float.IsNaN(p))
+		minPriceBelief = Mathf.Clamp(minPriceBelief, 0.1f, 900);
+		maxPriceBelief = Mathf.Clamp(maxPriceBelief, 1.1f, 1000);
+
+		if (float.IsNaN(minPriceBelief))
 		{
 			Debug.Log(commodityName + ": NaN! wobble" + wobble + " mean: " + mean + " sold price: " +price);
 		}
@@ -91,7 +126,15 @@ public class CommodityStock {
 	public float wobble = .05f;
 	public float quantity;
 	public float maxQuantity;
-	public float minPriceBelief;
+	public float minPriceBelief {
+		get { return _minPriceBelief; }
+		set {
+			if (value > 1000)
+                Debug.Log("minPriceBelief old: $" + _minPriceBelief + " new: $" + value);
+			_minPriceBelief = value;
+		}
+	}
+	private float _minPriceBelief;
 	public float maxPriceBelief;
 	public float meanCost; //total cost spent to acquire stock
 	//number of units produced per turn = production * productionRate
@@ -139,7 +182,7 @@ public class EconAgent : MonoBehaviour {
 		maxStock = maxstock;
 		foreach (var buildable in buildables)
 		{
-            Debug.Log(gameObject.name + " builds: " + buildable);
+            Debug.Log(gameObject.name + " has $" + cash + " builds: " + buildable);
 
 			if (!com.ContainsKey(buildable))
 				Debug.Log("commodity not recognized: " + buildable);
@@ -161,13 +204,13 @@ public class EconAgent : MonoBehaviour {
 		bool starving = false;
 		if (stockPile.ContainsKey("Food"))
 		{
-            stockPile["Food"].quantity -= 1;
+            stockPile["Food"].quantity -= .1f;
             var food = stockPile["Food"].quantity;
-            starving = food < -15;
+            starving = food < -25;
 		}
 		if (cash < bankruptcyThreshold || starving == true)
 		{
-			Debug.Log(name + " is bankrupt: $" + cash + " or starving " + starving);
+			Debug.Log(name + ":" + buildables[0] + " is bankrupt: $" + cash + " or starving " + starving);
 			ChangeProfession();
 		}
 	}
@@ -175,16 +218,21 @@ public class EconAgent : MonoBehaviour {
 	void ChangeProfession()
 	{
 		//find the most profession in demand
-		string mostDemand = "invalid";
+		//randomly assign
+		var rand = new System.Random();
+		string mostDemand = com.ElementAt(rand.Next(0, com.Count)).Key;
+		//values[rand.Next(size)];
+		//string mostDemand = values[rand.Next(com.Count)];
 		float max = 0;
 		foreach (var item in com)
 		{
 			var c = item.Value;
-			if (max < c.demand)
+			if (max < c.demand * c.price)
 			{
-				max = c.demand;
+				max = c.demand * c.price;
 				mostDemand = item.Key;
 			}
+			Debug.Log(item.Key + " Demand: " + c.demand * c.price);
 		}
 		Debug.Log("Most in demand: " + mostDemand + ": " + max);
 		
@@ -193,20 +241,21 @@ public class EconAgent : MonoBehaviour {
 		stockPile.Clear();
 		List<string> b = new List<string>();
 		b.Add(mostDemand);
-		Init(500, b);
+		Init(100, b);
 	}
-	const float bankruptcyThreshold = -1000;
+
+	const float bankruptcyThreshold = -50;
 	/*********** Trading ************/
 	public void Buy(string commodity, float quantity, float price)
 	{
 		stockPile[commodity].Buy(quantity, price);
-		Debug.Log(name + " has " + cash + " buying " + commodity + " " + price * quantity);
+		Debug.Log(name + " has " + cash + " buying " + commodity + " $" + price * quantity);
 		cash -= price * quantity;
 	}
 	public void Sell(string commodity, float quantity, float price)
 	{
 		stockPile[commodity].Sell(-quantity, price);
-		Debug.Log(name + " has " + cash + " selling " + commodity + " " + price * quantity);
+		Debug.Log(name + " has " + cash + " selling " + commodity + " $" + price * quantity);
 		cash += price * quantity;
 	}
 	public void RejectAsk(string commodity, float price)
@@ -218,7 +267,34 @@ public class EconAgent : MonoBehaviour {
 		stockPile[commodity].updatePriceBelief(false, price, false);
 	}
 
-	/*********** Produce and consume; enter asks and bids to auction house *****/
+	int historyCount = 10;
+    /*********** Produce and consume; enter asks and bids to auction house *****/
+    float FindSellCount(string c)
+	{
+		var skip = Mathf.Max(0, com[c].prices.Count() - historyCount);
+		Debug.Log(c + " prices: " + com[c].prices.Count + " to skip: " + skip);
+		var avgPrice = com[c].prices.Skip(skip).Average();
+		var lowestPrice = stockPile[c].priceHistory.Min();
+		var highestPrice = stockPile[c].priceHistory.Max();
+		//todo SANITY check
+		float favorability = Mathf.Lerp(lowestPrice, highestPrice, avgPrice);
+		float numAsks = (favorability) * stockPile[c].Surplus();
+		numAsks = Mathf.Max(1, numAsks);
+
+		return numAsks;
+	}
+	float FindBuyCount(string c)
+	{
+		var avgPrice = com[c].prices.Skip(Mathf.Max(0, com[c].prices.Count() - historyCount)).Average();
+		var lowestPrice = stockPile[c].priceHistory.Min();
+		var highestPrice = stockPile[c].priceHistory.Max();
+		//todo SANITY check
+		float favorability = Mathf.Lerp(lowestPrice, highestPrice, avgPrice);
+		float numBids = (1 - favorability) * stockPile[c].Deficit();
+		numBids = Mathf.Max(1, numBids);
+
+		return numBids;
+	}
 	public TradeSubmission Consume(Dictionary<string, Commodity> com) {
         var bids = new TradeSubmission();
         //replenish depended commodities
@@ -226,20 +302,23 @@ public class EconAgent : MonoBehaviour {
 		{
 			if (buildables.Contains(stock.Key)) continue;
 
-			//TODO add price beliefs
-			var numBids = stock.Value.Deficit();
+			var numBids = FindBuyCount(stock.Key);
 			if (numBids > 0)
 			{
 				//maybe buy less if expensive?
 				float buyPrice = stock.Value.GetPrice();
-				Assert.IsTrue(buyPrice > 0);
+				if (buyPrice > 1000)
+				{
+					Debug.Log(stock.Key + "buyPrice: " + buyPrice + " : " + stock.Value.minPriceBelief + "<" + stock.Value.maxPriceBelief);
+				}
+				if (numBids < 0)
+				{
+					Debug.Log(stock.Key + " buying negative " + numBids + " for $" + buyPrice);
+				}
 				bids.Add(stock.Key, new Trade(stock.Value.commodityName, buyPrice, numBids, this));
 			}
         }
-				//adjust price believes
-		//if in debt > threshtold
-			//remove least profitable commodity, add in most in demand commodity
-			return bids;
+        return bids;
 	}
 	public TradeSubmission Produce(Dictionary<string, Commodity> com) {
         var asks = new TradeSubmission();
@@ -252,6 +331,10 @@ public class EconAgent : MonoBehaviour {
 			float numProduced = float.MaxValue; //amt agent can produce for commodity buildable
 			string sStock = ", has in stock";
 			//find max that can be made w/ available stock
+			if (!com.ContainsKey(buildable))
+			{
+				Debug.Log("not a commodity: " + buildable);
+			}
 			foreach (var dep in com[buildable].dep)
 			{
 				//get num commodities you can build
@@ -266,29 +349,26 @@ public class EconAgent : MonoBehaviour {
 			//build and add to stockpile
 			foreach (var dep in com[buildable].dep)
 			{
-				bool sanity = (stockPile[dep.Key].quantity >= dep.Value * numProduced);
-				if (!sanity)
-                {
-                    Assert.IsTrue(sanity);
-					Debug.Log(dep.Key + ": " + stockPile[dep.Key].quantity + ">=" + dep.Value * numProduced);
-                    stockPile[dep.Key].quantity = 0;
-				}
-                else
-                {
-                    stockPile[dep.Key].quantity -= dep.Value * numProduced;
-				}
+				var stock = stockPile[dep.Key].quantity;
+				var numUsed = dep.Value * numProduced;
+				numUsed = Mathf.Min(numUsed, stock);
+                stockPile[dep.Key].quantity -= numUsed;
 			}
 			numProduced *= stockPile[buildable].production;
 			stockPile[buildable].quantity += numProduced;
 			if (float.IsNaN(numProduced))
 				Debug.Log(buildable + " numproduced is nan!");
 
-            Debug.Log(name + " has " + cash + " made " + numProduced + " " + buildable + sStock);
-			if (numProduced > 0)
+            var buildStock = stockPile[buildable];
+            float sellPrice = FindSellCount(buildable); buildStock.GetPrice();
+			//HACK, so economy is always flowing somewhere
+			numProduced = Mathf.Max(1, numProduced);
+			sellPrice = Mathf.Max(1, sellPrice);
+
+            Debug.Log(name + " has " + cash + " made " + numProduced + buildable + sellPrice + sStock);
+
+			if (numProduced > 0 && sellPrice > 0)
 			{
-				var buildStock = stockPile[buildable];
-				float sellPrice = buildStock.GetPrice();
-				Assert.IsTrue(sellPrice > 0);
 				asks.Add(buildable, new Trade(buildable, sellPrice, buildStock.quantity, this));
 			}
 		}

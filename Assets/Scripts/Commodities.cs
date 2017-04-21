@@ -37,12 +37,22 @@ public class Recipe
 public class Commodity
 {
 	const float defaultPrice = 1;
+	public List<float> bids, asks, prices, trades;
 	public Commodity(float p, Dependency d)
 	{
 		production = p;
 		price = defaultPrice;
 		dep = d;
 		demand = 1;
+
+		bids   = new List<float>(); 
+		bids.Add(1);
+		asks   = new List<float>(); 
+		asks.Add(1);
+		trades = new List<float>(); 
+		trades.Add(1);
+		prices = new List<float>(); 
+		prices.Add(1);
 	}
 	public void Update(float p, float dem)
 	{
@@ -113,24 +123,24 @@ public class Commodities : MonoBehaviour
 		//replicate paper
 		Dependency foodDep = new Dependency();
 		foodDep.Add("Wood", 1);
-		Add("Food", 4, foodDep);
+		Add("Food", 5, foodDep);
 
 		Dependency woodDep = new Dependency();
-		woodDep.Add("Food", 3);
+		woodDep.Add("Food", 1);
 		woodDep.Add("Tool", .1f);
 		Add("Wood", 3, woodDep);
 
 		Dependency oreDep = new Dependency();
-		oreDep.Add("Food", 4);
+		oreDep.Add("Food", .5f);
 		Add("Ore", 2, oreDep);
 
 		Dependency metalDep = new Dependency();
-		metalDep.Add("Food", 2);
+		metalDep.Add("Food", 1);
 		metalDep.Add("Ore", 2);
 		Add("Metal", 1, metalDep);
 
 		Dependency toolDep = new Dependency();
-		toolDep.Add("Food", 2);
+		toolDep.Add("Food", 1.3f);
 		toolDep.Add("Metal", 2);
 		Add("Tool", 1, toolDep);
 

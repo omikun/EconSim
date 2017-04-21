@@ -31,11 +31,22 @@ public class GraphLead : MonoBehaviour {
 	}
 	public void SetMaxY(float y)
 	{
+		Debug.Log("old maxy: " + lMax.y + " new: " + y);
 		lMax.y = y;
+	}
+	public void ResetYBounds()
+	{
+		if (firstThisUpdate)
+		{
+			firstThisUpdate = false;
+			lMax = Vector2.zero;
+			lMin = Vector2.zero;
+		}
 	}
 	public void UpdateLBounds(Vector2 _lMin, Vector2 _lMax)
 	{
 		lMin = Vector2.Min(lMin, _lMin);
+		lMin.x = _lMin.x;
 		lMax = Vector2.Max(lMax, _lMax);
 	}
 	// Use this for initialization
@@ -67,9 +78,10 @@ public class GraphLead : MonoBehaviour {
 
 
 	}
-	
+	bool firstThisUpdate = true;
 	// Update is called once per frame
 	void LateUpdate () {
+		firstThisUpdate = true;
 		tXmin.SetText(lMin.x.ToString("G"));
 		tXmax.SetText(lMax.x.ToString("G"));
 		tYmin.SetText(lMin.y.ToString("G"));
