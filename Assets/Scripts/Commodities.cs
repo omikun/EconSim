@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine.Assertions;
 using UnityEngine;
+using System.Linq;
 
 //using Dependency = System.Collections.Generic.Dictionary<string, float>;
 //TODO replace dependencies with recipe
@@ -38,8 +39,22 @@ public class Commodity
 {
 	const float defaultPrice = 1;
 	public List<float> bids, asks, prices, trades;
-	public Commodity(float p, Dependency d)
+	float avgPrice = 1;
+	bool firstAvgPrice = true;
+	public float GetAvgPrice(int history)
 	{
+		if (firstAvgPrice == true)
+		{
+            firstAvgPrice = false;
+            var skip = Mathf.Max(0, prices.Count - history);
+            Debug.Log(name + " prices: " + prices.Count + " to skip: " + skip);
+            avgPrice = prices.Skip(skip).Average();
+        }
+		return avgPrice;
+	}
+	public Commodity(string n, float p, Dependency d)
+	{
+		name = n;
 		production = p;
 		price = defaultPrice;
 		dep = d;
@@ -56,10 +71,12 @@ public class Commodity
 	}
 	public void Update(float p, float dem)
 	{
+		firstAvgPrice = true;
 		price = p;
 		demand = dem;
 	}
 	int debug = 0;
+	string name;
 	public float price { get; private set; } //market price
 	public float demand { get; private set; }
 	public float production { get; private set; }
@@ -99,7 +116,7 @@ public class Commodities : MonoBehaviour
 		if (com.ContainsKey(name)) { return false; }
 		Assert.IsNotNull(dep);
 
-		com.Add(name, new Commodity(production, dep));
+		com.Add(name, new Commodity(name, production, dep));
 		return true;
 	}
     void PrintStat()

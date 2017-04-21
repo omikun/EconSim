@@ -46,7 +46,7 @@ public class CommodityStock {
 		if (p > 1000f)
 		{
             Assert.IsTrue(p <= 1000f);
-			Debug.Log("price beliefs: " + minPriceBelief + ", " + maxPriceBelief);
+			Debug.Log("price beliefs: " + minPriceBelief.ToString("n2") + ", " + maxPriceBelief.ToString("n2"));
 		}
 
 		return p;
@@ -55,18 +55,18 @@ public class CommodityStock {
 	{
 		minPriceBelief = Mathf.Clamp(minPriceBelief, 0.1f, 900);
 		maxPriceBelief = Mathf.Clamp(maxPriceBelief, 1.1f, 1000);
-        Debug.Log(commodityName + " bounds: " + minPriceBelief + " < " + maxPriceBelief);
+        Debug.Log(commodityName + " bounds: " + minPriceBelief.ToString("n2") + " < " + maxPriceBelief.ToString("n2"));
 		if (minPriceBelief > maxPriceBelief)
 		{
             Assert.IsTrue(minPriceBelief < maxPriceBelief);
-			Debug.Log(commodityName + " ERROR " + minPriceBelief + " > "  + maxPriceBelief);
+			Debug.Log(commodityName + " ERROR " + minPriceBelief.ToString("n2") + " > "  + maxPriceBelief.ToString("n2"));
 		}
 
 		priceHistory.Add(price);
         var buy = !sell;
 		var mean = (minPriceBelief + maxPriceBelief) / 2;
 		var deltaMean = mean - price; //TODO or use auction house mean price?
-		Debug.Log("mean: $" + mean + " price $" + price + " dMean: $" + deltaMean);
+		Debug.Log("mean: " + mean.ToString("c2") + " price " + price.ToString("c2") + " dMean: " + deltaMean.ToString("c2"));
 		if (success)
 		{
 			if ((sell && deltaMean < -significant * mean) //undersold
@@ -104,9 +104,9 @@ public class CommodityStock {
 
 		//clamp to sane values
 		if (maxPriceBelief > 1000)
-			Debug.Log("ERROR " + maxPriceBelief + " > 1000");
+			Debug.Log("ERROR " + maxPriceBelief.ToString("c2") + " > 1000");
 		if (maxPriceBelief < 0 || minPriceBelief < 0)
-			Debug.Log("ERROR negative " + minPriceBelief+ " " + maxPriceBelief );
+			Debug.Log("ERROR negative " + minPriceBelief.ToString("c2") + " " + maxPriceBelief.ToString("c2") );
 
         if (minPriceBelief < maxPriceBelief)
             minPriceBelief = maxPriceBelief / 2;
@@ -117,7 +117,7 @@ public class CommodityStock {
 
 		if (float.IsNaN(minPriceBelief))
 		{
-			Debug.Log(commodityName + ": NaN! wobble" + wobble + " mean: " + mean + " sold price: " +price);
+			Debug.Log(commodityName + ": NaN! wobble" + wobble.ToString("n2") + " mean: " + mean.ToString("c2") + " sold price: " +price.ToString("c2"));
 		}
 	}
 	//TODO change quantity based on historical price ranges & deficit
@@ -130,7 +130,7 @@ public class CommodityStock {
 		get { return _minPriceBelief; }
 		set {
 			if (value > 1000)
-                Debug.Log("minPriceBelief old: $" + _minPriceBelief + " new: $" + value);
+                Debug.Log("minPriceBelief old: " + _minPriceBelief.ToString("c2") + " new: " + value.ToString("c2"));
 			_minPriceBelief = value;
 		}
 	}
@@ -182,7 +182,7 @@ public class EconAgent : MonoBehaviour {
 		maxStock = maxstock;
 		foreach (var buildable in buildables)
 		{
-            Debug.Log(gameObject.name + " has $" + cash + " builds: " + buildable);
+            Debug.Log(gameObject.name + " has " + cash.ToString("c2") + " builds: " + buildable);
 
 			if (!com.ContainsKey(buildable))
 				Debug.Log("commodity not recognized: " + buildable);
@@ -210,7 +210,7 @@ public class EconAgent : MonoBehaviour {
 		}
 		if (cash < bankruptcyThreshold || starving == true)
 		{
-			Debug.Log(name + ":" + buildables[0] + " is bankrupt: $" + cash + " or starving " + starving);
+			Debug.Log(name + ":" + buildables[0] + " is bankrupt: " + cash.ToString("c2") + " or starving " + starving);
 			ChangeProfession();
 		}
 	}
@@ -249,13 +249,13 @@ public class EconAgent : MonoBehaviour {
 	public void Buy(string commodity, float quantity, float price)
 	{
 		stockPile[commodity].Buy(quantity, price);
-		Debug.Log(name + " has " + cash + " buying " + commodity + " $" + price * quantity);
+		Debug.Log(name + " has " + cash.ToString("c2") + " buying " + commodity + " " + price * quantity);
 		cash -= price * quantity;
 	}
 	public void Sell(string commodity, float quantity, float price)
 	{
 		stockPile[commodity].Sell(-quantity, price);
-		Debug.Log(name + " has " + cash + " selling " + commodity + " $" + price * quantity);
+		Debug.Log(name + " has " + cash.ToString("c2") + " selling " + commodity + " " + price * quantity);
 		cash += price * quantity;
 	}
 	public void RejectAsk(string commodity, float price)
@@ -271,28 +271,30 @@ public class EconAgent : MonoBehaviour {
     /*********** Produce and consume; enter asks and bids to auction house *****/
     float FindSellCount(string c)
 	{
-		var skip = Mathf.Max(0, com[c].prices.Count() - historyCount);
-		Debug.Log(c + " prices: " + com[c].prices.Count + " to skip: " + skip);
-		var avgPrice = com[c].prices.Skip(skip).Average();
+		var avgPrice = com[c].GetAvgPrice(historyCount);
 		var lowestPrice = stockPile[c].priceHistory.Min();
 		var highestPrice = stockPile[c].priceHistory.Max();
 		//todo SANITY check
 		float favorability = Mathf.Lerp(lowestPrice, highestPrice, avgPrice);
+		favorability = Mathf.Clamp(favorability, 0, 1);
 		float numAsks = (favorability) * stockPile[c].Surplus();
 		numAsks = Mathf.Max(1, numAsks);
 
+		Debug.Log("avgPrice: " + avgPrice.ToString("c2") + " favoribility: " + favorability + " numAsks: " + numAsks.ToString("0.00"));
 		return numAsks;
 	}
 	float FindBuyCount(string c)
 	{
-		var avgPrice = com[c].prices.Skip(Mathf.Max(0, com[c].prices.Count() - historyCount)).Average();
+		var avgPrice = com[c].GetAvgPrice(historyCount);
 		var lowestPrice = stockPile[c].priceHistory.Min();
 		var highestPrice = stockPile[c].priceHistory.Max();
 		//todo SANITY check
 		float favorability = Mathf.Lerp(lowestPrice, highestPrice, avgPrice);
+		favorability = Mathf.Clamp(favorability, 0, 1);
 		float numBids = (1 - favorability) * stockPile[c].Deficit();
 		numBids = Mathf.Max(1, numBids);
 
+		Debug.Log("avgPrice: " + avgPrice.ToString("c2") + " favoribility: " + favorability.ToString("n2") + " numBids: " + numBids.ToString("n2"));
 		return numBids;
 	}
 	public TradeSubmission Consume(Dictionary<string, Commodity> com) {
@@ -309,11 +311,11 @@ public class EconAgent : MonoBehaviour {
 				float buyPrice = stock.Value.GetPrice();
 				if (buyPrice > 1000)
 				{
-					Debug.Log(stock.Key + "buyPrice: " + buyPrice + " : " + stock.Value.minPriceBelief + "<" + stock.Value.maxPriceBelief);
+					Debug.Log(stock.Key + "buyPrice: " + buyPrice.ToString("c2") + " : " + stock.Value.minPriceBelief.ToString("n2") + "<" + stock.Value.maxPriceBelief.ToString("n2"));
 				}
 				if (numBids < 0)
 				{
-					Debug.Log(stock.Key + " buying negative " + numBids + " for $" + buyPrice);
+					Debug.Log(stock.Key + " buying negative " + numBids.ToString("n2") + " for " + buyPrice.ToString("c2"));
 				}
 				bids.Add(stock.Key, new Trade(stock.Value.commodityName, buyPrice, numBids, this));
 			}
@@ -365,7 +367,7 @@ public class EconAgent : MonoBehaviour {
 			numProduced = Mathf.Max(1, numProduced);
 			sellPrice = Mathf.Max(1, sellPrice);
 
-            Debug.Log(name + " has " + cash + " made " + numProduced + buildable + sellPrice + sStock);
+            Debug.Log(name + " has " + cash.ToString("c2") + " made " + numProduced.ToString("n2") + " " + buildable + sellPrice.ToString("c2") + sStock);
 
 			if (numProduced > 0 && sellPrice > 0)
 			{
