@@ -98,6 +98,7 @@ public class TradeTable : Dictionary<string, Trades>
 }
 public class AuctionHouse : MonoBehaviour {
 
+    public int numAgents = 100;
 	public float initCash = 100;
 	public float initStock = 15;
 	public float maxStock = 20;
@@ -110,6 +111,7 @@ public class AuctionHouse : MonoBehaviour {
 	float lastTick;
 	// Use this for initialization
 	void Start () {
+		Debug.logger.logEnabled=false;
 		lastTick = 0;
 		int count = 0;
 		var com = Commodities.Instance.com;
@@ -132,6 +134,13 @@ public class AuctionHouse : MonoBehaviour {
 			gProfessions.Add(gp.transform.Find("line"+i).GetComponent<GraphMe>());
 		}
 
+		var prefab = Resources.Load("Agent");
+		for (int i = transform.childCount; i < numAgents; i++)
+		{
+            GameObject go = Instantiate(prefab) as GameObject; 
+			go.transform.parent = transform;
+			go.name = "agent" + i.ToString();
+		}
 		/* initialize agents */
 		foreach (Transform tChild in transform)
 		{
@@ -139,7 +148,7 @@ public class AuctionHouse : MonoBehaviour {
 			var agent = child.GetComponent<EconAgent>();
 
 			string type = "invalid";
-			int numPerType = 4;
+			int numPerType = transform.childCount / 5;
 			int typeNum = 1;
 			if (count < numPerType*typeNum++) 		type = "Food";	//farmer
 			else if (count < numPerType*typeNum++) 	type = "Wood";	//woodcutter
@@ -168,7 +177,7 @@ public class AuctionHouse : MonoBehaviour {
 	int roundNumber = 0;
 	void FixedUpdate () {
 		//wait 1s before update
-		float tickInterval = .5f;
+		float tickInterval = .1f;
 		if (Time.time - lastTick > tickInterval)
 		{
 			Debug.Log("Round: " + roundNumber++);

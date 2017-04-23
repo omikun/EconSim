@@ -170,6 +170,7 @@ public class EconAgent : MonoBehaviour {
         stockPile.Add(name, new CommodityStock(name, num, max, price, production));
 
 		//book keeping
+		Debug.Log(gameObject.name + " adding " + name + " to stockpile");
 		stockPileCost[name] = com[name].price * num;
 	}
 	public void Init(float initCash, List<string> b, float initNum=5, float maxstock=10) {
@@ -206,7 +207,7 @@ public class EconAgent : MonoBehaviour {
 		{
             stockPile["Food"].quantity -= .1f;
             var food = stockPile["Food"].quantity;
-            starving = food < -25;
+            starving = false;//food < -25;
 		}
 		if (cash < bankruptcyThreshold || starving == true)
 		{
@@ -249,13 +250,13 @@ public class EconAgent : MonoBehaviour {
 	public void Buy(string commodity, float quantity, float price)
 	{
 		stockPile[commodity].Buy(quantity, price);
-		Debug.Log(name + " has " + cash.ToString("c2") + " buying " + commodity + " " + price * quantity);
+		Debug.Log(name + " has " + cash.ToString("c2") + " buying " + quantity.ToString("n2") + " " + commodity + " for " + price.ToString("c2"));
 		cash -= price * quantity;
 	}
 	public void Sell(string commodity, float quantity, float price)
 	{
 		stockPile[commodity].Sell(-quantity, price);
-		Debug.Log(name + " has " + cash.ToString("c2") + " selling " + commodity + " " + price * quantity);
+		Debug.Log(name + " has " + cash.ToString("c2") + " selling " + quantity.ToString("n2") +" " +  commodity + " for " + price.ToString("c2"));
 		cash += price * quantity;
 	}
 	public void RejectAsk(string commodity, float price)

@@ -144,11 +144,11 @@ public class Commodities : MonoBehaviour
 
 		Dependency woodDep = new Dependency();
 		woodDep.Add("Food", 1);
-		woodDep.Add("Tool", .1f);
+		woodDep.Add("Tool", .4f);
 		Add("Wood", 3, woodDep);
 
 		Dependency oreDep = new Dependency();
-		oreDep.Add("Food", .5f);
+		oreDep.Add("Food", .7f);
 		Add("Ore", 2, oreDep);
 
 		Dependency metalDep = new Dependency();
@@ -157,7 +157,7 @@ public class Commodities : MonoBehaviour
 		Add("Metal", 1, metalDep);
 
 		Dependency toolDep = new Dependency();
-		toolDep.Add("Food", 1.3f);
+		toolDep.Add("Food", 2.3f);
 		toolDep.Add("Metal", 2);
 		Add("Tool", 1, toolDep);
 

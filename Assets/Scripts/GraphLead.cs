@@ -82,9 +82,9 @@ public class GraphLead : MonoBehaviour {
 	// Update is called once per frame
 	void LateUpdate () {
 		firstThisUpdate = true;
-		tXmin.SetText(lMin.x.ToString("G"));
-		tXmax.SetText(lMax.x.ToString("G"));
-		tYmin.SetText(lMin.y.ToString("G"));
-		tYmax.SetText(lMax.y.ToString("G"));
+		tXmin.SetText(lMin.x.ToString("n2"));
+		tXmax.SetText(lMax.x.ToString("n2"));
+		tYmin.SetText(lMin.y.ToString("n2"));
+		tYmax.SetText(lMax.y.ToString("n2"));
     }
 }

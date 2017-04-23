@@ -294,6 +294,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dd5378998db5ba9488d08a4e3b80821a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  m_Width: 320
+  m_Height: 200
+  m_AutoAspect: 1
+  m_FramePerSecond: 15
+  m_Repeat: 0
+  m_Quality: 15
+  m_BufferSize: 3
+  WorkerPriority: 1
 --- !u!114 &192318761
 MonoBehaviour:
   m_ObjectHideFlags: 0
