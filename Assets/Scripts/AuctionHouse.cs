@@ -35,7 +35,7 @@ public class Trade
 	}
 	public void Print()
 	{
-		Debug.Log(commodity + " trade: " + price + ", " + quantity + ", " + agent.transform.gameObject.name);
+		Debug.Log(agent.gameObject.name + ": " + commodity + " trade: " + price + ", " + quantity);
 	}
 	public string commodity { get; private set; }
 	public float price { get; private set; }
@@ -103,15 +103,19 @@ public class AuctionHouse : MonoBehaviour {
 	public float initStock = 15;
 	public float maxStock = 20;
 	List<EconAgent> agents = new List<EconAgent>();
-	TradeTable askTable, bidTable;
-	//gmp = Graph Mean Price
-	List<GraphMe> gMeanPrice = new List<GraphMe>();
+    TradeTable askTable, bidTable;
+				
+
+//gmp = Graph Mean Price
+List<GraphMe> gMeanPrice = new List<GraphMe>();
 	List<GraphMe> gUnitsExchanged = new List<GraphMe>();
 	List<GraphMe> gProfessions = new List<GraphMe>();
 	float lastTick;
+	public bool EnableDebug = false;
 	// Use this for initialization
 	void Start () {
-		Debug.logger.logEnabled=false;
+		Debug.logger.logEnabled=EnableDebug;
+
 		lastTick = 0;
 		int count = 0;
 		var com = Commodities.Instance.com;
@@ -161,7 +165,7 @@ public class AuctionHouse : MonoBehaviour {
 			count++;
 		}
 		askTable = new TradeTable();
-		bidTable = new TradeTable();
+        bidTable = new TradeTable();
 
 		//initialize agents
 	}
@@ -171,8 +175,12 @@ public class AuctionHouse : MonoBehaviour {
         agent.debug++;
         List<string> buildables = new List<string>();
 		buildables.Add(type);
-        agent.Init(initCash, buildables, initStock, maxStock);
+		var _initStock = UnityEngine.Random.Range(initStock/2, initStock*2);
+		var _maxStock = Mathf.Max(initStock, maxStock);
+
+        agent.Init(initCash, buildables, _initStock, _maxStock);
 	}
+	
 	// Update is called once per frame
 	int roundNumber = 0;
 	void FixedUpdate () {
@@ -186,7 +194,6 @@ public class AuctionHouse : MonoBehaviour {
 		}
 	}
 
-	Random rnd = new Random();
 	void Tick()
 	{
 		var com = Commodities.Instance.com;
@@ -205,7 +212,7 @@ public class AuctionHouse : MonoBehaviour {
 			var commodity = entry.Key;
 			var asks = askTable[commodity];
             var bids = bidTable[commodity];
-			var demand = bids.Count / Mathf.Max(.1f, (float)asks.Count);
+			var demand = bids.Count / Mathf.Max(.01f, (float)asks.Count);
             
 			/******* debug */
 			if (bids.Count > 0)
@@ -294,6 +301,49 @@ public class AuctionHouse : MonoBehaviour {
 
             entry.Value.Update(averagePrice, demand);
 		}
+
+		CountProfits();
+		EnactBankruptcy();
+	}
+
+	void CountProfits()
+	{
+		var com = Commodities.Instance.com;
+		//count profit per profession/commodity
+		//first get total profit earned this round
+        Dictionary<string, float> totalProfits = new Dictionary<string, float>();
+		//and number of agents per commodity
+        Dictionary<string, int> numAgents = new Dictionary<string, int>();
+		//initialize
+        foreach (var entry in com)
+        {
+            var commodity = entry.Key;
+			totalProfits.Add(commodity, 0);
+			numAgents.Add(commodity, 0);
+        }
+		//accumulate
+        foreach (var agent in agents)
+        {
+            var commodity = agent.buildables[0];
+            totalProfits[commodity] += agent.GetProfit();
+			numAgents[commodity] ++;
+        }
+		//average
+		foreach (var entry in com)
+		{
+			var commodity = entry.Key;
+			var profit = totalProfits[commodity] / numAgents[commodity];
+			if (profit == 0)
+			{
+				Debug.Log(commodity + " no profit earned this round");
+			} else {
+                entry.Value.profits.Add(profit);
+			}
+		}
+	}
+
+	void EnactBankruptcy()
+	{
         foreach (var agent in agents)
         {
             agent.Tick();
@@ -319,7 +369,7 @@ public class AuctionHouse : MonoBehaviour {
 
 		foreach (var entry in professions)
 		{
-			Debug.Log("Profession: " + entry.Key + ": " + entry.Value);
+			//Debug.Log("Profession: " + entry.Key + ": " + entry.Value);
 			SetGraph(gProfessions, entry.Key, entry.Value);
 		}
 	}

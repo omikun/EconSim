@@ -35,10 +35,22 @@ public class Recipe
 		return numProduce;
 	}
 }
+public class ESList : List<float>
+{
+    float avg;
+    public float LastAverage(int history)
+    {
+        var skip = Mathf.Max(0, base.Count - history);
+        var newList = base.GetRange(skip, history);
+        avg = newList.Average();
+        return avg;
+    }
+}
 public class Commodity
 {
 	const float defaultPrice = 1;
-	public List<float> bids, asks, prices, trades;
+	public ESList bids, asks, prices, trades, profits; 
+	
 	float avgPrice = 1;
 	bool firstAvgPrice = true;
 	public float GetAvgPrice(int history)
@@ -46,8 +58,8 @@ public class Commodity
 		if (firstAvgPrice == true)
 		{
             firstAvgPrice = false;
+//            Debug.Log(name + " prices: " + prices.Count + " to skip: " + skip);
             var skip = Mathf.Max(0, prices.Count - history);
-            Debug.Log(name + " prices: " + prices.Count + " to skip: " + skip);
             avgPrice = prices.Skip(skip).Average();
         }
 		return avgPrice;
@@ -60,14 +72,16 @@ public class Commodity
 		dep = d;
 		demand = 1;
 
-		bids   = new List<float>(); 
+		bids   = new ESList();
 		bids.Add(1);
-		asks   = new List<float>(); 
+		asks   = new  ESList();
 		asks.Add(1);
-		trades = new List<float>(); 
+		trades = new  ESList();
 		trades.Add(1);
-		prices = new List<float>(); 
+		prices = new  ESList();
 		prices.Add(1);
+		profits = new ESList();
+		profits.Add(1);
 	}
 	public void Update(float p, float dem)
 	{
@@ -110,7 +124,46 @@ public class Commodities : MonoBehaviour
 		com = new Dictionary<string, Commodity>(); //names, market price
 		Init();
     }
+    public string GetMostProfitableProfession(int history = 10)
+	{
+		string prof = "invalid";
+		float most = 0;
 
+		foreach (var entry in com)
+		{
+			var commodity = entry.Key;
+			var profitHistory = entry.Value.profits;
+			//WARNING this history refers to the last # agents' profits, not last # rounds... short history if popular profession...
+			var profit = profitHistory.LastAverage(history);
+			if (profit > most)
+			{
+				prof = commodity;
+			}
+		}
+		return prof;
+	}
+	public string GetHottestGood(int history=10)
+	{
+		var rand = new System.Random();
+		//string mostDemand = com.ElementAt(rand.Next(0, com.Count)).Key;
+		string mostDemand = "invalid";
+		float max = 2;
+		foreach (var c in com)
+		{
+			var asks = c.Value.asks.LastAverage(history);
+			var bids = c.Value.bids.LastAverage(history);
+            asks = Mathf.Max(.5f, asks);
+			var ratio = bids / asks;
+			if (max < ratio)
+			{
+				max = ratio;
+				mostDemand = c.Key;
+			}
+			Debug.Log(c.Key + " Ratio: " + ratio.ToString("n2"));
+		}
+		Debug.Log("Most in demand: " + mostDemand + ": " + max);
+		return mostDemand;
+	}
 	bool Add(string name, float production, Dependency dep)
 	{
 		if (com.ContainsKey(name)) { return false; }
