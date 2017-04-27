@@ -14,6 +14,7 @@ public class GraphLead : MonoBehaviour {
 	//physical min/max
 	Vector2 pMin = new Vector2();
 	Vector2 pMax = new Vector2();
+	LineRenderer axis;
 
  //convert logical coord to physical coord
 	public Vector3 Logical2PhysicalCoord(float x, float y)
@@ -70,11 +71,16 @@ public class GraphLead : MonoBehaviour {
 		pMax = new Vector2(pxmax.transform.position.x, pymax.transform.position.y);
 
 		//set axis
-		var axis = transform.FindChild("plane").GetComponent<LineRenderer>();
-		axis.SetVertexCount(3);
+		GameObject go = transform.FindChild("plane").gameObject;
+		axis = go.GetComponent<LineRenderer>();
+		axis.numPositions = 4;
+
+		var hi = Hierarchy(go);
+		Debug.Log(hi + " numPos: " + axis.numPositions );
 		axis.SetPosition(0, pymax.transform.position);
 		axis.SetPosition(1, pymin.transform.position);
-		axis.SetPosition(2, pxmax.transform.position);
+		axis.SetPosition(2, pymin.transform.position);
+		axis.SetPosition(3, pxmax.transform.position);
 
 
 	}
@@ -86,5 +92,30 @@ public class GraphLead : MonoBehaviour {
 		tXmax.SetText(lMax.x.ToString("n2"));
 		tYmin.SetText(lMin.y.ToString("n2"));
 		tYmax.SetText(lMax.y.ToString("n2"));
+
+		//set zero line (position 2 and 3)
+		float lyzero = Mathf.InverseLerp(lMin.y, lMax.y, 0);
+		var pyzero = Vector3.Lerp(pymin.transform.position, pymax.transform.position, lyzero);
+		//var pyzero = lyzero * (pymax.transform.position) - pymin.transform.position;
+
+		axis.SetPosition(2, pyzero);
+		var tmp = pxmax.transform.position;
+		tmp.y = pyzero.y;
+		var hi = Hierarchy(gameObject);
+		axis.numPositions = 4;
+		Debug.Log(hi + " numPos: " + axis.numPositions + " pos3: " + tmp.ToString());
+		axis.SetPosition(3, tmp);
     }
+	string Hierarchy(GameObject go, int num=0)
+	{
+		string ret = "";
+		num++;
+		if (num > 4)
+			return ret;
+		if (go.transform.parent != null)
+			ret += Hierarchy(go.transform.parent.gameObject, num);
+
+        ret += ":" + go.name;
+        return ret;
+	}
 }

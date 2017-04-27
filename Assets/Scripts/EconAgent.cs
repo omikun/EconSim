@@ -24,14 +24,21 @@ public class CommodityStock {
 		priceHistory.Add(_meanPrice);
 		production = _production;
 	}
-	public void Buy(float quant, float price)
+	public float Buy(float quant, float price)
 	{
 		//update meanCost of units in stock
         var totalCost = meanCost * this.quantity + price * quant;
         this.meanCost = totalCost / this.quantity;
+		var leftOver = quant - Deficit();
 		this.quantity += quant;
+		if (leftOver > 0)
+		{
+			//this.quantity -= leftOver;
+			Debug.Log("Bought too much! Max: " + this.quantity + " " + quant.ToString("n2") + " leftover: " + leftOver.ToString("n2"));
+		}
 		//update price belief
 		updatePriceBelief(false, price);
+		return quant;//leftOver;
 	}
 	public void Sell(float quant, float price)
 	{
@@ -92,8 +99,9 @@ public class CommodityStock {
 			if ((buy  && this.quantity < maxQuantity * lowInventory)
              || (sell && this.quantity > maxQuantity * highInventory))
             {
-                wobble += 0.05f;
+                //wobble += 0.05f;
             } else {
+                //wobble -= 0.02f;
 				//if too much demand or supply
 				//new mean might be 0%-200% of market rate 
 				//shift more based on market supply/demand
@@ -123,7 +131,7 @@ public class CommodityStock {
 	//TODO change quantity based on historical price ranges & deficit
 	public float Deficit() { return maxQuantity - quantity; }
 	public float Surplus() { return quantity; }
-	public float wobble = .05f;
+	public float wobble = .02f;
 	public float quantity;
 	public float maxQuantity;
 	public float minPriceBelief {
@@ -143,12 +151,12 @@ public class CommodityStock {
 }
 public class EconAgent : MonoBehaviour {
 	public int debug = 0;
-	float cash = 0;
+	public float cash { get; private set; }
 	float prevCash = 0;
 	float maxStock = 1;
 	ESList profits = new ESList();
 	//has a set of commodities in stock
-	Dictionary<string, CommodityStock> stockPile = new Dictionary<string, CommodityStock>(); //commodities stockpiled
+	public Dictionary<string, CommodityStock> stockPile = new Dictionary<string, CommodityStock>(); //commodities stockpiled
 	Dictionary<string, float> stockPileCost = new Dictionary<string, float>(); //commodities stockpiled
 
 	//can produce a set of commodities
@@ -163,6 +171,7 @@ public class EconAgent : MonoBehaviour {
 	// Use this for initialization
 	Dictionary<string, Commodity> com {get; set;}
 	void Start () {
+		cash = 0;
 	}
 	void AddToStockPile(string name, float num, float max, float price, float production)
 	{
@@ -197,7 +206,7 @@ public class EconAgent : MonoBehaviour {
 			foreach (var dep in com[buildable].dep)
 			{
 				var commodity = dep.Key;
-                Debug.Log("::" + commodity);
+                //Debug.Log("::" + commodity);
 				AddToStockPile(commodity, initNum, maxStock, com[commodity].price, com[commodity].production);
 			}
 			AddToStockPile(buildable, 0, maxStock, com[buildable].price, com[buildable].production);
@@ -247,11 +256,12 @@ public class EconAgent : MonoBehaviour {
 
 	const float bankruptcyThreshold = -50;
 	/*********** Trading ************/
-	public void Buy(string commodity, float quantity, float price)
+	public float Buy(string commodity, float quantity, float price)
 	{
-		stockPile[commodity].Buy(quantity, price);
+		var boughtQuantity = stockPile[commodity].Buy(quantity, price);
 //	Debug.Log(name + " has " + cash.ToString("c2") + " buying " + quantity.ToString("n2") + " " + commodity + " for " + price.ToString("c2"));
-		cash -= price * quantity;
+		cash -= price * boughtQuantity;
+		return boughtQuantity;
 	}
 	public void Sell(string commodity, float quantity, float price)
 	{
@@ -276,7 +286,7 @@ public class EconAgent : MonoBehaviour {
 		var lowestPrice = stockPile[c].priceHistory.Min();
 		var highestPrice = stockPile[c].priceHistory.Max();
 		//todo SANITY check
-		float favorability = Mathf.Lerp(lowestPrice, highestPrice, avgPrice);
+		float favorability = Mathf.InverseLerp(lowestPrice, highestPrice, avgPrice);
 		favorability = Mathf.Clamp(favorability, 0, 1);
 		float numAsks = (favorability) * stockPile[c].Surplus();
 		numAsks = Mathf.Max(1, numAsks);
@@ -290,7 +300,7 @@ public class EconAgent : MonoBehaviour {
 		var lowestPrice = stockPile[c].priceHistory.Min();
 		var highestPrice = stockPile[c].priceHistory.Max();
 		//todo SANITY check
-		float favorability = Mathf.Lerp(lowestPrice, highestPrice, avgPrice);
+		float favorability = Mathf.InverseLerp(lowestPrice, highestPrice, avgPrice);
 		favorability = Mathf.Clamp(favorability, 0, 1);
 		float numBids = (1 - favorability) * stockPile[c].Deficit();
 		numBids = Mathf.Max(1, numBids);
@@ -374,7 +384,7 @@ public class EconAgent : MonoBehaviour {
 			{
 				asks.Add(buildable, new Trade(buildable, sellPrice, buildStock.quantity, this));
 			} else {
-				cash -= 2;
+				cash -= Mathf.Abs(cash*.2f);
 			}
 		}
 

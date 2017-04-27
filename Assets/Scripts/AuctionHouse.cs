@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-
+using UnityEngine.Assertions;
  
 public static class IListExtensions {
     /// <summary>
@@ -97,19 +97,16 @@ public class TradeTable : Dictionary<string, Trades>
 	}
 }
 public class AuctionHouse : MonoBehaviour {
-
+    public float tickInterval = .1f;
     public int numAgents = 100;
 	public float initCash = 100;
 	public float initStock = 15;
 	public float maxStock = 20;
 	List<EconAgent> agents = new List<EconAgent>();
     TradeTable askTable, bidTable;
-				
 
-//gmp = Graph Mean Price
-List<GraphMe> gMeanPrice = new List<GraphMe>();
-	List<GraphMe> gUnitsExchanged = new List<GraphMe>();
-	List<GraphMe> gProfessions = new List<GraphMe>();
+    //gmp = Graph Mean Price
+    List<GraphMe> gMeanPrice, gUnitsExchanged, gProfessions, gStocks, gCash;
 	float lastTick;
 	public bool EnableDebug = false;
 	// Use this for initialization
@@ -122,20 +119,22 @@ List<GraphMe> gMeanPrice = new List<GraphMe>();
         gMeanPrice = new List<GraphMe>(com.Count);
         gUnitsExchanged = new List<GraphMe>(com.Count);
         gProfessions = new List<GraphMe>(com.Count);
+        gStocks = new List<GraphMe>(com.Count);
+        gCash = new List<GraphMe>(com.Count);
 
 		/* initialize graphs */
 		var gmp = GameObject.Find("AvgPriceGraph");
+		var gue = GameObject.Find("UnitsExchangedGraph");
+		var gp = GameObject.Find("ProfessionsGraph");
+		var gs = GameObject.Find("StockPileGraph");
+		var gc = GameObject.Find("CashGraph");
 		for (int i = 0; i < com.Count; i++) 
 		{
 			gMeanPrice.Add(gmp.transform.Find("line"+i).GetComponent<GraphMe>());
-		}
-		var gue = GameObject.Find("UnitsExchangedGraph");
-		for (int i = 0; i < com.Count; i++) {
 			gUnitsExchanged.Add(gue.transform.Find("line"+i).GetComponent<GraphMe>());
-		}
-		var gp = GameObject.Find("ProfessionsGraph");
-		for (int i = 0; i < com.Count; i++) {
 			gProfessions.Add(gp.transform.Find("line"+i).GetComponent<GraphMe>());
+			gStocks.Add(gs.transform.Find("line"+i).GetComponent<GraphMe>());
+			gCash.Add(gc.transform.Find("line"+i).GetComponent<GraphMe>());
 		}
 
 		var prefab = Resources.Load("Agent");
@@ -185,7 +184,6 @@ List<GraphMe> gMeanPrice = new List<GraphMe>();
 	int roundNumber = 0;
 	void FixedUpdate () {
 		//wait 1s before update
-		float tickInterval = .1f;
 		if (Time.time - lastTick > tickInterval)
 		{
 			Debug.Log("Round: " + roundNumber++);
@@ -256,8 +254,8 @@ List<GraphMe> gMeanPrice = new List<GraphMe>();
 				}
 				//trade
 				var tradeQuantity = Mathf.Min(bid.quantity, ask.quantity);
-				ask.agent.Sell(commodity, tradeQuantity, clearingPrice);
-				bid.agent.Buy(commodity, tradeQuantity, clearingPrice);
+				var boughtQuantity = bid.agent.Buy(commodity, tradeQuantity, clearingPrice);
+				ask.agent.Sell(commodity, boughtQuantity, clearingPrice);
                 //remove ask/bid if fullfilled
                 if (ask.Reduce(tradeQuantity) == 0) { asks.RemoveAt(askIndex); }
 				if (bid.Reduce(tradeQuantity) == 0) { bids.RemoveAt(bidIndex); }
@@ -302,10 +300,62 @@ List<GraphMe> gMeanPrice = new List<GraphMe>();
             entry.Value.Update(averagePrice, demand);
 		}
 
+		CountStockPileAndCash();
 		CountProfits();
 		EnactBankruptcy();
 	}
+	void CountStockPileAndCash() 
+	{
+		Dictionary<string, float> stockPile = new Dictionary<string, float>();
+		Dictionary<string, List<float>> stockList = new Dictionary<string, List<float>>();
+		Dictionary<string, List<float>> cashList = new Dictionary<string, List<float>>();
+		var com = Commodities.Instance.com;
+		foreach(var entry in com)
+		{
+			stockPile.Add(entry.Key, 100);
+			stockList.Add(entry.Key, new List<float>());
+			cashList.Add(entry.Key, new List<float>());
+		}
+		foreach(var agent in agents)
+		{
+			//count stocks in all stocks of agent
+			foreach(var c in agent.stockPile)
+			{
+				stockPile[c.Key] += c.Value.Surplus();
+				stockList[c.Key].Add(c.Value.Surplus());
+			}
+            cashList[agent.buildables[0]].Add(agent.cash);
+		}
+		foreach(var stock in stockPile)
+        {
+			int bucket = 1, index = 0;
+			var avg = GetQuantile(stockList[stock.Key], bucket, index);
+            SetGraph(gStocks, stock.Key, avg);
 
+			avg = GetQuantile(cashList[stock.Key], bucket, index);
+			SetGraph(gCash, stock.Key, avg);
+			//SetGraph(gStocks, stock.Key, stock.Value);
+		}
+	}
+	float GetQuantile(List<float> list, int buckets=4, int index=0) //default lowest quartile
+	{
+		float avg = 0;
+		Assert.IsTrue(index < buckets);
+		Assert.IsTrue(index >= 0);
+		var numPerQuantile = list.Count / buckets;
+		var numQuantiles = buckets;
+		var begin = Mathf.Max(0, index * numPerQuantile);
+		var end = Mathf.Min(list.Count-1, begin + numPerQuantile);
+		if (list.Count != 0 && end > 0)
+		{
+            //Debug.Log("list.count: " + list.Count + " begin: " + begin + " end: " + end);
+            //var skip = Mathf.Max(0, list.Count * (buckets - index -1) / buckets);
+            list.Sort();
+            var newList = list.GetRange(begin, end);
+            avg = newList.Average();
+        }
+		return avg;
+    }
 	void CountProfits()
 	{
 		var com = Commodities.Instance.com;

@@ -40,8 +40,13 @@ public class ESList : List<float>
     float avg;
     public float LastAverage(int history)
     {
-        var skip = Mathf.Max(0, base.Count - history);
-        var newList = base.GetRange(skip, history);
+		if (base.Count == 0)
+		{
+			return 0;
+		}
+        var skip = Mathf.Min(base.Count-1, Mathf.Max(0, base.Count - history));
+		var end = Mathf.Min(base.Count-1, history);
+        var newList = base.GetRange(skip, end);
         avg = newList.Average();
         return avg;
     }
@@ -142,26 +147,47 @@ public class Commodities : MonoBehaviour
 		}
 		return prof;
 	}
+	//get price of good
+	float GetRelativeDemand(Commodity c, int history=10)
+	{
+        var averagePrice = c.prices.LastAverage(history);
+        var minPrice = c.prices.Min();
+		var price = c.prices[c.prices.Count-1];
+		var relativeDemand = (price - minPrice) / (averagePrice - minPrice);
+		//Debug.Log("avgPrice: " + averagePrice.ToString("c2") + " min: " + minPrice.ToString("c2") + " curr: " + price.ToString("c2"));
+		//var relativeDemand = Mathf.InverseLerp(minPrice, averagePrice, price);
+		return relativeDemand;
+	}
 	public string GetHottestGood(int history=10)
 	{
 		var rand = new System.Random();
 		//string mostDemand = com.ElementAt(rand.Next(0, com.Count)).Key;
 		string mostDemand = "invalid";
-		float max = 2;
+		float max = 1.1f;
+		string mostRDDemand = "invalid";
+		float maxRD = max;
 		foreach (var c in com)
 		{
 			var asks = c.Value.asks.LastAverage(history);
 			var bids = c.Value.bids.LastAverage(history);
             asks = Mathf.Max(.5f, asks);
 			var ratio = bids / asks;
+			var relDemand = GetRelativeDemand(c.Value, history);
+
+			if ( maxRD < relDemand)
+			{
+				mostRDDemand = c.Key;
+				maxRD = relDemand;
+			}
 			if (max < ratio)
 			{
 				max = ratio;
 				mostDemand = c.Key;
 			}
-			Debug.Log(c.Key + " Ratio: " + ratio.ToString("n2"));
+			//Debug.Log(c.Key + " Ratio: " + ratio.ToString("n2") + " relative demand: " + relDemand);
 		}
 		Debug.Log("Most in demand: " + mostDemand + ": " + max);
+		//Debug.Log("Most in rel demand: " + mostRDDemand + ": " + maxRD);
 		return mostDemand;
 	}
 	bool Add(string name, float production, Dependency dep)
@@ -192,25 +218,25 @@ public class Commodities : MonoBehaviour
 		Debug.Log("Initializing commodities");
 		//replicate paper
 		Dependency foodDep = new Dependency();
-		foodDep.Add("Wood", 1);
+		foodDep.Add("Wood", 2);
 		Add("Food", 5, foodDep);
 
 		Dependency woodDep = new Dependency();
 		woodDep.Add("Food", 1);
-		woodDep.Add("Tool", .4f);
+		woodDep.Add("Tool", .1f);
 		Add("Wood", 3, woodDep);
 
 		Dependency oreDep = new Dependency();
-		oreDep.Add("Food", .7f);
+		oreDep.Add("Food", 2f);
 		Add("Ore", 2, oreDep);
 
 		Dependency metalDep = new Dependency();
-		metalDep.Add("Food", 1);
+		metalDep.Add("Food", 2);
 		metalDep.Add("Ore", 2);
 		Add("Metal", 1, metalDep);
 
 		Dependency toolDep = new Dependency();
-		toolDep.Add("Food", 2.3f);
+		toolDep.Add("Food", 4.3f);
 		toolDep.Add("Metal", 2);
 		Add("Tool", 1, toolDep);
 
