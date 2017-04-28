@@ -322,7 +322,12 @@ public class AuctionHouse : MonoBehaviour {
 			foreach(var c in agent.stockPile)
 			{
 				stockPile[c.Key] += c.Value.Surplus();
-				stockList[c.Key].Add(c.Value.Surplus());
+				var surplus = c.Value.Surplus();
+				if (surplus > 20)
+				{
+					Debug.Log(agent.name + " has " + surplus + " " + c.Key);
+				}
+				stockList[c.Key].Add(surplus);
 			}
             cashList[agent.buildables[0]].Add(agent.cash);
 		}
@@ -330,6 +335,12 @@ public class AuctionHouse : MonoBehaviour {
         {
 			int bucket = 1, index = 0;
 			var avg = GetQuantile(stockList[stock.Key], bucket, index);
+			//var avg = stockList[stock.Key].Average();
+
+		if (avg > 20) 
+		{
+			Debug.Log(stock.Key + " HIGHSTOCK: " + avg.ToString("n2") + " max: " + stockList[stock.Key].Max().ToString("n2") + " num: " + stockList[stock.Key].Count);
+		}
             SetGraph(gStocks, stock.Key, avg);
 
 			avg = GetQuantile(cashList[stock.Key], bucket, index);

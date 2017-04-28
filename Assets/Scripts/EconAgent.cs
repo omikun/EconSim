@@ -33,8 +33,10 @@ public class CommodityStock {
 		this.quantity += quant;
 		if (leftOver > 0)
 		{
-			//this.quantity -= leftOver;
+			this.quantity -= leftOver;
 			Debug.Log("Bought too much! Max: " + this.quantity + " " + quant.ToString("n2") + " leftover: " + leftOver.ToString("n2"));
+		} else {
+			leftOver = 0;
 		}
 		//update price belief
 		updatePriceBelief(false, price);
@@ -357,17 +359,21 @@ public class EconAgent : MonoBehaviour {
 				sStock += " " + numAvail + " " + dep.Key;
 			}
 			numProduced = Mathf.Max(0, numProduced);//sanity check
-			//can only build 1 at a time
+			//can only build fixed rate at a time
 			numProduced = Mathf.Min(numProduced, stockPile[buildable].productionRate);
+			//can't produce more than what's in stock
+			numProduced = Mathf.Min(numProduced, stockPile[buildable].Deficit());
 			//build and add to stockpile
 			foreach (var dep in com[buildable].dep)
 			{
 				var stock = stockPile[dep.Key].quantity;
 				var numUsed = dep.Value * numProduced;
 				numUsed = Mathf.Min(numUsed, stock);
+				numUsed = Mathf.Max(numUsed, 0);
                 stockPile[dep.Key].quantity -= numUsed;
 			}
 			numProduced *= stockPile[buildable].production;
+			numProduced = Mathf.Max(numProduced, 0);
 			stockPile[buildable].quantity += numProduced;
 			if (float.IsNaN(numProduced))
 				Debug.Log(buildable + " numproduced is nan!");
