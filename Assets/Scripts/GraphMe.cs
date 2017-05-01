@@ -26,6 +26,11 @@ public class GraphMe : MonoBehaviour {
 	
 	// Update is called once per frame
 	public void Tick (float input) {
+		if (input == -42)
+		{
+			if (inputs.Count > 0)
+                input = inputs[inputs.Count - 1];
+		}
 		if (inputs.Count >= gl.maxPoints)
 		{
 			inputs.RemoveAt(0);

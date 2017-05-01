@@ -4,17 +4,27 @@ using UnityEngine;
 using UnityEngine.Assertions;
 using System.Linq;
 
+public class History : List<float>
+{
+    public float min = 0;
+    public float max = 0;
+    public float Min() { return min; }
+	public float Max() { return max; }
+}
 public class CommodityStock {
 	public string commodityName { get; private set; }
 	const float significant = 0.25f;
 	const float sig_imbalance = .33f;
 	const float lowInventory = .1f;
 	const float highInventory = 2f;
-	public List<float> priceHistory = new List<float>();
+	public History priceHistory;
+	public float cost = 1;
+
 
 	public CommodityStock (string _name, float _quantity=1, float _maxQuantity=10, 
 					float _meanPrice=1, float _production=1)
 	{
+		priceHistory = new History();
 		commodityName = _name;
 		quantity = _quantity;
 		maxQuantity = _maxQuantity;
@@ -23,6 +33,11 @@ public class CommodityStock {
 		meanCost = _meanPrice;
 		priceHistory.Add(_meanPrice);
 		production = _production;
+	}
+	public void Tick()
+	{
+		priceHistory.min = priceHistory.Min();
+		priceHistory.max = priceHistory.Max();
 	}
 	public float Buy(float quant, float price)
 	{
@@ -40,7 +55,8 @@ public class CommodityStock {
 		}
 		//update price belief
 		updatePriceBelief(false, price);
-		return quant;//leftOver;
+		//return quant;
+		return quant - leftOver;
 	}
 	public void Sell(float quant, float price)
 	{
@@ -49,8 +65,7 @@ public class CommodityStock {
 	}
 	public float GetPrice()
 	{
-		minPriceBelief = Mathf.Clamp(minPriceBelief, 0.1f, 900);
-		maxPriceBelief = Mathf.Clamp(maxPriceBelief, 1.1f, 1000);
+		SanePriceBeliefs();
 		var p = Random.Range(minPriceBelief, maxPriceBelief);
 		if (p > 1000f)
 		{
@@ -60,10 +75,17 @@ public class CommodityStock {
 
 		return p;
 	}
-	public void updatePriceBelief(bool sell, float price, bool success=true)
+	void SanePriceBeliefs()
 	{
+		minPriceBelief = Mathf.Max(cost*.9f, minPriceBelief);
+		maxPriceBelief = Mathf.Max(minPriceBelief*1.1f, maxPriceBelief);
 		minPriceBelief = Mathf.Clamp(minPriceBelief, 0.1f, 900);
 		maxPriceBelief = Mathf.Clamp(maxPriceBelief, 1.1f, 1000);
+	}
+	
+	public void updatePriceBelief(bool sell, float price, bool success=true)
+	{
+		SanePriceBeliefs();
 //        Debug.Log(commodityName + " bounds: " + minPriceBelief.ToString("n2") + " < " + maxPriceBelief.ToString("n2"));
 		if (minPriceBelief > maxPriceBelief)
 		{
@@ -94,14 +116,14 @@ public class CommodityStock {
 			}
             wobble /= 2;
 		} else {
-            minPriceBelief -= deltaMean / 2;        //shift toward mean
-            maxPriceBelief -= deltaMean / 2;
+            minPriceBelief -= deltaMean / 4;        //shift toward mean
+            maxPriceBelief -= deltaMean / 4;
 
 			//if low inventory and can't buy or high inventory and can't sell
 			if ((buy  && this.quantity < maxQuantity * lowInventory)
              || (sell && this.quantity > maxQuantity * highInventory))
             {
-                //wobble += 0.05f;
+                //wobble += 0.02f;
             } else {
                 //wobble -= 0.02f;
 				//if too much demand or supply
@@ -122,8 +144,7 @@ public class CommodityStock {
             minPriceBelief = maxPriceBelief / 2;
 		Assert.IsTrue(minPriceBelief < maxPriceBelief);
 		
-		minPriceBelief = Mathf.Clamp(minPriceBelief, 0.1f, 900);
-		maxPriceBelief = Mathf.Clamp(maxPriceBelief, 1.1f, 1000);
+		SanePriceBeliefs();
 
 		if (float.IsNaN(minPriceBelief))
 		{
@@ -131,7 +152,11 @@ public class CommodityStock {
 		}
 	}
 	//TODO change quantity based on historical price ranges & deficit
-	public float Deficit() { return maxQuantity - quantity; }
+	public float Deficit() { 
+		var shortage = maxQuantity - quantity;
+		//Assert.IsTrue(shortage >= 0);
+		return Mathf.Max(0, shortage);
+    }
 	public float Surplus() { return quantity; }
 	public float wobble = .02f;
 	public float quantity;
@@ -215,11 +240,24 @@ public class EconAgent : MonoBehaviour {
 		}
     }
 
+	public float TaxProfit(float taxRate)
+	{
+		var profit = GetProfit();
+		if (profit <= 0)
+			return profit;
+		var taxAmt = profit * taxRate;
+		cash -= taxAmt;
+		return profit - taxAmt;
+	}
 	public float GetProfit()
 	{
 		var profit = cash - prevCash;
 		prevCash = cash;
 		return profit;
+	}
+	public bool IsBankrupt()
+	{
+		return cash < bankruptcyThreshold;
 	}
     public void Tick()
 	{
@@ -230,10 +268,20 @@ public class EconAgent : MonoBehaviour {
             var food = stockPile["Food"].quantity;
             starving = false;//food < -25;
 		}
-		if (cash < bankruptcyThreshold || starving == true)
+		
+		foreach (var entry in stockPile)
+		{
+			entry.Value.Tick();
+        }
+
+        if (IsBankrupt() || starving == true)
 		{
 			Debug.Log(name + ":" + buildables[0] + " is bankrupt: " + cash.ToString("c2") + " or starving " + starving);
 			ChangeProfession();
+		}
+		foreach (var buildable in buildables)
+		{
+			stockPile[buildable].cost = GetCostOf(buildable);
 		}
 	}
 
@@ -358,18 +406,16 @@ public class EconAgent : MonoBehaviour {
 				numProduced = Mathf.Min(numProduced, numAvail/numNeeded);
 				sStock += " " + numAvail + " " + dep.Key;
 			}
-			numProduced = Mathf.Max(0, numProduced);//sanity check
 			//can only build fixed rate at a time
-			numProduced = Mathf.Min(numProduced, stockPile[buildable].productionRate);
 			//can't produce more than what's in stock
-			numProduced = Mathf.Min(numProduced, stockPile[buildable].Deficit());
+			var upperBound = Mathf.Min(stockPile[buildable].productionRate, stockPile[buildable].Deficit());
+			numProduced = Mathf.Clamp(numProduced, 0, upperBound);;
 			//build and add to stockpile
 			foreach (var dep in com[buildable].dep)
 			{
 				var stock = stockPile[dep.Key].quantity;
 				var numUsed = dep.Value * numProduced;
-				numUsed = Mathf.Min(numUsed, stock);
-				numUsed = Mathf.Max(numUsed, 0);
+				numUsed = Mathf.Clamp(numUsed, 0, stock);
                 stockPile[dep.Key].quantity -= numUsed;
 			}
 			numProduced *= stockPile[buildable].production;
@@ -407,6 +453,20 @@ public class EconAgent : MonoBehaviour {
 		}
 
 		return asks;
+	}
+    //get the cost of a commodity
+    float GetCostOf(string commodity)
+	{
+		var com = Commodities.Instance.com;
+		float cost = 0;
+		foreach (var dep in com[commodity].dep)
+		{
+			var depCommodity = dep.Key;
+			var numDep = dep.Value;
+			var depCost = stockPile[depCommodity].priceHistory.Last();
+			cost += numDep * depCost;
+		}
+		return cost;
 	}
 	// Update is called once per frame
 	void Update () {

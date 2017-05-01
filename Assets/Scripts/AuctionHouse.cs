@@ -3,7 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Assertions;
- 
+
+
 public static class IListExtensions {
     /// <summary>
     /// Shuffles the element order of the specified list.
@@ -106,11 +107,22 @@ public class AuctionHouse : MonoBehaviour {
     TradeTable askTable, bidTable;
 
     //gmp = Graph Mean Price
-    List<GraphMe> gMeanPrice, gUnitsExchanged, gProfessions, gStocks, gCash;
+    List<GraphMe> gMeanPrice, gUnitsExchanged, gProfessions, gStocks, gCash, gCapital;
+	//trackBids[selling_commodity][buyer's producing commodity] = price buyer paid for seller * number of selling_commodity bought
+	Dictionary<string, Dictionary<string, float>> trackBids = new Dictionary<string, Dictionary<string, float>>();
 	float lastTick;
 	public bool EnableDebug = false;
+	void AddLine(int i, List<GraphMe> gmList, GameObject graph)
+	{
+		var line = graph.transform.Find("line"+i);
+		if (line != null)
+		{
+			gmList.Add(line.GetComponent<GraphMe>());
+		}
+	}
 	// Use this for initialization
 	void Start () {
+		//sampler = new CustomSampler("AuctionHouseTick");
 		Debug.logger.logEnabled=EnableDebug;
 
 		lastTick = 0;
@@ -121,6 +133,7 @@ public class AuctionHouse : MonoBehaviour {
         gProfessions = new List<GraphMe>(com.Count);
         gStocks = new List<GraphMe>(com.Count);
         gCash = new List<GraphMe>(com.Count);
+        gCapital = new List<GraphMe>(com.Count);
 
 		/* initialize graphs */
 		var gmp = GameObject.Find("AvgPriceGraph");
@@ -128,14 +141,25 @@ public class AuctionHouse : MonoBehaviour {
 		var gp = GameObject.Find("ProfessionsGraph");
 		var gs = GameObject.Find("StockPileGraph");
 		var gc = GameObject.Find("CashGraph");
-		for (int i = 0; i < com.Count; i++) 
+		var gtc = GameObject.Find("TotalCapitalGraph");
+		for (int i = 0; i < com.Count+2; i++) 
 		{
+			AddLine(i, gMeanPrice, gmp);
+			AddLine(i, gUnitsExchanged, gue);
+			AddLine(i, gProfessions, gp);
+			AddLine(i, gStocks,  gs);
+			AddLine(i, gCash, gc);
+			AddLine(i, gCapital, gtc);
+		}
+		#if false
 			gMeanPrice.Add(gmp.transform.Find("line"+i).GetComponent<GraphMe>());
 			gUnitsExchanged.Add(gue.transform.Find("line"+i).GetComponent<GraphMe>());
 			gProfessions.Add(gp.transform.Find("line"+i).GetComponent<GraphMe>());
 			gStocks.Add(gs.transform.Find("line"+i).GetComponent<GraphMe>());
 			gCash.Add(gc.transform.Find("line"+i).GetComponent<GraphMe>());
+			gCapital.Add(gtc.transform.Find("line"+i).GetComponent<GraphMe>());
 		}
+		#endif
 
 		var prefab = Resources.Load("Agent");
 		for (int i = transform.childCount; i < numAgents; i++)
@@ -166,7 +190,34 @@ public class AuctionHouse : MonoBehaviour {
 		askTable = new TradeTable();
         bidTable = new TradeTable();
 
-		//initialize agents
+		foreach (var entry in com)
+		{
+			trackBids.Add(entry.Key, new Dictionary<string, float>());
+            foreach (var item in com)
+			{
+				//allow tracking farmers buying food...
+				trackBids[entry.Key].Add(item.Key, 0);
+			}
+		}
+	}
+	void PrintTrackBids()
+	{
+        string print = "Track Wood: ";
+		foreach (var entry in trackBids["Wood"])
+		{
+			print += entry.Key + "," + entry.Value.ToString("c2") + " ";
+		}
+		Debug.Log(print);
+	}
+	void ClearTrackBids()
+	{
+		foreach (var item in trackBids)
+		{
+			foreach (var item2 in item.Value)
+			{
+				item.Value[item2.Key] = 0;
+			}
+		}
 	}
 	
 	void InitAgent(EconAgent agent, string type)
@@ -187,7 +238,9 @@ public class AuctionHouse : MonoBehaviour {
 		if (Time.time - lastTick > tickInterval)
 		{
 			Debug.Log("Round: " + roundNumber++);
+			//sampler.BeginSample("AuctionHouseTick");
             Tick();
+			//sampler.EndSample();
 			lastTick = Time.time;
 		}
 	}
@@ -228,8 +281,19 @@ public class AuctionHouse : MonoBehaviour {
             }
             /******* end debug */
 
-			entry.Value.bids.Add(bids.Count);
-			entry.Value.asks.Add(asks.Count);
+			bool switchBasedOnNumBids = true;
+			if (switchBasedOnNumBids)
+            {
+                var numBids = bids.Sum(item => item.quantity);
+                var numAsks = asks.Sum(item => item.quantity);
+                entry.Value.bids.Add(numBids);
+                entry.Value.asks.Add(numAsks);
+			}
+            else
+            {
+                entry.Value.bids.Add(bids.Count);
+                entry.Value.asks.Add(asks.Count);
+            }
 
             asks.Shuffle();
 			bids.Shuffle();
@@ -256,11 +320,14 @@ public class AuctionHouse : MonoBehaviour {
 				var tradeQuantity = Mathf.Min(bid.quantity, ask.quantity);
 				var boughtQuantity = bid.agent.Buy(commodity, tradeQuantity, clearingPrice);
 				ask.agent.Sell(commodity, boughtQuantity, clearingPrice);
+				//track who bought what
+				var buyers = trackBids[commodity];
+				buyers[bid.agent.buildables[0]] += clearingPrice * boughtQuantity;
                 //remove ask/bid if fullfilled
                 if (ask.Reduce(tradeQuantity) == 0) { asks.RemoveAt(askIndex); }
 				if (bid.Reduce(tradeQuantity) == 0) { bids.RemoveAt(bidIndex); }
-				moneyExchanged += clearingPrice * tradeQuantity;
-				goodsExchanged += tradeQuantity;
+				moneyExchanged += clearingPrice * boughtQuantity;
+				goodsExchanged += boughtQuantity;
             }
 			if (goodsExchanged == 0)
 			{
@@ -303,6 +370,8 @@ public class AuctionHouse : MonoBehaviour {
 		CountStockPileAndCash();
 		CountProfits();
 		EnactBankruptcy();
+		//PrintTrackBids();
+		//ClearTrackBids();
 	}
 	void CountStockPileAndCash() 
 	{
@@ -310,6 +379,7 @@ public class AuctionHouse : MonoBehaviour {
 		Dictionary<string, List<float>> stockList = new Dictionary<string, List<float>>();
 		Dictionary<string, List<float>> cashList = new Dictionary<string, List<float>>();
 		var com = Commodities.Instance.com;
+		float totalCash = 0;
 		foreach(var entry in com)
 		{
 			stockPile.Add(entry.Key, 100);
@@ -325,32 +395,40 @@ public class AuctionHouse : MonoBehaviour {
 				var surplus = c.Value.Surplus();
 				if (surplus > 20)
 				{
-					Debug.Log(agent.name + " has " + surplus + " " + c.Key);
+					//Debug.Log(agent.name + " has " + surplus + " " + c.Key);
 				}
 				stockList[c.Key].Add(surplus);
 			}
             cashList[agent.buildables[0]].Add(agent.cash);
+			totalCash += agent.cash;
 		}
 		foreach(var stock in stockPile)
         {
 			int bucket = 1, index = 0;
 			var avg = GetQuantile(stockList[stock.Key], bucket, index);
-			//var avg = stockList[stock.Key].Average();
-
-		if (avg > 20) 
-		{
-			Debug.Log(stock.Key + " HIGHSTOCK: " + avg.ToString("n2") + " max: " + stockList[stock.Key].Max().ToString("n2") + " num: " + stockList[stock.Key].Count);
-		}
             SetGraph(gStocks, stock.Key, avg);
 
-			avg = GetQuantile(cashList[stock.Key], bucket, index);
-			SetGraph(gCash, stock.Key, avg);
-			//SetGraph(gStocks, stock.Key, stock.Value);
-		}
+            if (avg > 20)
+            {
+                //Debug.Log(stock.Key + " HIGHSTOCK: " + avg.ToString("n2") + " max: " + stockList[stock.Key].Max().ToString("n2") + " num: " + stockList[stock.Key].Count);
+            }
+
+            //avg = GetQuantile(cashList[stock.Key], bucket, index);
+            SetGraph(gCapital, stock.Key, cashList[stock.Key].Sum());
+        }
+        SetGraph(gCapital, "Total", totalCash);
+		
 	}
 	float GetQuantile(List<float> list, int buckets=4, int index=0) //default lowest quartile
 	{
 		float avg = 0;
+		if (buckets == 1)
+		{
+			if (list.Count > 0)
+                return list.Average();
+            else
+				return 0;
+		}
 		Assert.IsTrue(index < buckets);
 		Assert.IsTrue(index >= 0);
 		var numPerQuantile = list.Count / buckets;
@@ -367,6 +445,7 @@ public class AuctionHouse : MonoBehaviour {
         }
 		return avg;
     }
+	float taxRate = .15f;
 	void CountProfits()
 	{
 		var com = Commodities.Instance.com;
@@ -386,6 +465,7 @@ public class AuctionHouse : MonoBehaviour {
         foreach (var agent in agents)
         {
             var commodity = agent.buildables[0];
+            //totalProfits[commodity] += agent.TaxProfit(taxRate);
             totalProfits[commodity] += agent.GetProfit();
 			numAgents[commodity] ++;
         }
@@ -393,22 +473,33 @@ public class AuctionHouse : MonoBehaviour {
 		foreach (var entry in com)
 		{
 			var commodity = entry.Key;
-			var profit = totalProfits[commodity] / numAgents[commodity];
+			var profit = totalProfits[commodity];// / numAgents[commodity];
 			if (profit == 0)
 			{
 				Debug.Log(commodity + " no profit earned this round");
 			} else {
                 entry.Value.profits.Add(profit);
 			}
+			if (float.IsNaN(profit) || profit > 10000)
+			{
+				profit = -42; //special case to use last value in graph
+			}
+            SetGraph(gCash, commodity, profit);
 		}
 	}
 
+    float defaulted = 0;
 	void EnactBankruptcy()
 	{
         foreach (var agent in agents)
         {
+			if (agent.IsBankrupt())
+			{
+				defaulted += agent.cash;
+			}
             agent.Tick();
         }
+		SetGraph(gCapital, "Debt", defaulted);
 		CountProfessions();
 	}
 	void CountProfessions()
@@ -441,5 +532,7 @@ public class AuctionHouse : MonoBehaviour {
         if (commodity == "Ore") graphs[2].Tick(input);
         if (commodity == "Metal") graphs[3].Tick(input);
         if (commodity == "Tool") graphs[4].Tick(input);
+        if (commodity == "Total") graphs[5].Tick(input);
+        if (commodity == "Debt") graphs[6].Tick(input);
     }
 }
