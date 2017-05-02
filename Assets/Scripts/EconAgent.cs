@@ -48,7 +48,7 @@ public class CommodityStock {
 		this.quantity += quant;
 		if (leftOver > 0)
 		{
-			this.quantity -= leftOver;
+			//this.quantity -= leftOver;
 			Debug.Log("Bought too much! Max: " + this.quantity + " " + quant.ToString("n2") + " leftover: " + leftOver.ToString("n2"));
 		} else {
 			leftOver = 0;
@@ -56,7 +56,7 @@ public class CommodityStock {
 		//update price belief
 		updatePriceBelief(false, price);
 		//return quant;
-		return quant - leftOver;
+		return quant;// - leftOver;
 	}
 	public void Sell(float quant, float price)
 	{
@@ -304,7 +304,7 @@ public class EconAgent : MonoBehaviour {
 		Init(100, b);
 	}
 
-	const float bankruptcyThreshold = -50;
+	const float bankruptcyThreshold = -200;
 	/*********** Trading ************/
 	public float Buy(string commodity, float quantity, float price)
 	{
@@ -436,7 +436,7 @@ public class EconAgent : MonoBehaviour {
 			{
 				asks.Add(buildable, new Trade(buildable, sellPrice, buildStock.quantity, this));
 			} else {
-				cash -= Mathf.Abs(cash*.2f);
+				//cash -= Mathf.Abs(cash*.2f);
 			}
 		}
 

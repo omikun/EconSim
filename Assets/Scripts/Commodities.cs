@@ -236,7 +236,7 @@ public class Commodities : MonoBehaviour
 		Add("Metal", 1, metalDep);
 
 		Dependency toolDep = new Dependency();
-		toolDep.Add("Food", 4.3f);
+		toolDep.Add("Food", 2.3f);
 		toolDep.Add("Metal", 2);
 		Add("Tool", 1, toolDep);
 

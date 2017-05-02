@@ -303,6 +303,7 @@ public class AuctionHouse : MonoBehaviour {
 
 			//Debug.Log(commodity + " asks sorted: "); asks.Print();
 			//Debug.Log(commodity + " bids sorted: "); bids.Print();
+			float failsafe = 0;
             while (asks.Count > 0 && bids.Count > 0)
             {
                 //get highest bid and lowest ask
@@ -324,8 +325,21 @@ public class AuctionHouse : MonoBehaviour {
 				var buyers = trackBids[commodity];
 				buyers[bid.agent.buildables[0]] += clearingPrice * boughtQuantity;
                 //remove ask/bid if fullfilled
-                if (ask.Reduce(tradeQuantity) == 0) { asks.RemoveAt(askIndex); }
-				if (bid.Reduce(tradeQuantity) == 0) { bids.RemoveAt(bidIndex); }
+                if (ask.Reduce(boughtQuantity) == 0) { 
+					asks.RemoveAt(askIndex);
+					failsafe = 0;
+				}
+				if (bid.Reduce(boughtQuantity) == 0) { 
+					bids.RemoveAt(bidIndex);
+					failsafe = 0;
+				}
+				failsafe++;
+				if (failsafe > 1000)
+				{
+					Debug.Log("Can't seem to sell: " + commodity + " bought: " + boughtQuantity + " for " + clearingPrice.ToString("c2"));
+					asks.RemoveAt(askIndex);
+					//break;
+				}
 				moneyExchanged += clearingPrice * boughtQuantity;
 				goodsExchanged += boughtQuantity;
             }
