@@ -259,8 +259,9 @@ public class EconAgent : MonoBehaviour {
 	{
 		return cash < bankruptcyThreshold;
 	}
-    public void Tick()
+    public float Tick()
 	{
+		float taxConsumed = 0;
 		bool starving = false;
 		if (stockPile.ContainsKey("Food"))
 		{
@@ -277,15 +278,16 @@ public class EconAgent : MonoBehaviour {
         if (IsBankrupt() || starving == true)
 		{
 			Debug.Log(name + ":" + buildables[0] + " is bankrupt: " + cash.ToString("c2") + " or starving " + starving);
-			ChangeProfession();
+			taxConsumed = ChangeProfession();
 		}
 		foreach (var buildable in buildables)
 		{
 			stockPile[buildable].cost = GetCostOf(buildable);
 		}
+		return taxConsumed;
 	}
 
-	void ChangeProfession()
+	float ChangeProfession()
 	{
 		string bestGood = Commodities.Instance.GetHottestGood(10);
 		string bestProf = Commodities.Instance.GetMostProfitableProfession(10);
@@ -301,7 +303,9 @@ public class EconAgent : MonoBehaviour {
 		stockPile.Clear();
 		List<string> b = new List<string>();
 		b.Add(mostDemand);
-		Init(100, b);
+		var initCash = 100f;
+		Init(initCash, b);
+		return initCash;
 	}
 
 	const float bankruptcyThreshold = -200;
@@ -383,7 +387,7 @@ public class EconAgent : MonoBehaviour {
         }
         return bids;
 	}
-	public TradeSubmission Produce(Dictionary<string, Commodity> com) {
+	public TradeSubmission Produce(Dictionary<string, Commodity> com, ref float idleTax) {
         var asks = new TradeSubmission();
 		//TODO sort buildables by profit
 
@@ -436,7 +440,8 @@ public class EconAgent : MonoBehaviour {
 			{
 				asks.Add(buildable, new Trade(buildable, sellPrice, buildStock.quantity, this));
 			} else {
-				//cash -= Mathf.Abs(cash*.2f);
+				idleTax = Mathf.Abs(cash*.05f);
+				cash -= idleTax;
 			}
 		}
 

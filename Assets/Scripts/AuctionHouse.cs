@@ -142,7 +142,7 @@ public class AuctionHouse : MonoBehaviour {
 		var gs = GameObject.Find("StockPileGraph");
 		var gc = GameObject.Find("CashGraph");
 		var gtc = GameObject.Find("TotalCapitalGraph");
-		for (int i = 0; i < com.Count+2; i++) 
+		for (int i = 0; i < com.Count+3; i++) 
 		{
 			AddLine(i, gMeanPrice, gmp);
 			AddLine(i, gUnitsExchanged, gue);
@@ -244,7 +244,7 @@ public class AuctionHouse : MonoBehaviour {
 			lastTick = Time.time;
 		}
 	}
-
+	float irs = 0;
 	void Tick()
 	{
 		var com = Commodities.Instance.com;
@@ -252,7 +252,9 @@ public class AuctionHouse : MonoBehaviour {
 		//get all agents bids
 		foreach (var agent in agents)
 		{
-			askTable.Add(agent.Produce(com));
+			float idleTax = 0;
+			askTable.Add(agent.Produce(com, ref idleTax));
+			irs += idleTax;
 			bidTable.Add(agent.Consume(com));
 		}
 		//resolve prices
@@ -431,6 +433,7 @@ public class AuctionHouse : MonoBehaviour {
             SetGraph(gCapital, stock.Key, cashList[stock.Key].Sum());
         }
         SetGraph(gCapital, "Total", totalCash);
+		SetGraph(gCapital, "IRS", irs+totalCash);
 		
 	}
 	float GetQuantile(List<float> list, int buckets=4, int index=0) //default lowest quartile
@@ -511,7 +514,7 @@ public class AuctionHouse : MonoBehaviour {
 			{
 				defaulted += agent.cash;
 			}
-            agent.Tick();
+            irs -= agent.Tick();
         }
 		SetGraph(gCapital, "Debt", defaulted);
 		CountProfessions();
@@ -548,5 +551,6 @@ public class AuctionHouse : MonoBehaviour {
         if (commodity == "Tool") graphs[4].Tick(input);
         if (commodity == "Total") graphs[5].Tick(input);
         if (commodity == "Debt") graphs[6].Tick(input);
+        if (commodity == "IRS") graphs[7].Tick(input);
     }
 }
