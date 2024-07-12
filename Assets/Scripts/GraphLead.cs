@@ -1,11 +1,11 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using TMPro;
+using UnityEngine.UI;
 
 public class GraphLead : MonoBehaviour {
 
-	TextMeshPro tYmin, tYmax, tXmin, tXmax;
+	Text tYmin, tYmax, tXmin, tXmax;
 	GameObject pymax, pymin, pxmax;
 	public int maxPoints = 100;
 	//logical min/max
@@ -54,15 +54,15 @@ public class GraphLead : MonoBehaviour {
 	void Start () {
 		
 		//axis labels (text)
-		tYmin = transform.FindChild("ymin").GetComponent<TextMeshPro>();
-		tXmin = transform.FindChild("xmin").GetComponent<TextMeshPro>();
-		tYmax = transform.FindChild("ymax").GetComponent<TextMeshPro>();
-		tXmax = transform.FindChild("xmax").GetComponent<TextMeshPro>();
+		tYmin = transform.Find("ymin").GetComponent<Text>();
+		tXmin = transform.Find("xmin").GetComponent<Text>();
+		tYmax = transform.Find("ymax").GetComponent<Text>();
+		tXmax = transform.Find("xmax").GetComponent<Text>();
 
 		//physical bounds of graph
-		pymin = transform.FindChild("pymin").gameObject;
-		pymax = transform.FindChild("pymax").gameObject;
-		pxmax = transform.FindChild("pxmax").gameObject;
+		pymin = transform.Find("pymin").gameObject;
+		pymax = transform.Find("pymax").gameObject;
+		pxmax = transform.Find("pxmax").gameObject;
 
 		//logical bounds, aggregate of all sub graphs
         lMin = Vector2.zero;
@@ -71,12 +71,12 @@ public class GraphLead : MonoBehaviour {
 		pMax = new Vector2(pxmax.transform.position.x, pymax.transform.position.y);
 
 		//set axis
-		GameObject go = transform.FindChild("plane").gameObject;
+		GameObject go = transform.Find("plane").gameObject;
 		axis = go.GetComponent<LineRenderer>();
-		axis.numPositions = 4;
+		axis.positionCount = 4;
 
 		var hi = Hierarchy(go);
-		Debug.Log(hi + " numPos: " + axis.numPositions );
+		Debug.Log(hi + " numPos: " + axis.positionCount );
 		axis.SetPosition(0, pymax.transform.position);
 		axis.SetPosition(1, pymin.transform.position);
 		axis.SetPosition(2, pymin.transform.position);
@@ -88,10 +88,11 @@ public class GraphLead : MonoBehaviour {
 	// Update is called once per frame
 	void LateUpdate () {
 		firstThisUpdate = true;
-		tXmin.SetText(lMin.x.ToString("n2"));
-		tXmax.SetText(lMax.x.ToString("n2"));
-		tYmin.SetText(lMin.y.ToString("n2"));
-		tYmax.SetText(lMax.y.ToString("n2"));
+		//TODO roll this back: rn getting null ref exception
+		//tXmin.text = (lMin.x.ToString("n2"));
+		//tXmax.text = (lMax.x.ToString("n2"));
+		//tYmin.text = (lMin.y.ToString("n2"));
+		//tYmax.text = (lMax.y.ToString("n2"));
 
 		//set zero line (position 2 and 3)
 		float lyzero = Mathf.InverseLerp(lMin.y, lMax.y, 0);
@@ -102,8 +103,8 @@ public class GraphLead : MonoBehaviour {
 		var tmp = pxmax.transform.position;
 		tmp.y = pyzero.y;
 		var hi = Hierarchy(gameObject);
-		axis.numPositions = 4;
-		Debug.Log(hi + " numPos: " + axis.numPositions + " pos3: " + tmp.ToString());
+		axis.positionCount = 4;
+		Debug.Log(hi + " numPos: " + axis.positionCount + " pos3: " + tmp.ToString());
 		axis.SetPosition(3, tmp);
     }
 	string Hierarchy(GameObject go, int num=0)

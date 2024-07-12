@@ -21,7 +21,7 @@ public class GraphMe : MonoBehaviour {
 
 		Assert.IsNotNull(gl);
 		line = GetComponent<LineRenderer>();
-		line.numPositions = gl.maxPoints;
+		line.positionCount = gl.maxPoints;
     }
 	
 	// Update is called once per frame

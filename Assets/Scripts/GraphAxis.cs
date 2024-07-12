@@ -12,7 +12,7 @@ public class GraphAxis : MonoBehaviour {
 		pxmax = transform.parent.Find("pxmax").gameObject;
 
 		var axis = GetComponent<LineRenderer>();
-		axis.numPositions = 3;
+		axis.positionCount = 3;
 		axis.SetPosition(0, pymax.transform.position);
 		axis.SetPosition(1, pymin.transform.position);
 		axis.SetPosition(2, pxmax.transform.position);

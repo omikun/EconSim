@@ -215,6 +215,7 @@ public class Commodities : MonoBehaviour
 	}
     // Use this for initialization
     void Init () {
+#if true
 		Debug.Log("Initializing commodities");
 		//replicate paper
 		Dependency foodDep = new Dependency();
@@ -242,7 +243,7 @@ public class Commodities : MonoBehaviour
 
 		//PrintStat();
 		return;
-#if false
+#else
 		Add("Food", 4);
 		Add("Water", 1);
 		Add("Oil", 6);

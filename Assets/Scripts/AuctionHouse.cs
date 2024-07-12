@@ -1,8 +1,11 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Assertions;
+using UnityEngine.UIElements;
 
 
 public static class IListExtensions {
@@ -98,13 +101,15 @@ public class TradeTable : Dictionary<string, Trades>
 	}
 }
 public class AuctionHouse : MonoBehaviour {
-    public float tickInterval = .1f;
+    public float tickInterval = .02f;
     public int numAgents = 100;
 	public float initCash = 100;
 	public float initStock = 15;
 	public float maxStock = 20;
 	List<EconAgent> agents = new List<EconAgent>();
+	float irs;
     TradeTable askTable, bidTable;
+	StreamWriter sw;
 
     //gmp = Graph Mean Price
     List<GraphMe> gMeanPrice, gUnitsExchanged, gProfessions, gStocks, gCash, gCapital;
@@ -123,7 +128,8 @@ public class AuctionHouse : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
 		//sampler = new CustomSampler("AuctionHouseTick");
-		Debug.logger.logEnabled=EnableDebug;
+		Debug.unityLogger.logEnabled=EnableDebug;
+		OpenFileForWrite();
 
 		lastTick = 0;
 		int count = 0;
@@ -151,6 +157,7 @@ public class AuctionHouse : MonoBehaviour {
 			AddLine(i, gCash, gc);
 			AddLine(i, gCapital, gtc);
 		}
+		irs = 0; //GetComponent<EconAgent>();
 		#if false
 			gMeanPrice.Add(gmp.transform.Find("line"+i).GetComponent<GraphMe>());
 			gUnitsExchanged.Add(gue.transform.Find("line"+i).GetComponent<GraphMe>());
@@ -200,6 +207,12 @@ public class AuctionHouse : MonoBehaviour {
 			}
 		}
 	}
+
+	void OnApplicationQuit() 
+	{
+		//CloseWriteFile();
+	}
+
 	void PrintTrackBids()
 	{
         string print = "Track Wood: ";
@@ -209,6 +222,7 @@ public class AuctionHouse : MonoBehaviour {
 		}
 		Debug.Log(print);
 	}
+
 	void ClearTrackBids()
 	{
 		foreach (var item in trackBids)
@@ -234,17 +248,28 @@ public class AuctionHouse : MonoBehaviour {
 	// Update is called once per frame
 	int roundNumber = 0;
 	void FixedUpdate () {
+		if (roundNumber > 20)
+		{
+			CloseWriteFile();
+#if UNITY_EDITOR
+			UnityEditor.EditorApplication.isPlaying = false;
+#elif UNITY_WEBPLAYER
+        Application.OpenURL("127.0.0.1");
+#else
+        Application.Quit();
+#endif
+			return;
+		}
 		//wait 1s before update
 		if (Time.time - lastTick > tickInterval)
 		{
-			Debug.Log("Round: " + roundNumber++);
+			Debug.Log("v1.2 Round: " + roundNumber++);
 			//sampler.BeginSample("AuctionHouseTick");
             Tick();
 			//sampler.EndSample();
 			lastTick = Time.time;
 		}
 	}
-	float irs = 0;
 	void Tick()
 	{
 		var com = Commodities.Instance.com;
@@ -254,9 +279,10 @@ public class AuctionHouse : MonoBehaviour {
 		{
 			float idleTax = 0;
 			askTable.Add(agent.Produce(com, ref idleTax));
-			irs += idleTax;
+			//Utilities.TransferQuantity(idleTax, agent, irs);
 			bidTable.Add(agent.Consume(com));
 		}
+
 		//resolve prices
 		foreach (var entry in com)
 		{
@@ -321,8 +347,12 @@ public class AuctionHouse : MonoBehaviour {
 				}
 				//trade
 				var tradeQuantity = Mathf.Min(bid.quantity, ask.quantity);
+#if false
+				Trade(commodity, clearingPrice, bid.agent, ask.agent);
+#else
 				var boughtQuantity = bid.agent.Buy(commodity, tradeQuantity, clearingPrice);
 				ask.agent.Sell(commodity, boughtQuantity, clearingPrice);
+#endif
 				//track who bought what
 				var buyers = trackBids[commodity];
 				buyers[bid.agent.buildables[0]] += clearingPrice * boughtQuantity;
@@ -348,15 +378,17 @@ public class AuctionHouse : MonoBehaviour {
 			if (goodsExchanged == 0)
 			{
 				goodsExchanged = 1;
-			} else if (goodsExchanged < 0)
+			} else 
 			{
 				Debug.Log("ERROR " + commodity + " had negative exchanges!?!?!");
+				Assert.IsFalse(goodsExchanged < 0);
 			}
 			
 			var averagePrice = moneyExchanged/goodsExchanged;
 			if (float.IsNaN(averagePrice))
 			{
 				Debug.Log(commodity + ": average price is nan");
+				Assert.IsFalse(float.IsNaN(averagePrice));
 			}
 			SetGraph(gMeanPrice, commodity, averagePrice);
 			SetGraph(gUnitsExchanged, commodity, goodsExchanged);
@@ -383,11 +415,49 @@ public class AuctionHouse : MonoBehaviour {
             entry.Value.Update(averagePrice, demand);
 		}
 
+		//PrintToFile("round, " + roundNumber + ", commodity, " + commodity + ", price, " + averagePrice);
+		AgentsStats();
 		CountStockPileAndCash();
 		CountProfits();
 		EnactBankruptcy();
+		
 		//PrintTrackBids();
 		//ClearTrackBids();
+	}
+
+	// TODO decouple transfer of commodity with transfer of money
+	// TODO convert cash into another commodity
+	void Trade(String commodity, float clearingPrice, float quantity, EconAgent bidder, EconAgent seller) 
+	{
+		//transfer commodity
+		//transfer cash
+		var boughtQuantity = bidder.Buy(commodity, quantity, clearingPrice);
+		seller.Sell(commodity, boughtQuantity, clearingPrice);
+		var cashQuantity = quantity * clearingPrice;
+
+	}
+
+	void OpenFileForWrite() {
+		sw = new StreamWriter("log2.csv");
+		String header_row = "round, agent, produces, commodity_stock, type, cs_amount, \n";
+		PrintToFile(header_row);
+	}
+	void PrintToFile(String msg) {
+		sw.Write(msg + "\n");
+	}
+
+	void CloseWriteFile() {
+		sw.Close();
+	}
+
+	void AgentsStats() {
+		String header = roundNumber + ", ";
+		String msg = "";
+		foreach (var agent in agents)
+		{
+			msg += agent.Stats(header);
+		}
+		PrintToFile(msg);
 	}
 	void CountStockPileAndCash() 
 	{
