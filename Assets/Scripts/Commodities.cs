@@ -60,7 +60,7 @@ public class Commodity
 	bool firstAvgPrice = true;
 	public float GetAvgPrice(int history)
 	{
-		if (firstAvgPrice == true)
+		// TODO why first? if (firstAvgPrice == true)
 		{
             firstAvgPrice = false;
 //            Debug.Log(name + " prices: " + prices.Count + " to skip: " + skip);

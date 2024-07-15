@@ -6,13 +6,6 @@ using System.Linq;
 using UnityEngine.XR;
 using System;
 
-public class History : List<float>
-{
-    public float min = 0;
-    public float max = 0;
-    public float Min() { return min; }
-	public float Max() { return max; }
-}
 public class EconAgent : MonoBehaviour {
 	static int uid_idx = 0;
 	int uid;
@@ -157,11 +150,12 @@ public class EconAgent : MonoBehaviour {
 		List<string> b = new List<string>();
 		b.Add(mostDemand);
 		var initCash = 100f;
+		// todo take from irs?
 		Init(initCash, b);
 		return initCash;
 	}
 
-	const float bankruptcyThreshold = -200;
+	const float bankruptcyThreshold = -100;
 	/*********** Trading ************/
 	public void modify_cash(float quant)
 	{
@@ -198,33 +192,33 @@ public class EconAgent : MonoBehaviour {
     float FindSellCount(string c)
 	{
 		var avgPrice = com[c].GetAvgPrice(historyCount);
-		var lowestPrice = stockPile[c].priceHistory.Min();
-		var highestPrice = stockPile[c].priceHistory.Max();
+		var lowestPrice = stockPile[c].sellHistory.Min();
+		var highestPrice = stockPile[c].sellHistory.Max();
 		//todo SANITY check
 		float favorability = Mathf.InverseLerp(lowestPrice, highestPrice, avgPrice);
 		favorability = Mathf.Clamp(favorability, 0, 1);
 		float numAsks = (favorability) * stockPile[c].Surplus();
-		numAsks = Mathf.Max(1, numAsks);
+		//why max of 1??? numAsks = Mathf.Max(1, numAsks);
 
 //		Debug.Log("avgPrice: " + avgPrice.ToString("c2") + " favoribility: " + favorability + " numAsks: " + numAsks.ToString("0.00"));
-		return numAsks;
+		return Mathf.Floor(numAsks);
 	}
 	float FindBuyCount(string c)
 	{
 		var avgPrice = com[c].GetAvgPrice(historyCount);
-		var lowestPrice = stockPile[c].priceHistory.Min();
-		var highestPrice = stockPile[c].priceHistory.Max();
+		var lowestPrice = stockPile[c].buyHistory.Min();
+		var highestPrice = stockPile[c].buyHistory.Max();
 		//todo SANITY check
 		float favorability = Mathf.InverseLerp(lowestPrice, highestPrice, avgPrice);
 		favorability = Mathf.Clamp(favorability, 0, 1);
 		float numBids = (1 - favorability) * stockPile[c].Deficit();
 		//WHY??? 
 		//TODO find prices of all dependent commodities, then get relative importance, and split numBids on all commodities proportional to value (num needed/price)
-		numBids = Mathf.Max(1, numBids);
+		//numBids = Mathf.Max(1, numBids);
 		
 
 //		Debug.Log("avgPrice: " + avgPrice.ToString("c2") + " favoribility: " + favorability.ToString("n2") + " numBids: " + numBids.ToString("n2"));
-		return numBids;
+		return Mathf.Floor(numBids);
 	}
 	public TradeSubmission Consume(Dictionary<string, Commodity> com) {
         var bids = new TradeSubmission();
@@ -275,7 +269,7 @@ public class EconAgent : MonoBehaviour {
 				var numNeeded = dep.Value;
 				var numAvail = stockPile[dep.Key].quantity;
 				numProduced = Mathf.Min(numProduced, numAvail/numNeeded);
-				sStock += " " + numAvail + " " + dep.Key;
+				sStock += " " + dep.Key + ": " + numAvail + "/" + dep.Key;
 			}
 			//can only build fixed rate at a time
 			//can't produce more than what's in stock
@@ -289,11 +283,12 @@ public class EconAgent : MonoBehaviour {
 				numUsed = Mathf.Clamp(numUsed, 0, stock);
                 stockPile[dep.Key].quantity -= numUsed;
 			}
-			numProduced *= stockPile[buildable].production;
-			numProduced = Mathf.Max(numProduced, 0);
+			// WTF is production?? numProduced *= stockPile[buildable].production;
+			//numProduced = Mathf.Max(numProduced, 0);
 			stockPile[buildable].quantity += numProduced;
 			if (float.IsNaN(numProduced))
 				Debug.Log(buildable + " numproduced is nan!");
+			Assert.IsFalse(float.IsNaN(numProduced));
 
             var buildStock = stockPile[buildable];
             float sellQuantity = FindSellCount(buildable);
@@ -341,8 +336,9 @@ public class EconAgent : MonoBehaviour {
 		{
 			var depCommodity = dep.Key;
 			var numDep = dep.Value;
-			var depCost = stockPile[depCommodity].priceHistory.Last();
-			cost += numDep * depCost;
+			// TODO take average of stock pile history instead of last price
+			var depCost = stockPile[depCommodity].buyHistory.Last();
+			cost += numDep * depCost.price;
 		}
 		return cost;
 	}

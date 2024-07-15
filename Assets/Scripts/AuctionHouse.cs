@@ -101,7 +101,7 @@ public class TradeTable : Dictionary<string, Trades>
 	}
 }
 public class AuctionHouse : MonoBehaviour {
-    public float tickInterval = .02f;
+    public float tickInterval = .01f;
     public int numAgents = 100;
 	public float initCash = 100;
 	public float initStock = 15;
@@ -248,7 +248,7 @@ public class AuctionHouse : MonoBehaviour {
 	// Update is called once per frame
 	int roundNumber = 0;
 	void FixedUpdate () {
-		if (roundNumber > 20)
+		if (roundNumber > 100)
 		{
 			CloseWriteFile();
 #if UNITY_EDITOR
@@ -323,8 +323,8 @@ public class AuctionHouse : MonoBehaviour {
                 entry.Value.asks.Add(asks.Count);
             }
 
-            asks.Shuffle();
-			bids.Shuffle();
+            //asks.Shuffle();
+			//bids.Shuffle();
 			
 			asks.Sort((x, y) => x.price.CompareTo(y.price)); //inc
 			bids.Sort((x, y) => y.price.CompareTo(x.price)); //dec
@@ -394,6 +394,7 @@ public class AuctionHouse : MonoBehaviour {
 			SetGraph(gUnitsExchanged, commodity, goodsExchanged);
 			entry.Value.trades.Add(goodsExchanged);
 			entry.Value.prices.Add(averagePrice);
+			
             //reject the rest
             foreach (var ask in asks)
 			{
@@ -439,7 +440,7 @@ public class AuctionHouse : MonoBehaviour {
 
 	void OpenFileForWrite() {
 		sw = new StreamWriter("log2.csv");
-		String header_row = "round, agent, produces, commodity_stock, type, cs_amount, \n";
+		String header_row = "round, agent, produces, commodity_stock, type, cs_amount";
 		PrintToFile(header_row);
 	}
 	void PrintToFile(String msg) {

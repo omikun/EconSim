@@ -5,15 +5,37 @@ using UnityEngine;
 using UnityEngine.Assertions;
 
 
-
+public class Transaction {
+    public Transaction(float p, float q)
+    {
+        price = p;
+        quantity = q;
+    }
+    public float price;
+    public float quantity;
+}
+public class History : Queue<Transaction>
+{
+    public float min = 0;
+    public float max = 0;
+    public float Min() { return min; }
+	public float Max() { return max; }
+	public void Tick()
+	{
+		min = Min();
+		max = Max();
+	}
+}
 public class CommodityStock {
 	public string commodityName { get; private set; }
 	const float significant = 0.25f;
 	const float sig_imbalance = .33f;
 	const float lowInventory = .1f;
 	const float highInventory = 2f;
-	public History priceHistory;
+	public History buyHistory;
+	public History sellHistory;
 	public float cost = 1;
+    public float last_price = 1;
 	public float wobble = .02f;
 	public float quantity;
 	public float maxQuantity;
@@ -35,20 +57,22 @@ public class CommodityStock {
 	public CommodityStock (string _name, float _quantity=1, float _maxQuantity=10, 
 					float _meanPrice=1, float _production=1)
 	{
-		priceHistory = new History();
+		buyHistory = new History();
+		sellHistory = new History();
 		commodityName = _name;
 		quantity = _quantity;
 		maxQuantity = _maxQuantity;
 		minPriceBelief = _meanPrice / 2;
 		maxPriceBelief = _meanPrice * 2;
 		meanCost = _meanPrice;
-		priceHistory.Add(_meanPrice);
+		buyHistory.Enqueue(new Transaction(1,_meanPrice));
+		sellHistory.Enqueue(new Transaction(1,_meanPrice));
 		production = _production;
 	}
 	public void Tick()
 	{
-		priceHistory.min = priceHistory.Min();
-		priceHistory.max = priceHistory.Max();
+        sellHistory.Tick();
+        buyHistory.Tick();
 	}
 	public float Buy(float quant, float price)
 	{
@@ -66,6 +90,7 @@ public class CommodityStock {
 		}
 		//update price belief
 		updatePriceBelief(false, price);
+        buyHistory.Enqueue(new Transaction(price, quant));
 		//return quant;
 		return quant;// - leftOver;
 	}
@@ -73,22 +98,17 @@ public class CommodityStock {
 	{
 		this.quantity += quant;
 		updatePriceBelief(true, price);
+        sellHistory.Enqueue(new Transaction(price, quant));
 	}
 	public float GetPrice()
 	{
 		SanePriceBeliefs();
 		var p = UnityEngine.Random.Range(minPriceBelief, maxPriceBelief);
-		if (p > 1000f)
-		{
-            Assert.IsTrue(p <= 1000f);
-			Debug.Log("price beliefs: " + minPriceBelief.ToString("n2") + ", " + maxPriceBelief.ToString("n2"));
-		}
-
 		return p;
 	}
 	void SanePriceBeliefs()
 	{
-		minPriceBelief = Mathf.Max(cost*.9f, minPriceBelief);
+		minPriceBelief = Mathf.Max(cost, minPriceBelief);
 		maxPriceBelief = Mathf.Max(minPriceBelief*1.1f, maxPriceBelief);
 		minPriceBelief = Mathf.Clamp(minPriceBelief, 0.1f, 900);
 		maxPriceBelief = Mathf.Clamp(maxPriceBelief, 1.1f, 1000);
@@ -104,7 +124,6 @@ public class CommodityStock {
 			Debug.Log(commodityName + " ERROR " + minPriceBelief.ToString("n2") + " > "  + maxPriceBelief.ToString("n2"));
 		}
 
-		priceHistory.Add(price);
         var buy = !sell;
 		var mean = (minPriceBelief + maxPriceBelief) / 2;
 		var deltaMean = mean - price; //TODO or use auction house mean price?
