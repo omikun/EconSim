@@ -178,13 +178,13 @@ public class EconAgent : MonoBehaviour {
 //		Debug.Log(name + " has " + cash.ToString("c2") + " selling " + quantity.ToString("n2") +" " +  commodity + " for " + price.ToString("c2"));
 		cash += price * quantity;
 	}
-	public void RejectAsk(string commodity, float price)
+	public void UpdateSellerPriceBelief(in Trade trade, in Commodity commodity) 
 	{
-		stockPile[commodity].updatePriceBelief(true, price, false);
+		stockPile[commodity.name].UpdateSellerPriceBelief(in trade, in commodity);
 	}
-	public void RejectBid(string commodity, float price)
+	public void UpdateBuyerPriceBelief(in Trade trade, in Commodity commodity) 
 	{
-		stockPile[commodity].updatePriceBelief(false, price, false);
+		stockPile[commodity.name].UpdateBuyerPriceBelief(in trade, in commodity);
 	}
 
 	int historyCount = 10;
@@ -226,6 +226,8 @@ public class EconAgent : MonoBehaviour {
         foreach (var stock in stockPile)
 		{
 			//don't buy agent output
+			// TODO speculate and buy if it's cheaper than historical average 
+			// (for 1 or more commodities)
 			if (buildables.Contains(stock.Key)) continue;
 
 			var numBids = FindBuyCount(stock.Key);
@@ -236,10 +238,12 @@ public class EconAgent : MonoBehaviour {
 				if (buyPrice > 1000)
 				{
 					Debug.Log(stock.Key + "buyPrice: " + buyPrice.ToString("c2") + " : " + stock.Value.minPriceBelief.ToString("n2") + "<" + stock.Value.maxPriceBelief.ToString("n2"));
+					Assert.IsFalse(buyPrice > 1000);
 				}
 				if (numBids < 0)
 				{
 					Debug.Log(stock.Key + " buying negative " + numBids.ToString("n2") + " for " + buyPrice.ToString("c2"));
+					Assert.IsFalse(numBids < 0);
 				}
 				bids.Add(stock.Key, new Trade(stock.Value.commodityName, buyPrice, numBids, this));
 			}

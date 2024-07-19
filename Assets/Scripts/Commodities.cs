@@ -54,7 +54,7 @@ public class ESList : List<float>
 public class Commodity
 {
 	const float defaultPrice = 1;
-	public ESList bids, asks, prices, trades, profits; 
+	public ESList buyers, sellers, bids, asks, prices, trades, profits;
 	
 	float avgPrice = 1;
 	bool firstAvgPrice = true;
@@ -77,6 +77,10 @@ public class Commodity
 		dep = d;
 		demand = 1;
 
+		buyers   = new ESList();
+		buyers.Add(1);
+		sellers   = new ESList();
+		sellers.Add(1);
 		bids   = new ESList();
 		bids.Add(1);
 		asks   = new  ESList();
@@ -95,7 +99,7 @@ public class Commodity
 		demand = dem;
 	}
 	int debug = 0;
-	string name;
+	public string name { get; private set; }
 	public float price { get; private set; } //market price
 	public float demand { get; private set; }
 	public float production { get; private set; }
@@ -224,7 +228,7 @@ public class Commodities : MonoBehaviour
 
 		Dependency woodDep = new Dependency();
 		woodDep.Add("Food", 1);
-		woodDep.Add("Tool", .1f);
+		woodDep.Add("Tool", 1f);
 		Add("Wood", 3, woodDep);
 
 		Dependency oreDep = new Dependency();

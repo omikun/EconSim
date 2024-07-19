@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using UnityEngine;
 using UnityEngine.Assertions;
 
@@ -39,7 +40,7 @@ public class CommodityStock {
 	public float wobble = .02f;
 	public float quantity;
 	public float maxQuantity;
-	private float _minPriceBelief;
+	public float minPriceBelief;
 	public float maxPriceBelief;
 	public float meanCost; //total cost spent to acquire stock
 	//number of units produced per turn = production * productionRate
@@ -50,7 +51,7 @@ public class CommodityStock {
     public String Stats(String header) 
     {
         String ret = header + commodityName + ", stock, " + quantity + "\n"; 
-        ret += header + commodityName + ", minPriceBelief, " + _minPriceBelief + "\n";
+        ret += header + commodityName + ", minPriceBelief, " + minPriceBelief + "\n";
         ret += header + commodityName + ", maxPriceBelief, " + maxPriceBelief + "\n";
         return ret;
     }
@@ -81,15 +82,7 @@ public class CommodityStock {
         this.meanCost = totalCost / this.quantity;
 		var leftOver = quant - Deficit();
 		this.quantity += quant;
-		if (leftOver > 0)
-		{
-			//this.quantity -= leftOver;
-			Debug.Log("Bought too much! Max: " + this.quantity + " " + quant.ToString("n2") + " leftover: " + leftOver.ToString("n2"));
-		} else {
-			leftOver = 0;
-		}
-		//update price belief
-		updatePriceBelief(false, price);
+        // why do I care about this Assert.IsTrue(leftOver >= 0);
         buyHistory.Enqueue(new Transaction(price, quant));
 		//return quant;
 		return quant;// - leftOver;
@@ -97,7 +90,6 @@ public class CommodityStock {
 	public void Sell(float quant, float price)
 	{
 		this.quantity += quant;
-		updatePriceBelief(true, price);
         sellHistory.Enqueue(new Transaction(price, quant));
 	}
 	public float GetPrice()
@@ -114,72 +106,99 @@ public class CommodityStock {
 		maxPriceBelief = Mathf.Clamp(maxPriceBelief, 1.1f, 1000);
 	}
 	
-	public void updatePriceBelief(bool sell, float price, bool success=true)
-	{
-		SanePriceBeliefs();
-        Debug.Log(commodityName + " bounds: " + minPriceBelief.ToString("n2") + " < " + maxPriceBelief.ToString("n2"));
-		if (minPriceBelief > maxPriceBelief)
-		{
-            Assert.IsTrue(minPriceBelief < maxPriceBelief);
-			Debug.Log(commodityName + " ERROR " + minPriceBelief.ToString("n2") + " > "  + maxPriceBelief.ToString("n2"));
-		}
+    public void UpdateBuyerPriceBelief(in Trade trade, in Commodity commodity)
+    {
+		//SanePriceBeliefs();
+        Assert.IsTrue(minPriceBelief < maxPriceBelief);
 
-        var buy = !sell;
-		var mean = (minPriceBelief + maxPriceBelief) / 2;
-		var deltaMean = mean - price; //TODO or use auction house mean price?
-		Debug.Log("mean: " + mean.ToString("c2") + " price " + price.ToString("c2") + " dMean: " + deltaMean.ToString("c2"));
-		if (success)
-		{
-			if ((sell && deltaMean < -significant * mean) //undersold
-             || (buy  && deltaMean >  significant * mean))//overpaid
-            {
-				minPriceBelief -= deltaMean / 4; 		//shift toward mean
-				maxPriceBelief -= deltaMean / 4;
-            }
-			minPriceBelief += wobble * mean;
-			maxPriceBelief -= wobble * mean;
-			if (minPriceBelief > maxPriceBelief)
-			{
-				var avg = (minPriceBelief + maxPriceBelief) / 2f;
-				minPriceBelief = avg * (1 - wobble);
-				maxPriceBelief = avg * (1 + wobble);
-			}
-            wobble /= 2;
-		} else {
-            minPriceBelief -= deltaMean / 4;        //shift toward mean
-            maxPriceBelief -= deltaMean / 4;
+        // implementation following paper
+        // TODO consolidate update to once per auction round per agent per commodity 
+        // maybe multiple transactions depending on quantity bid/asked mismatch
+        // need offer price, clearing/trace price, market share, mean price
+        // demand vs supply, 
+        //BUY
+		var meanBeliefPrice = (minPriceBelief + maxPriceBelief) / 2;
+		var deltaMean = meanBeliefPrice - trade.clearingPrice; //TODO or use auction house mean price?
+        var quantityBought = trade.offerQuantity - trade.remainingQuantity;
+        var historicalMeanPrice = commodity.prices.LastAverage(10);
 
-			//if low inventory and can't buy or high inventory and can't sell
-			if ((buy  && this.quantity < maxQuantity * lowInventory)
-             || (sell && this.quantity > maxQuantity * highInventory))
-            {
-                //wobble += 0.02f;
-            } else {
-                //wobble -= 0.02f;
-				//if too much demand or supply
-				//new mean might be 0%-200% of market rate 
-				//shift more based on market supply/demand
-			}
-			minPriceBelief -= wobble * mean;
-			maxPriceBelief += wobble * mean;
-		}
+        if ( quantityBought * 2 > trade.offerQuantity ) //at least 50% offer filled
+        {
+            // move limits inward by 10%
+            var range = maxPriceBelief - minPriceBelief;
+            maxPriceBelief -= range / 20;
+            minPriceBelief += range / 20;
+        }
+        else 
+        {
+            maxPriceBelief *= 1.1f;
+        }
+        if ( commodity.bids[^1] > commodity.asks[^1] && quantity < maxQuantity/4 ) //more bids than asks and inventory < 1/4 max
+        {
+            maxPriceBelief += deltaMean;
+            minPriceBelief += deltaMean;
+        }
+        else if ( trade.price > trade.clearingPrice || commodity.bids[^1] < commodity.asks[^1])   //bid price > trade price
+                            // or (supply > demand and offer > historical mean)
+        {
+            var overbid = 0f; //bid price - trade price
+            maxPriceBelief -= overbid * 1.1f;
+            minPriceBelief -= overbid * 1.1f;
+        }
+        else if (commodity.bids[^1] > commodity.asks[^1])     //demand > supply
+        {
+            //translate belief range up 1/5th of historical mean price
+            maxPriceBelief += historicalMeanPrice/5;
+            minPriceBelief += historicalMeanPrice/5;
+        } else {
+            //translate belief range down 1/5th of historical mean price
+            maxPriceBelief -= historicalMeanPrice/5;
+            minPriceBelief -= historicalMeanPrice/5;
+        }
+    }
+public void UpdateSellerPriceBelief(in Trade trade, in Commodity commodity)
+    {
+		//SanePriceBeliefs();
+        Assert.IsTrue(minPriceBelief < maxPriceBelief);
 
-		//clamp to sane values
-		//if (maxPriceBelief > 1000)
-			//Debug.Log("ERROR " + maxPriceBelief.ToString("c2") + " > 1000");
-	//	if (maxPriceBelief < 0 || minPriceBelief < 0)
-//			Debug.Log("ERROR negative " + minPriceBelief.ToString("c2") + " " + maxPriceBelief.ToString("c2") );
-
-        if (minPriceBelief < maxPriceBelief)
-            minPriceBelief = maxPriceBelief / 2;
-		Assert.IsTrue(minPriceBelief < maxPriceBelief);
+		var meanBeliefPrice = (minPriceBelief + maxPriceBelief) / 2;
+		var deltaMean = meanBeliefPrice - trade.clearingPrice; //TODO or use auction house mean price?
+        var quantitySold = trade.offerQuantity - trade.remainingQuantity;
+        var historicalMeanPrice = commodity.prices.LastAverage(10);
+        var price_mean = 12f;
+        var market_share = quantitySold / commodity.trades[^1];
+        var offer_price = trade.price;
+        var weight = quantitySold / trade.offerQuantity; //quantitySold / quantityAsked
+        var displacement = weight * meanBeliefPrice;
+        if (weight == 0)
+        {
+            maxPriceBelief -= displacement / 6;
+            minPriceBelief -= displacement / 6;
+        }
+        else if (market_share < .75f)
+        {
+            maxPriceBelief -= displacement / 7;
+            minPriceBelief -= displacement / 7;
+        }
+        else if (offer_price < trade.clearingPrice)
+        {
+            var overbid = offer_price - trade.clearingPrice;
+            maxPriceBelief += overbid * 1.2f;
+            minPriceBelief += overbid * 1.2f;
+        }
+        else if (commodity.bids[^1] > commodity.asks[^1])     //demand > supply
+        {
+            //translate belief range up 1/5th of historical mean price
+            maxPriceBelief += historicalMeanPrice/5;
+            minPriceBelief += historicalMeanPrice/5;
+        } else {
+            //translate belief range down 1/5th of historical mean price
+            maxPriceBelief -= historicalMeanPrice/5;
+            minPriceBelief -= historicalMeanPrice/5;
+        }
 		
-		SanePriceBeliefs();
-
-		if (float.IsNaN(minPriceBelief))
-		{
-			Debug.Log(commodityName + ": NaN! wobble" + wobble.ToString("n2") + " mean: " + mean.ToString("c2") + " sold price: " +price.ToString("c2"));
-		}
+		//SanePriceBeliefs();
+		Assert.IsFalse(float.IsNaN(minPriceBelief));
 	}
 	//TODO change quantity based on historical price ranges & deficit
 	public float Deficit() { 
@@ -188,12 +207,4 @@ public class CommodityStock {
 		return Mathf.Max(0, shortage);
     }
 	public float Surplus() { return quantity; }
-	public float minPriceBelief {
-		get { return _minPriceBelief; }
-		set {
-			//if (value > 1000)
-//                Debug.Log("minPriceBelief old: " + _minPriceBelief.ToString("c2") + " new: " + value.ToString("c2"));
-			_minPriceBelief = value;
-		}
-	}
 }

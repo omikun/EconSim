@@ -23,27 +23,38 @@ public static class IListExtensions {
         }
     }
 }
+
+public class MarketStats {
+	public float totalSupply;
+	public float totalDemand;
+	public float agentDemandRatio;
+	public float meanPrice;
+}
 public class Trade
 {
 	public Trade(string c, float p, float q, EconAgent a)
 	{
 		commodity = c;
 		price = p;
-		quantity = q;
+		clearingPrice = p;
+		remainingQuantity = q;
+		offerQuantity = q;
 		agent = a;
 	}
 	public float Reduce(float q)
 	{
-		quantity -= q;
-		return quantity;
+		remainingQuantity -= q;
+		return remainingQuantity;
 	}
 	public void Print()
 	{
-		Debug.Log(agent.gameObject.name + ": " + commodity + " trade: " + price + ", " + quantity);
+		Debug.Log(agent.gameObject.name + ": " + commodity + " trade: " + price + ", " + remainingQuantity);
 	}
 	public string commodity { get; private set; }
 	public float price { get; private set; }
-	public float quantity { get; private set; }
+	public float clearingPrice;
+	public float remainingQuantity { get; private set; }
+	public float offerQuantity { get; private set; }
 	public EconAgent agent{ get; private set; }
 }
 public class TradeSubmission : Dictionary<string, Trade> { }
@@ -263,7 +274,7 @@ public class AuctionHouse : MonoBehaviour {
 		//wait 1s before update
 		if (Time.time - lastTick > tickInterval)
 		{
-			Debug.Log("v1.2 Round: " + roundNumber++);
+			Debug.Log("v1.3 Round: " + roundNumber++);
 			//sampler.BeginSample("AuctionHouseTick");
             Tick();
 			//sampler.EndSample();
@@ -283,138 +294,14 @@ public class AuctionHouse : MonoBehaviour {
 			bidTable.Add(agent.Consume(com));
 		}
 
+		Debug.Log(roundNumber + ": com: " + com);
 		//resolve prices
 		foreach (var entry in com)
 		{
-			float moneyExchanged = 0;
-			float goodsExchanged = 0;
-			var commodity = entry.Key;
-			var asks = askTable[commodity];
-            var bids = bidTable[commodity];
-			var demand = bids.Count / Mathf.Max(.01f, (float)asks.Count);
-            
-			/******* debug */
-			if (bids.Count > 0)
-			{
-                Trade hTrade = bids[0];
-                foreach (var bid in bids)
-                {
-                    if (bid.price > hTrade.price)
-                    {
-                        hTrade = bid;
-                    }
-                }
-                if (hTrade.price > 1000)
-                    Debug.Log(hTrade.agent.name + " bid " + commodity + " more than $1000: " + hTrade.price);
-            }
-            /******* end debug */
-
-			bool switchBasedOnNumBids = true;
-			if (switchBasedOnNumBids)
-            {
-                var numBids = bids.Sum(item => item.quantity);
-                var numAsks = asks.Sum(item => item.quantity);
-                entry.Value.bids.Add(numBids);
-                entry.Value.asks.Add(numAsks);
-			}
-            else
-            {
-                entry.Value.bids.Add(bids.Count);
-                entry.Value.asks.Add(asks.Count);
-            }
-
-            //asks.Shuffle();
-			//bids.Shuffle();
-			
-			asks.Sort((x, y) => x.price.CompareTo(y.price)); //inc
-			bids.Sort((x, y) => y.price.CompareTo(x.price)); //dec
-
-			//Debug.Log(commodity + " asks sorted: "); asks.Print();
-			//Debug.Log(commodity + " bids sorted: "); bids.Print();
-			float failsafe = 0;
-            while (asks.Count > 0 && bids.Count > 0)
-            {
-                //get highest bid and lowest ask
-				int askIndex = 0;
-				var ask = asks[askIndex];
-				int bidIndex = 0;
-				var bid = bids[bidIndex];
-				//set price
-				var clearingPrice = (bid.price + ask.price) / 2;
-				if (clearingPrice < 0 || clearingPrice > 1000)
-				{
-					Debug.Log(commodity + " clearingPrice: " + clearingPrice + " ask: " + ask.price + " bid: " + bid.price);
-				}
-				//trade
-				var tradeQuantity = Mathf.Min(bid.quantity, ask.quantity);
-#if false
-				Trade(commodity, clearingPrice, bid.agent, ask.agent);
-#else
-				var boughtQuantity = bid.agent.Buy(commodity, tradeQuantity, clearingPrice);
-				ask.agent.Sell(commodity, boughtQuantity, clearingPrice);
-#endif
-				//track who bought what
-				var buyers = trackBids[commodity];
-				buyers[bid.agent.buildables[0]] += clearingPrice * boughtQuantity;
-                //remove ask/bid if fullfilled
-                if (ask.Reduce(boughtQuantity) == 0) { 
-					asks.RemoveAt(askIndex);
-					failsafe = 0;
-				}
-				if (bid.Reduce(boughtQuantity) == 0) { 
-					bids.RemoveAt(bidIndex);
-					failsafe = 0;
-				}
-				failsafe++;
-				if (failsafe > 1000)
-				{
-					Debug.Log("Can't seem to sell: " + commodity + " bought: " + boughtQuantity + " for " + clearingPrice.ToString("c2"));
-					asks.RemoveAt(askIndex);
-					//break;
-				}
-				moneyExchanged += clearingPrice * boughtQuantity;
-				goodsExchanged += boughtQuantity;
-            }
-			if (goodsExchanged == 0)
-			{
-				goodsExchanged = 1;
-			} else 
-			{
-				Debug.Log("ERROR " + commodity + " had negative exchanges!?!?!");
-				Assert.IsFalse(goodsExchanged < 0);
-			}
-			
-			var averagePrice = moneyExchanged/goodsExchanged;
-			if (float.IsNaN(averagePrice))
-			{
-				Debug.Log(commodity + ": average price is nan");
-				Assert.IsFalse(float.IsNaN(averagePrice));
-			}
-			SetGraph(gMeanPrice, commodity, averagePrice);
-			SetGraph(gUnitsExchanged, commodity, goodsExchanged);
-			entry.Value.trades.Add(goodsExchanged);
-			entry.Value.prices.Add(averagePrice);
-			
-            //reject the rest
-            foreach (var ask in asks)
-			{
-				ask.agent.RejectAsk(commodity, averagePrice);
-			}
-			asks.Clear();
-			foreach (var bid in bids)
-			{
-				bid.agent.RejectBid(commodity, averagePrice);
-			}
-			bids.Clear();
-
-			//calculate supply/demand
-			//var excessDemand = asks.Sum(ask => ask.quantity);
-			//var excessSupply = bids.Sum(bid => bid.quantity);
-			//var demand = (goodsExchanged + excessDemand) 
-			//					 / (goodsExchanged + excessSupply);
-
-            entry.Value.Update(averagePrice, demand);
+			ResolveOffers(entry.Value);
+			Debug.Log(entry.Key + ": goods: " + entry.Value.trades[^1] + " at price: " + entry.Value.prices[^1]);
 		}
+		
 
 		//PrintToFile("round, " + roundNumber + ", commodity, " + commodity + ", price, " + averagePrice);
 		AgentsStats();
@@ -424,6 +311,144 @@ public class AuctionHouse : MonoBehaviour {
 		
 		//PrintTrackBids();
 		//ClearTrackBids();
+	}
+
+	void ResolveOffers(Commodity commodity)
+	{
+		float moneyExchanged = 0;
+		float goodsExchanged = 0;
+		var asks = askTable[commodity.name];
+		var bids = bidTable[commodity.name];
+		var acceptedAsks = new Trades();
+		var acceptedBids = new Trades();
+		var agentDemandRatio = bids.Count / Mathf.Max(.01f, (float)asks.Count); //demand by num agents bid/
+
+		/******* debug */
+		if (bids.Count > 0)
+		{
+			Trade hTrade = bids[0];
+			foreach (var bid in bids)
+			{
+				if (bid.price > hTrade.price)
+				{
+					hTrade = bid;
+				}
+			}
+			if (hTrade.price > 1000)
+				Debug.Log(hTrade.agent.name + " bid " + commodity.name + " more than $1000: " + hTrade.price);
+		}
+		/******* end debug */
+
+		var quantityToBuy = bids.Sum(item => item.remainingQuantity);
+		var quantityToSell = asks.Sum(item => item.remainingQuantity);
+		commodity.bids.Add(quantityToBuy);
+		commodity.asks.Add(quantityToSell);
+		commodity.buyers.Add(bids.Count);
+		commodity.sellers.Add(asks.Count);
+
+		asks.Shuffle();
+		bids.Shuffle();
+
+		asks.Sort((x, y) => x.price.CompareTo(y.price)); //inc
+		bids.Sort((x, y) => y.price.CompareTo(x.price)); //dec
+
+		float watchdog_timer = 0;
+
+////////////////////////////////////////////
+// BIG LOOP to resolve all offers
+////////////////////////////////////////////
+		bool run = true;
+		var askIt = asks.GetEnumerator();
+		var bidIt = bids.GetEnumerator();
+		run &= askIt.MoveNext();
+		run &= bidIt.MoveNext();
+
+		while (true && run)
+		{
+			var ask = askIt.Current;
+			var bid = bidIt.Current;
+
+			//set price
+			var clearingPrice = (bid.price + ask.price) / 2;
+			bid.clearingPrice = clearingPrice;
+			ask.clearingPrice = clearingPrice;
+			if (clearingPrice < 0 || clearingPrice > 1000)
+			{
+				Debug.Log(commodity.name + " clearingPrice: " + clearingPrice + " ask: " + ask.price + " bid: " + bid.price);
+			}
+			//trade
+			var tradeQuantity = Mathf.Min(bid.remainingQuantity, ask.remainingQuantity);
+#if false
+				Trade(commodity, clearingPrice, bid.agent, ask.agent);
+#else
+			var boughtQuantity = bid.agent.Buy(commodity.name, tradeQuantity, clearingPrice);
+			ask.agent.Sell(commodity.name, boughtQuantity, clearingPrice);
+#endif
+			//track who bought what
+			var buyers = trackBids[commodity.name];
+			buyers[bid.agent.buildables[0]] += clearingPrice * boughtQuantity;
+
+			//go to next ask/bid if fullfilled
+			if (ask.Reduce(boughtQuantity) == 0)
+			{
+				if (askIt.MoveNext() == false)
+					break;
+				watchdog_timer = 0;
+			}
+			if (bid.Reduce(boughtQuantity) == 0)
+			{
+				if (bidIt.MoveNext() == false)
+					break;
+				watchdog_timer = 0;
+			}
+			watchdog_timer++;
+			if (watchdog_timer > 1000)
+			{
+				Debug.Log("Can't seem to sell: " + commodity.name + " bought: " + boughtQuantity + " for " + clearingPrice.ToString("c2"));
+				if (bidIt.MoveNext() == false)
+					break;
+			}
+			moneyExchanged += clearingPrice * boughtQuantity;
+			goodsExchanged += boughtQuantity;
+		}
+		Assert.IsFalse(goodsExchanged < 0);
+////////////////////////////////////////////
+// END OF BIG LOOP
+////////////////////////////////////////////
+
+		var denom = (goodsExchanged == 0) ? 1 : goodsExchanged;
+		var averagePrice = moneyExchanged / denom;
+		if (float.IsNaN(averagePrice))
+		{
+			Debug.Log(commodity.name + ": average price is nan");
+			Assert.IsFalse(float.IsNaN(averagePrice));
+		}
+		Debug.Log(roundNumber + ": " + commodity.name + ": " + goodsExchanged + " traded at average price of " + averagePrice);
+		commodity.trades.Add(goodsExchanged);
+		commodity.prices.Add(averagePrice);
+		commodity.Update(averagePrice, agentDemandRatio);
+
+		//calculate supply/demand
+		//var excessDemand = asks.Sum(ask => ask.quantity);
+		//var excessSupply = bids.Sum(bid => bid.quantity);
+		//var demand = (goodsExchanged + excessDemand) 
+		//					 / (goodsExchanged + excessSupply);
+
+		//update price beliefs
+		//reject the rest
+		foreach (var ask in asks)
+		{
+			ask.agent.UpdateSellerPriceBelief(in ask, in commodity);
+		}
+		asks.Clear();
+		foreach (var bid in bids)
+		{
+			bid.agent.UpdateBuyerPriceBelief(in bid, in commodity);
+		}
+		bids.Clear();
+
+		SetGraph(gMeanPrice, commodity.name, averagePrice);
+		SetGraph(gUnitsExchanged, commodity.name, goodsExchanged);
 	}
 
 	// TODO decouple transfer of commodity with transfer of money
