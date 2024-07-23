@@ -268,7 +268,7 @@ public class AuctionHouse : MonoBehaviour {
 	// Update is called once per frame
 	int roundNumber = 0;
 	void FixedUpdate () {
-		if (roundNumber > 20)
+		if (roundNumber > 100)
 		{
 			CloseWriteFile();
 #if UNITY_EDITOR
@@ -318,12 +318,13 @@ public class AuctionHouse : MonoBehaviour {
 		Debug.Log("post agent stats");
 		CountProfits();
 		Debug.Log("post count profits");
-		EnactBankruptcy();
-		Debug.Log("post enact bankruptcy");
+		CountProfessions();
+		Debug.Log("post count professions");
 		CountStockPileAndCash();
 		Debug.Log("post count stock pile and cash");
-		SetGraph(gCapital, "Debt", defaulted);
-		CountProfessions();
+		EnactBankruptcy();
+		Debug.Log("post enact bankruptcy");
+		//SetGraph(gCapital, "Debt", defaulted);
 		
 		//PrintTrackBids();
 		//ClearTrackBids();
@@ -466,8 +467,8 @@ public class AuctionHouse : MonoBehaviour {
 		}
 		bids.Clear();
 
-		SetGraph(gMeanPrice, commodity.name, averagePrice);
-		SetGraph(gUnitsExchanged, commodity.name, goodsExchanged);
+		//SetGraph(gMeanPrice, commodity.name, averagePrice);
+		//SetGraph(gUnitsExchanged, commodity.name, goodsExchanged);
 	}
 
 	// TODO decouple transfer of commodity with transfer of money
@@ -537,7 +538,7 @@ public class AuctionHouse : MonoBehaviour {
         {
 			int bucket = 1, index = 0;
 			var avg = GetQuantile(stockList[stock.Key], bucket, index);
-            SetGraph(gStocks, stock.Key, avg);
+            //SetGraph(gStocks, stock.Key, avg);
 
             if (avg > 20)
             {
@@ -545,10 +546,10 @@ public class AuctionHouse : MonoBehaviour {
             }
 
             //avg = GetQuantile(cashList[stock.Key], bucket, index);
-            SetGraph(gCapital, stock.Key, cashList[stock.Key].Sum());
+            //SetGraph(gCapital, stock.Key, cashList[stock.Key].Sum());
         }
-        SetGraph(gCapital, "Total", totalCash);
-		SetGraph(gCapital, "IRS", irs+totalCash);
+        //SetGraph(gCapital, "Total", totalCash);
+		//SetGraph(gCapital, "IRS", irs+totalCash);
 		
 	}
 	float GetQuantile(List<float> list, int buckets=4, int index=0) //default lowest quartile
@@ -616,7 +617,7 @@ public class AuctionHouse : MonoBehaviour {
 			{
 				profit = -42; //special case to use last value in graph
 			}
-            SetGraph(gCash, commodity, profit);
+            //SetGraph(gCash, commodity, profit);
 		}
 	}
 
@@ -654,7 +655,7 @@ public class AuctionHouse : MonoBehaviour {
 		foreach (var entry in professions)
 		{
 			//Debug.Log("Profession: " + entry.Key + ": " + entry.Value);
-			SetGraph(gProfessions, entry.Key, entry.Value);
+			//SetGraph(gProfessions, entry.Key, entry.Value);
 		}
 	}
 	void SetGraph(List<GraphMe> graphs, string commodity, float input)

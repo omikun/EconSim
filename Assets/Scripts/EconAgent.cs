@@ -57,11 +57,14 @@ public class EconAgent : MonoBehaviour {
 		stockPileCost[name] = com[name].price * num;
 	}
 	public void Init(float initCash, List<string> b, float initNum=5, float maxstock=10) {
+		uid = uid_idx++;
+		Reinit(initCash, b, initNum, maxstock);
+	}
+	public void Reinit(float initCash, List<string> b, float initNum=5, float maxstock=10) {
         if (com == null)
 			com = Commodities.Instance.com;
 		//list of commodities self can produce
 		//get initial stockpiles
-		uid = uid_idx++;
 		buildables = b;
 		cash = initCash;
 		prevCash = cash;
@@ -153,7 +156,7 @@ public class EconAgent : MonoBehaviour {
 		b.Add(mostDemand);
 		var initCash = 100f;
 		// todo take from irs?
-		Init(initCash, b);
+		Reinit(initCash, b);
 		return initCash;
 	}
 
