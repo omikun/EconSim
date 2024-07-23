@@ -44,15 +44,17 @@ public class CommodityStock {
 	public float maxPriceBelief;
 	public float meanCost; //total cost spent to acquire stock
 	//number of units produced per turn = production * productionRate
-	public float production; //scaler of productionRate
 	public float productionRate = 1; //# of assembly lines
 
 
     public String Stats(String header) 
     {
         String ret = header + commodityName + ", stock, " + quantity + "\n"; 
+        ret += header + commodityName + ", max_stock, " + maxQuantity + "\n"; 
         ret += header + commodityName + ", minPriceBelief, " + minPriceBelief + "\n";
         ret += header + commodityName + ", maxPriceBelief, " + maxPriceBelief + "\n";
+        ret += header + commodityName + ", sellQuant, " + sellHistory.Peek().quantity + "\n";
+        ret += header + commodityName + ", buyQuant, " + buyHistory.Peek().quantity + "\n";
         return ret;
     }
 	public CommodityStock (string _name, float _quantity=1, float _maxQuantity=10, 
@@ -68,7 +70,7 @@ public class CommodityStock {
 		meanCost = _meanPrice;
 		buyHistory.Enqueue(new Transaction(1,_meanPrice));
 		sellHistory.Enqueue(new Transaction(1,_meanPrice));
-		production = _production;
+		productionRate = _production;
 	}
 	public void Tick()
 	{
@@ -80,12 +82,12 @@ public class CommodityStock {
 		//update meanCost of units in stock
         var totalCost = meanCost * this.quantity + price * quant;
         this.meanCost = totalCost / this.quantity;
-		var leftOver = quant - Deficit();
+        Assert.IsTrue(Deficit() >= quant);
+        quant = Mathf.Min(quant, Deficit());
 		this.quantity += quant;
-        // why do I care about this Assert.IsTrue(leftOver >= 0);
         buyHistory.Enqueue(new Transaction(price, quant));
-		//return quant;
-		return quant;// - leftOver;
+		//return adjusted quant;
+		return quant;
 	}
 	public void Sell(float quant, float price)
 	{
@@ -155,6 +157,8 @@ public class CommodityStock {
             maxPriceBelief -= historicalMeanPrice/5;
             minPriceBelief -= historicalMeanPrice/5;
         }
+
+        SanePriceBeliefs();
     }
 public void UpdateSellerPriceBelief(in Trade trade, in Commodity commodity)
     {

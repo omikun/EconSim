@@ -101,19 +101,21 @@ public class EconAgent : MonoBehaviour {
 		prevCash = cash;
 		return profit;
 	}
+	const float bankruptcyThreshold = 0;
 	public bool IsBankrupt()
 	{
 		return cash < bankruptcyThreshold;
 	}
     public float Tick()
 	{
+		Debug.Log("agents ticking!");
 		float taxConsumed = 0;
 		bool starving = false;
 		if (stockPile.ContainsKey("Food"))
 		{
-            stockPile["Food"].quantity -= .1f;
+            stockPile["Food"].quantity -= .5f;
             var food = stockPile["Food"].quantity;
-            starving = false;//food < -25;
+            starving = food < 0;
 		}
 		
 		foreach (var entry in stockPile)
@@ -155,7 +157,6 @@ public class EconAgent : MonoBehaviour {
 		return initCash;
 	}
 
-	const float bankruptcyThreshold = -100;
 	/*********** Trading ************/
 	public void modify_cash(float quant)
 	{
@@ -168,7 +169,7 @@ public class EconAgent : MonoBehaviour {
 	public float Buy(string commodity, float quantity, float price)
 	{
 		var boughtQuantity = stockPile[commodity].Buy(quantity, price);
-//	Debug.Log(name + " has " + cash.ToString("c2") + " buying " + quantity.ToString("n2") + " " + commodity + " for " + price.ToString("c2"));
+	Debug.Log(name + " has " + cash.ToString("c2") + " want to buy " + quantity.ToString("n2") + " " + commodity + " for " + price.ToString("c2") + " bought " + boughtQuantity.ToString("n2"));
 		cash -= price * boughtQuantity;
 		return boughtQuantity;
 	}
@@ -197,7 +198,8 @@ public class EconAgent : MonoBehaviour {
 		//todo SANITY check
 		float favorability = Mathf.InverseLerp(lowestPrice, highestPrice, avgPrice);
 		favorability = Mathf.Clamp(favorability, 0, 1);
-		float numAsks = (favorability) * stockPile[c].Surplus();
+		//float numAsks = (favorability) * stockPile[c].Surplus();
+		float numAsks = stockPile[c].Surplus();
 		//why max of 1??? numAsks = Mathf.Max(1, numAsks);
 
 //		Debug.Log("avgPrice: " + avgPrice.ToString("c2") + " favoribility: " + favorability + " numAsks: " + numAsks.ToString("0.00"));
@@ -211,7 +213,8 @@ public class EconAgent : MonoBehaviour {
 		//todo SANITY check
 		float favorability = Mathf.InverseLerp(lowestPrice, highestPrice, avgPrice);
 		favorability = Mathf.Clamp(favorability, 0, 1);
-		float numBids = (1 - favorability) * stockPile[c].Deficit();
+		//float numBids = (1 - favorability) * stockPile[c].Deficit();
+		float numBids = stockPile[c].Deficit();
 		//WHY??? 
 		//TODO find prices of all dependent commodities, then get relative importance, and split numBids on all commodities proportional to value (num needed/price)
 		//numBids = Mathf.Max(1, numBids);
@@ -240,11 +243,8 @@ public class EconAgent : MonoBehaviour {
 					Debug.Log(stock.Key + "buyPrice: " + buyPrice.ToString("c2") + " : " + stock.Value.minPriceBelief.ToString("n2") + "<" + stock.Value.maxPriceBelief.ToString("n2"));
 					Assert.IsFalse(buyPrice > 1000);
 				}
-				if (numBids < 0)
-				{
-					Debug.Log(stock.Key + " buying negative " + numBids.ToString("n2") + " for " + buyPrice.ToString("c2"));
-					Assert.IsFalse(numBids < 0);
-				}
+				Debug.Log(this.name + " buying " + numBids.ToString("n2") + stock.Key + " for " + buyPrice.ToString("c2") + " each");
+				Assert.IsFalse(numBids < 0);
 				bids.Add(stock.Key, new Trade(stock.Value.commodityName, buyPrice, numBids, this));
 			}
         }
@@ -263,22 +263,22 @@ public class EconAgent : MonoBehaviour {
 			float numProduced = float.MaxValue; //amt agent can produce for commodity buildable
 			string sStock = ", has in stock";
 			//find max that can be made w/ available stock
-			if (!com.ContainsKey(buildable))
-			{
-				Debug.Log("not a commodity: " + buildable);
-			}
+			Assert.IsTrue(com.ContainsKey(buildable));
 			foreach (var dep in com[buildable].dep)
 			{
 				//get num commodities you can build
 				var numNeeded = dep.Value;
 				var numAvail = stockPile[dep.Key].quantity;
 				numProduced = Mathf.Min(numProduced, numAvail/numNeeded);
-				sStock += " " + dep.Key + ": " + numAvail + "/" + dep.Key;
+				Debug.Log(name + "can produce " + numProduced + " w/" + numAvail + "/" + numNeeded + dep.Key );
 			}
 			//can only build fixed rate at a time
 			//can't produce more than what's in stock
 			var upperBound = Mathf.Min(stockPile[buildable].productionRate, stockPile[buildable].Deficit());
-			numProduced = Mathf.Clamp(numProduced, 0, upperBound);;
+			numProduced = Mathf.Clamp(numProduced, 0, upperBound);
+			Debug.Log(name + " upperbound: " + upperBound + " production rate: " + stockPile[buildable].productionRate + " room: " + stockPile[buildable].Deficit());
+			numProduced = Mathf.Floor(numProduced);
+			Debug.Log(name + " upperbound: " + upperBound + " can produce: " + numProduced);
 			//build and add to stockpile
 			foreach (var dep in com[buildable].dep)
 			{
@@ -290,8 +290,6 @@ public class EconAgent : MonoBehaviour {
 			// WTF is production?? numProduced *= stockPile[buildable].production;
 			//numProduced = Mathf.Max(numProduced, 0);
 			stockPile[buildable].quantity += numProduced;
-			if (float.IsNaN(numProduced))
-				Debug.Log(buildable + " numproduced is nan!");
 			Assert.IsFalse(float.IsNaN(numProduced));
 
             var buildStock = stockPile[buildable];
@@ -301,21 +299,23 @@ public class EconAgent : MonoBehaviour {
 			//numProduced = Mathf.Max(1, numProduced);
 			//sellPrice = Mathf.Max(1, sellPrice);
 
-//            Debug.Log(name + " has " + cash.ToString("c2") + " made " + numProduced.ToString("n2") + " " + buildable + sellPrice.ToString("c2") + sStock);
+			Debug.Log(name + " has produced " + numProduced + " " + buildable);
+            Debug.Log(name + " has " + cash.ToString("c2") + " made " + numProduced.ToString("n2") + " " + buildable + " selling " + sellQuantity + " for " + sellPrice.ToString("c2") + sStock);
 
 			if (numProduced > 0 && sellPrice > 0)
 			{
-				asks.Add(buildable, new Trade(buildable, sellPrice, buildStock.quantity, this));
+				asks.Add(buildable, new Trade(buildable, sellPrice, sellQuantity, this));
 			}
 
 			producedThisRound += numProduced;
-			revenueThisRound += sellQuantity * sellPrice;
 		}
 
+#if false
 		if (producedThisRound > 0 && revenueThisRound > 0)
 		{
 			idleTax = Mathf.Abs(cash * .05f); 
 		}
+#endif
 
 		//alternative build: only make what is most profitable...?
 		foreach (var buildable in buildables)

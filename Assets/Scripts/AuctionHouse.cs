@@ -115,7 +115,7 @@ public class AuctionHouse : MonoBehaviour {
     public float tickInterval = .01f;
     public int numAgents = 100;
 	public float initCash = 100;
-	public float initStock = 15;
+	public float initStock = 10;
 	public float maxStock = 20;
 	List<EconAgent> agents = new List<EconAgent>();
 	float irs;
@@ -193,16 +193,24 @@ public class AuctionHouse : MonoBehaviour {
 			var agent = child.GetComponent<EconAgent>();
 
 			string type = "invalid";
-			int numPerType = transform.childCount / 5;
+			int numPerType = 2; //transform.childCount / 5;
 			int typeNum = 1;
-			if (count < numPerType*typeNum++) 		type = "Food";	//farmer
-			else if (count < numPerType*typeNum++) 	type = "Wood";	//woodcutter
-			else if (count < numPerType*typeNum++) 	type = "Ore";	//miner
-			else if (count < numPerType*typeNum++) 	type = "Metal";	//refiner
-			else if (count < numPerType*typeNum) 	type = "Tool";	//blacksmith
-			else Debug.Log(count + " too many agents, not supported: " + typeNum);
-			InitAgent(agent, type);
-			agents.Add(agent);
+
+			if (count < numPerType*1) 		type = "Food";
+			else if (count < numPerType*2) 	type = "Wood";  //woodcutter
+#if false
+			else if (count < numPerType*3) 	type = "Ore";	//miner
+			else if (count < numPerType*4) 	type = "Metal";	//refiner
+			else if (count < numPerType*5) 	type = "Tool";	//blacksmith
+#endif
+
+			Debug.Log("agent type: " + type);
+			if (type == "invalid")
+				Debug.Log("2agent type: " + type);
+			else {
+				InitAgent(agent, type);
+				agents.Add(agent);
+			}
 			count++;
 		}
 		askTable = new TradeTable();
@@ -251,6 +259,7 @@ public class AuctionHouse : MonoBehaviour {
         List<string> buildables = new List<string>();
 		buildables.Add(type);
 		var _initStock = UnityEngine.Random.Range(initStock/2, initStock*2);
+		_initStock = Mathf.Floor(_initStock);
 		var _maxStock = Mathf.Max(initStock, maxStock);
 
         agent.Init(initCash, buildables, _initStock, _maxStock);
@@ -259,7 +268,7 @@ public class AuctionHouse : MonoBehaviour {
 	// Update is called once per frame
 	int roundNumber = 0;
 	void FixedUpdate () {
-		if (roundNumber > 100)
+		if (roundNumber > 20)
 		{
 			CloseWriteFile();
 #if UNITY_EDITOR
@@ -283,6 +292,7 @@ public class AuctionHouse : MonoBehaviour {
 	}
 	void Tick()
 	{
+		Debug.Log("auction house ticking");
 		var com = Commodities.Instance.com;
 		//get all agents asks
 		//get all agents bids
@@ -294,7 +304,6 @@ public class AuctionHouse : MonoBehaviour {
 			bidTable.Add(agent.Consume(com));
 		}
 
-		Debug.Log(roundNumber + ": com: " + com);
 		//resolve prices
 		foreach (var entry in com)
 		{
@@ -302,12 +311,19 @@ public class AuctionHouse : MonoBehaviour {
 			Debug.Log(entry.Key + ": goods: " + entry.Value.trades[^1] + " at price: " + entry.Value.prices[^1]);
 		}
 		
+		Debug.Log("post resolve prices");
 
 		//PrintToFile("round, " + roundNumber + ", commodity, " + commodity + ", price, " + averagePrice);
 		AgentsStats();
-		CountStockPileAndCash();
+		Debug.Log("post agent stats");
 		CountProfits();
+		Debug.Log("post count profits");
 		EnactBankruptcy();
+		Debug.Log("post enact bankruptcy");
+		CountStockPileAndCash();
+		Debug.Log("post count stock pile and cash");
+		SetGraph(gCapital, "Debt", defaulted);
+		CountProfessions();
 		
 		//PrintTrackBids();
 		//ClearTrackBids();
@@ -383,6 +399,9 @@ public class AuctionHouse : MonoBehaviour {
 #else
 			var boughtQuantity = bid.agent.Buy(commodity.name, tradeQuantity, clearingPrice);
 			ask.agent.Sell(commodity.name, boughtQuantity, clearingPrice);
+			Debug.Log(ask.agent.name + " ask " + ask.remainingQuantity + "x" + ask.price 
+					+ " | " + bid.agent.name + " bid: " + bid.remainingQuantity + "x" + bid.price 
+					+ " -- " + commodity.name + " offer quantity: " + tradeQuantity + " bought quantity: " + boughtQuantity);
 #endif
 			//track who bought what
 			var buyers = trackBids[commodity.name];
@@ -604,16 +623,16 @@ public class AuctionHouse : MonoBehaviour {
     float defaulted = 0;
 	void EnactBankruptcy()
 	{
+		Debug.Log("enacting bankruptcy!");
         foreach (var agent in agents)
         {
 			if (agent.IsBankrupt())
 			{
 				defaulted += agent.cash;
 			}
-            irs -= agent.Tick();
+			agent.Tick();
+            //irs -= agent.Tick();
         }
-		SetGraph(gCapital, "Debt", defaulted);
-		CountProfessions();
 	}
 	void CountProfessions()
 	{

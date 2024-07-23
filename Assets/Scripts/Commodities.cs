@@ -219,8 +219,16 @@ public class Commodities : MonoBehaviour
 	}
     // Use this for initialization
     void Init () {
-#if true
 		Debug.Log("Initializing commodities");
+#if true
+		Dependency foodDep = new Dependency();
+		foodDep.Add("Wood", 2);
+		Add("Food", 3, foodDep);
+
+		Dependency woodDep = new Dependency();
+		woodDep.Add("Food", 1);
+		Add("Wood", 2, woodDep);
+#elif false
 		//replicate paper
 		Dependency foodDep = new Dependency();
 		foodDep.Add("Wood", 2);
