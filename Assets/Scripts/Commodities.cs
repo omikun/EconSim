@@ -222,12 +222,12 @@ public class Commodities : MonoBehaviour
 		Debug.Log("Initializing commodities");
 #if true
 		Dependency foodDep = new Dependency();
-		foodDep.Add("Wood", 2);
-		Add("Food", 3, foodDep);
+		foodDep.Add("Wood", 1);
+		Add("Food", 1, foodDep);
 
 		Dependency woodDep = new Dependency();
 		woodDep.Add("Food", 1);
-		Add("Wood", 2, woodDep);
+		Add("Wood", 40, woodDep);
 #elif false
 		//replicate paper
 		Dependency foodDep = new Dependency();

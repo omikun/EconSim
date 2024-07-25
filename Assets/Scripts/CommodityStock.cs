@@ -38,7 +38,7 @@ public class CommodityStock {
 	public float cost = 1;
     public float last_price = 1;
 	public float wobble = .02f;
-	public float quantity;
+	public float Quantity { get; private set; }
 	public float maxQuantity;
 	public float minPriceBelief;
 	public float maxPriceBelief;
@@ -49,8 +49,9 @@ public class CommodityStock {
 
     public String Stats(String header) 
     {
-        String ret = header + commodityName + ", stock, " + quantity + "\n"; 
+        String ret = header + commodityName + ", stock, " + Quantity + "\n"; 
         ret += header + commodityName + ", max_stock, " + maxQuantity + "\n"; 
+        ret += header + commodityName + ", mean_price, " + meanCost + "\n"; 
         ret += header + commodityName + ", minPriceBelief, " + minPriceBelief + "\n";
         ret += header + commodityName + ", maxPriceBelief, " + maxPriceBelief + "\n";
         ret += header + commodityName + ", sellQuant, " + sellHistory.Peek().quantity + "\n";
@@ -63,7 +64,7 @@ public class CommodityStock {
 		buyHistory = new History();
 		sellHistory = new History();
 		commodityName = _name;
-		quantity = _quantity;
+		Quantity = _quantity;
 		maxQuantity = _maxQuantity;
 		minPriceBelief = _meanPrice / 2;
 		maxPriceBelief = _meanPrice * 2;
@@ -77,21 +78,43 @@ public class CommodityStock {
         sellHistory.Tick();
         buyHistory.Tick();
 	}
+    public void Increase(float quant)
+    {
+        Quantity += quant;
+        Assert.IsTrue(quant >= 0);
+    }
+    public void Decrease(float quant)
+    {
+        Quantity -= quant;
+        Assert.IsTrue(Quantity >= 0);
+    }
 	public float Buy(float quant, float price)
 	{
+        UnityEngine.Debug.Log("buying " + commodityName + " " + quant.ToString("n2") + " for " + price.ToString("c2") + " currently have " + this.Quantity.ToString("n2"));
 		//update meanCost of units in stock
-        var totalCost = meanCost * this.quantity + price * quant;
-        this.meanCost = totalCost / this.quantity;
-        Assert.IsTrue(Deficit() >= quant);
-        quant = Mathf.Min(quant, Deficit());
-		this.quantity += quant;
+        Assert.IsTrue(this.Quantity >= 0);
+        Assert.IsTrue(quant > 0);
+
+        var totalCost = meanCost * this.Quantity + price * quant;
+		this.Quantity += quant;
+        this.meanCost = (this.Quantity == 0) ? 0 : totalCost / this.Quantity;
         buyHistory.Enqueue(new Transaction(price, quant));
 		//return adjusted quant;
 		return quant;
 	}
 	public void Sell(float quant, float price)
 	{
-		this.quantity += quant;
+		//update meanCost of units in stock
+        Assert.IsTrue(this.Quantity > 0);
+        if (quant == 0)
+            return;
+        UnityEngine.Debug.Log("sell quant is " + quant);
+        quant = Mathf.Min(quant, Surplus());
+        UnityEngine.Debug.Log("sell quant is " + quant);
+        Assert.IsTrue(quant > 0);
+        var totalCost = meanCost * this.Quantity + price * quant;
+		this.Quantity -= quant;
+        this.meanCost = (this.Quantity == 0) ? 0 : totalCost / this.Quantity;
         sellHistory.Enqueue(new Transaction(price, quant));
 	}
 	public float GetPrice()
@@ -103,9 +126,9 @@ public class CommodityStock {
 	void SanePriceBeliefs()
 	{
 		minPriceBelief = Mathf.Max(cost, minPriceBelief);
+		minPriceBelief = Mathf.Clamp(minPriceBelief, 0.1f, 900f);
 		maxPriceBelief = Mathf.Max(minPriceBelief*1.1f, maxPriceBelief);
-		minPriceBelief = Mathf.Clamp(minPriceBelief, 0.1f, 900);
-		maxPriceBelief = Mathf.Clamp(maxPriceBelief, 1.1f, 1000);
+		maxPriceBelief = Mathf.Clamp(maxPriceBelief, 1.1f, 1000f);
 	}
 	
     public void UpdateBuyerPriceBelief(in Trade trade, in Commodity commodity)
@@ -135,7 +158,7 @@ public class CommodityStock {
         {
             maxPriceBelief *= 1.1f;
         }
-        if ( commodity.bids[^1] > commodity.asks[^1] && quantity < maxQuantity/4 ) //more bids than asks and inventory < 1/4 max
+        if ( commodity.bids[^1] > commodity.asks[^1] && Quantity < maxQuantity/4 ) //more bids than asks and inventory < 1/4 max
         {
             maxPriceBelief += deltaMean;
             minPriceBelief += deltaMean;
@@ -169,7 +192,6 @@ public void UpdateSellerPriceBelief(in Trade trade, in Commodity commodity)
 		var deltaMean = meanBeliefPrice - trade.clearingPrice; //TODO or use auction house mean price?
         var quantitySold = trade.offerQuantity - trade.remainingQuantity;
         var historicalMeanPrice = commodity.prices.LastAverage(10);
-        var price_mean = 12f;
         var market_share = quantitySold / commodity.trades[^1];
         var offer_price = trade.price;
         var weight = quantitySold / trade.offerQuantity; //quantitySold / quantityAsked
@@ -206,9 +228,8 @@ public void UpdateSellerPriceBelief(in Trade trade, in Commodity commodity)
 	}
 	//TODO change quantity based on historical price ranges & deficit
 	public float Deficit() { 
-		var shortage = maxQuantity - quantity;
-		//Assert.IsTrue(shortage >= 0);
+		var shortage = maxQuantity - Quantity;
 		return Mathf.Max(0, shortage);
     }
-	public float Surplus() { return quantity; }
+	public float Surplus() { return Quantity; }
 }

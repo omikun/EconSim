@@ -268,7 +268,7 @@ public class AuctionHouse : MonoBehaviour {
 	// Update is called once per frame
 	int roundNumber = 0;
 	void FixedUpdate () {
-		if (roundNumber > 100)
+		if (roundNumber > 20)
 		{
 			CloseWriteFile();
 #if UNITY_EDITOR
@@ -330,6 +330,13 @@ public class AuctionHouse : MonoBehaviour {
 		//ClearTrackBids();
 	}
 
+	void PrintAuctionStats(String c, float buy, float sell)
+	{
+		String header = roundNumber + ", auction, none, " + c + ", ";
+		String msg = header + "bid, " + buy + "\n";
+		msg += header + "ask, " + sell + "\n";
+		PrintToFile(msg);
+	}
 	void ResolveOffers(Commodity commodity)
 	{
 		float moneyExchanged = 0;
@@ -362,6 +369,7 @@ public class AuctionHouse : MonoBehaviour {
 		commodity.asks.Add(quantityToSell);
 		commodity.buyers.Add(bids.Count);
 		commodity.sellers.Add(asks.Count);
+		PrintAuctionStats(commodity.name, quantityToBuy, quantityToSell);
 
 		asks.Shuffle();
 		bids.Shuffle();
@@ -389,12 +397,15 @@ public class AuctionHouse : MonoBehaviour {
 			var clearingPrice = (bid.price + ask.price) / 2;
 			bid.clearingPrice = clearingPrice;
 			ask.clearingPrice = clearingPrice;
+			Assert.IsTrue(clearingPrice > 0);
 			if (clearingPrice < 0 || clearingPrice > 1000)
 			{
 				Debug.Log(commodity.name + " clearingPrice: " + clearingPrice + " ask: " + ask.price + " bid: " + bid.price);
 			}
 			//trade
 			var tradeQuantity = Mathf.Min(bid.remainingQuantity, ask.remainingQuantity);
+			Assert.IsTrue(tradeQuantity > 0);
+			Assert.IsTrue(clearingPrice > 0);
 #if false
 				Trade(commodity, clearingPrice, bid.agent, ask.agent);
 #else
@@ -485,11 +496,11 @@ public class AuctionHouse : MonoBehaviour {
 
 	void OpenFileForWrite() {
 		sw = new StreamWriter("log2.csv");
-		String header_row = "round, agent, produces, commodity_stock, type, cs_amount";
+		String header_row = "round, agent, produces, commodity_stock, type, cs_amount\n";
 		PrintToFile(header_row);
 	}
 	void PrintToFile(String msg) {
-		sw.Write(msg + "\n");
+		sw.Write(msg);
 	}
 
 	void CloseWriteFile() {
