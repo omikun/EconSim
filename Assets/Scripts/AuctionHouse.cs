@@ -196,8 +196,8 @@ public class AuctionHouse : MonoBehaviour {
 			int numPerType = 2; //transform.childCount / 5;
 			int typeNum = 1;
 
-			if (count < numPerType*1) 		type = "Food";
-			else if (count < numPerType*2) 	type = "Wood";  //woodcutter
+			if (count < 3) 		type = "Food";
+			else if (count < 4) 	type = "Wood";  //woodcutter
 #if false
 			else if (count < numPerType*3) 	type = "Ore";	//miner
 			else if (count < numPerType*4) 	type = "Metal";	//refiner
@@ -268,7 +268,7 @@ public class AuctionHouse : MonoBehaviour {
 	// Update is called once per frame
 	int roundNumber = 0;
 	void FixedUpdate () {
-		if (roundNumber > 20)
+		if (roundNumber > 100)
 		{
 			CloseWriteFile();
 #if UNITY_EDITOR

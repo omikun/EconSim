@@ -227,7 +227,7 @@ public class Commodities : MonoBehaviour
 
 		Dependency woodDep = new Dependency();
 		woodDep.Add("Food", 1);
-		Add("Wood", 40, woodDep);
+		Add("Wood", 1, woodDep);
 #elif false
 		//replicate paper
 		Dependency foodDep = new Dependency();
