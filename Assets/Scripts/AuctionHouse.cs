@@ -293,6 +293,7 @@ public class AuctionHouse : MonoBehaviour {
 	void Tick()
 	{
 		Debug.Log("auction house ticking");
+
 		var com = Commodities.Instance.com;
 		//get all agents asks
 		//get all agents bids
@@ -303,6 +304,10 @@ public class AuctionHouse : MonoBehaviour {
 			//Utilities.TransferQuantity(idleTax, agent, irs);
 			bidTable.Add(agent.Consume(com));
 		}
+
+		//was at bottom of tick
+		EnactBankruptcy();
+		Debug.Log("post enact bankruptcy");
 
 		//resolve prices
 		foreach (var entry in com)
@@ -322,8 +327,6 @@ public class AuctionHouse : MonoBehaviour {
 		Debug.Log("post count professions");
 		CountStockPileAndCash();
 		Debug.Log("post count stock pile and cash");
-		EnactBankruptcy();
-		Debug.Log("post enact bankruptcy");
 		//SetGraph(gCapital, "Debt", defaulted);
 		
 		//PrintTrackBids();
@@ -402,8 +405,25 @@ public class AuctionHouse : MonoBehaviour {
 			{
 				Debug.Log(commodity.name + " clearingPrice: " + clearingPrice + " ask: " + ask.price + " bid: " + bid.price);
 			}
+			//go to next ask/bid if fullfilled
+			// DEBUG this should not be necessary!?
+			if (ask.remainingQuantity == 0)
+			{
+				if (askIt.MoveNext() == false)
+					break;
+				watchdog_timer = 0;
+				continue;
+			}
+			if (bid.remainingQuantity == 0)
+			{
+				if (bidIt.MoveNext() == false)
+					break;
+				watchdog_timer = 0;
+				continue;
+			}
 			//trade
 			var tradeQuantity = Mathf.Min(bid.remainingQuantity, ask.remainingQuantity);
+			Debug.Log(commodity.name + " asked: " + ask.remainingQuantity + " bided: " + bid.remainingQuantity);
 			Assert.IsTrue(tradeQuantity > 0);
 			Assert.IsTrue(clearingPrice > 0);
 #if false
@@ -418,6 +438,9 @@ public class AuctionHouse : MonoBehaviour {
 			//track who bought what
 			var buyers = trackBids[commodity.name];
 			buyers[bid.agent.buildables[0]] += clearingPrice * boughtQuantity;
+
+			moneyExchanged += clearingPrice * boughtQuantity;
+			goodsExchanged += boughtQuantity;
 
 			//go to next ask/bid if fullfilled
 			if (ask.Reduce(boughtQuantity) == 0)
@@ -439,8 +462,6 @@ public class AuctionHouse : MonoBehaviour {
 				if (bidIt.MoveNext() == false)
 					break;
 			}
-			moneyExchanged += clearingPrice * boughtQuantity;
-			goodsExchanged += boughtQuantity;
 		}
 		Assert.IsFalse(goodsExchanged < 0);
 ////////////////////////////////////////////

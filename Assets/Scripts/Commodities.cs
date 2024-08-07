@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine.Assertions;
 using UnityEngine;
 using System.Linq;
+using System;
 
 //using Dependency = System.Collections.Generic.Dictionary<string, float>;
 //TODO replace dependencies with recipe
@@ -133,7 +134,7 @@ public class Commodities : MonoBehaviour
 		com = new Dictionary<string, Commodity>(); //names, market price
 		Init();
     }
-    public string GetMostProfitableProfession(int history = 10)
+    public string GetMostProfitableProfession(String exclude_key, int history = 10)
 	{
 		string prof = "invalid";
 		float most = 0;
@@ -141,6 +142,10 @@ public class Commodities : MonoBehaviour
 		foreach (var entry in com)
 		{
 			var commodity = entry.Key;
+			if (exclude_key == commodity) 
+			{
+				continue;
+			}
 			var profitHistory = entry.Value.profits;
 			//WARNING this history refers to the last # agents' profits, not last # rounds... short history if popular profession...
 			var profit = profitHistory.LastAverage(history);
@@ -223,11 +228,11 @@ public class Commodities : MonoBehaviour
 #if true
 		Dependency foodDep = new Dependency();
 		foodDep.Add("Wood", 1);
-		Add("Food", 1, foodDep);
+		Add("Food", 2, foodDep);
 
 		Dependency woodDep = new Dependency();
 		woodDep.Add("Food", 1);
-		Add("Wood", 1, woodDep);
+		Add("Wood", 3, woodDep);
 #elif false
 		//replicate paper
 		Dependency foodDep = new Dependency();

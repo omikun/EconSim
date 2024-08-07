@@ -66,6 +66,7 @@ public class CommodityStock {
 		commodityName = _name;
 		Quantity = _quantity;
 		maxQuantity = _maxQuantity;
+        Assert.IsTrue(_meanPrice >= 0); //TODO really should never be 0???
 		minPriceBelief = _meanPrice / 2;
 		maxPriceBelief = _meanPrice * 2;
 		meanCost = _meanPrice;
@@ -78,21 +79,22 @@ public class CommodityStock {
         sellHistory.Tick();
         buyHistory.Tick();
 	}
-    public void Increase(float quant)
+    public float Increase(float quant)
     {
         Quantity += quant;
         Assert.IsTrue(quant >= 0);
+        return Quantity;
     }
-    public void Decrease(float quant)
+    public float Decrease(float quant)
     {
         Quantity -= quant;
-        Assert.IsTrue(Quantity >= 0);
+        //Assert.IsTrue(Quantity >= 0);
+        return Quantity;
     }
 	public float Buy(float quant, float price)
 	{
         UnityEngine.Debug.Log("buying " + commodityName + " " + quant.ToString("n2") + " for " + price.ToString("c2") + " currently have " + this.Quantity.ToString("n2"));
 		//update meanCost of units in stock
-        Assert.IsTrue(this.Quantity >= 0);
         Assert.IsTrue(quant > 0);
 
         var totalCost = meanCost * this.Quantity + price * quant;
@@ -125,10 +127,12 @@ public class CommodityStock {
 	}
 	void SanePriceBeliefs()
 	{
+
 		minPriceBelief = Mathf.Max(cost, minPriceBelief);
 		minPriceBelief = Mathf.Clamp(minPriceBelief, 0.1f, 900f);
 		maxPriceBelief = Mathf.Max(minPriceBelief*1.1f, maxPriceBelief);
 		maxPriceBelief = Mathf.Clamp(maxPriceBelief, 1.1f, 1000f);
+        Assert.IsTrue(minPriceBelief < maxPriceBelief);
 	}
 	
     public void UpdateBuyerPriceBelief(in Trade trade, in Commodity commodity)
@@ -146,11 +150,12 @@ public class CommodityStock {
 		var deltaMean = meanBeliefPrice - trade.clearingPrice; //TODO or use auction house mean price?
         var quantityBought = trade.offerQuantity - trade.remainingQuantity;
         var historicalMeanPrice = commodity.prices.LastAverage(10);
+        Assert.IsTrue(historicalMeanPrice >= 0);
 
         if ( quantityBought * 2 > trade.offerQuantity ) //at least 50% offer filled
         {
             // move limits inward by 10%
-            var range = maxPriceBelief - minPriceBelief;
+            var range = Mathf.Abs(maxPriceBelief - minPriceBelief);
             maxPriceBelief -= range / 20;
             minPriceBelief += range / 20;
         }
@@ -166,7 +171,7 @@ public class CommodityStock {
         else if ( trade.price > trade.clearingPrice || commodity.bids[^1] < commodity.asks[^1])   //bid price > trade price
                             // or (supply > demand and offer > historical mean)
         {
-            var overbid = 0f; //bid price - trade price
+            var overbid = Mathf.Abs(trade.price - trade.clearingPrice); //bid price - trade price
             maxPriceBelief -= overbid * 1.1f;
             minPriceBelief -= overbid * 1.1f;
         }
@@ -223,7 +228,9 @@ public void UpdateSellerPriceBelief(in Trade trade, in Commodity commodity)
             minPriceBelief -= historicalMeanPrice/5;
         }
 		
-		//SanePriceBeliefs();
+        //ensure buildable price at least cost of input commodities
+
+		SanePriceBeliefs();
 		Assert.IsFalse(float.IsNaN(minPriceBelief));
 	}
 	//TODO change quantity based on historical price ranges & deficit
