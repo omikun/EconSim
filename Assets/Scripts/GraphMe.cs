@@ -51,6 +51,7 @@ public class GraphMe : MonoBehaviour {
 	}
 	public void LateUpdate() 
 	{
+		return;
         for (int i = 0; i < inputs.Count; i++)
         {
             line.SetPosition(i, gl.L2PC_RelX(i, inputs[i]));

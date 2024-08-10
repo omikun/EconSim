@@ -87,6 +87,7 @@ public class GraphLead : MonoBehaviour {
 	bool firstThisUpdate = true;
 	// Update is called once per frame
 	void LateUpdate () {
+		return;
 		firstThisUpdate = true;
 		//TODO roll this back: rn getting null ref exception
 		//tXmin.text = (lMin.x.ToString("n2"));

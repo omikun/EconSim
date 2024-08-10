@@ -127,11 +127,17 @@ public class Commodities : MonoBehaviour
     public static Commodities Instance { get; private set; }
 
 	public Dictionary<string, Commodity> com { get; private set; }
+	public int round { get; private set; }
 	
+	public void nextRound()
+	{
+		round += 1;
+	}
     private void Awake()
     {
         Instance = this;
 		com = new Dictionary<string, Commodity>(); //names, market price
+		round = 0;
 		Init();
     }
     public string GetMostProfitableProfession(String exclude_key, int history = 10)

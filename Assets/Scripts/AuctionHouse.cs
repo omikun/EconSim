@@ -112,7 +112,7 @@ public class TradeTable : Dictionary<string, Trades>
 	}
 }
 public class AuctionHouse : MonoBehaviour {
-    public float tickInterval = .01f;
+    public float tickInterval = .001f;
     public int numAgents = 100;
 	public float initCash = 100;
 	public float initStock = 10;
@@ -142,6 +142,7 @@ public class AuctionHouse : MonoBehaviour {
 		Debug.unityLogger.logEnabled=EnableDebug;
 		OpenFileForWrite();
 
+		UnityEngine.Random.seed = 42;
 		lastTick = 0;
 		int count = 0;
 		var com = Commodities.Instance.com;
@@ -260,6 +261,7 @@ public class AuctionHouse : MonoBehaviour {
 		buildables.Add(type);
 		var _initStock = UnityEngine.Random.Range(initStock/2, initStock*2);
 		_initStock = Mathf.Floor(_initStock);
+		//_initStock = 10;
 		var _maxStock = Mathf.Max(initStock, maxStock);
 
         agent.Init(initCash, buildables, _initStock, _maxStock);
@@ -307,7 +309,6 @@ public class AuctionHouse : MonoBehaviour {
 
 		//was at bottom of tick
 		EnactBankruptcy();
-		Debug.Log("post enact bankruptcy");
 
 		//resolve prices
 		foreach (var entry in com)
@@ -437,7 +438,7 @@ public class AuctionHouse : MonoBehaviour {
 #endif
 			//track who bought what
 			var buyers = trackBids[commodity.name];
-			buyers[bid.agent.buildables[0]] += clearingPrice * boughtQuantity;
+			buyers[bid.agent.outputs[0]] += clearingPrice * boughtQuantity;
 
 			moneyExchanged += clearingPrice * boughtQuantity;
 			goodsExchanged += boughtQuantity;
@@ -498,6 +499,10 @@ public class AuctionHouse : MonoBehaviour {
 			bid.agent.UpdateBuyerPriceBelief(in bid, in commodity);
 		}
 		bids.Clear();
+		foreach (var agent in agents)
+		{
+			agent.ClearRoundStats();
+		}
 
 		//SetGraph(gMeanPrice, commodity.name, averagePrice);
 		//SetGraph(gUnitsExchanged, commodity.name, goodsExchanged);
@@ -553,7 +558,7 @@ public class AuctionHouse : MonoBehaviour {
 		foreach(var agent in agents)
 		{
 			//count stocks in all stocks of agent
-			foreach(var c in agent.stockPile)
+			foreach(var c in agent.inventory)
 			{
 				stockPile[c.Key] += c.Value.Surplus();
 				var surplus = c.Value.Surplus();
@@ -563,7 +568,7 @@ public class AuctionHouse : MonoBehaviour {
 				}
 				stockList[c.Key].Add(surplus);
 			}
-            cashList[agent.buildables[0]].Add(agent.cash);
+            cashList[agent.outputs[0]].Add(agent.cash);
 			totalCash += agent.cash;
 		}
 		foreach(var stock in stockPile)
@@ -629,7 +634,7 @@ public class AuctionHouse : MonoBehaviour {
 		//accumulate
         foreach (var agent in agents)
         {
-            var commodity = agent.buildables[0];
+            var commodity = agent.outputs[0];
             //totalProfits[commodity] += agent.TaxProfit(taxRate);
             totalProfits[commodity] += agent.GetProfit();
 			numAgents[commodity] ++;
@@ -656,7 +661,6 @@ public class AuctionHouse : MonoBehaviour {
     float defaulted = 0;
 	void EnactBankruptcy()
 	{
-		Debug.Log("enacting bankruptcy!");
         foreach (var agent in agents)
         {
 			if (agent.IsBankrupt())
@@ -681,7 +685,7 @@ public class AuctionHouse : MonoBehaviour {
 		//bin professions
         foreach (var agent in agents)
         {
-			professions[agent.buildables[0]] += 1;
+			professions[agent.outputs[0]] += 1;
         }
 
 		foreach (var entry in professions)

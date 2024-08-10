@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.Assertions;
 
@@ -27,7 +28,7 @@ public class History : Queue<Transaction>
 		max = Max();
 	}
 }
-public class CommodityStock {
+public class inventoryItem {
 	public string commodityName { get; private set; }
 	const float significant = 0.25f;
 	const float sig_imbalance = .33f;
@@ -39,10 +40,12 @@ public class CommodityStock {
     public float last_price = 1;
 	public float wobble = .02f;
 	public float Quantity { get; private set; }
+    public float quantityTradedThisRound = 0;
+    public float costThisRound = 0;
 	public float maxQuantity;
 	public float minPriceBelief;
 	public float maxPriceBelief;
-	public float meanCost; //total cost spent to acquire stock
+	public float meanPriceThisRound; //total cost spent to acquire stock
 	//number of units produced per turn = production * productionRate
 	public float productionRate = 1; //# of assembly lines
 
@@ -51,14 +54,14 @@ public class CommodityStock {
     {
         String ret = header + commodityName + ", stock, " + Quantity + "\n"; 
         ret += header + commodityName + ", max_stock, " + maxQuantity + "\n"; 
-        ret += header + commodityName + ", mean_price, " + meanCost + "\n"; 
+        ret += header + commodityName + ", meanPrice, " + meanPriceThisRound + "\n"; 
         ret += header + commodityName + ", minPriceBelief, " + minPriceBelief + "\n";
         ret += header + commodityName + ", maxPriceBelief, " + maxPriceBelief + "\n";
         ret += header + commodityName + ", sellQuant, " + sellHistory.Peek().quantity + "\n";
         ret += header + commodityName + ", buyQuant, " + buyHistory.Peek().quantity + "\n";
         return ret;
     }
-	public CommodityStock (string _name, float _quantity=1, float _maxQuantity=10, 
+	public inventoryItem (string _name, float _quantity=1, float _maxQuantity=10, 
 					float _meanPrice=1, float _production=1)
 	{
 		buyHistory = new History();
@@ -69,7 +72,7 @@ public class CommodityStock {
         Assert.IsTrue(_meanPrice >= 0); //TODO really should never be 0???
 		minPriceBelief = _meanPrice / 2;
 		maxPriceBelief = _meanPrice * 2;
-		meanCost = _meanPrice;
+		meanPriceThisRound = _meanPrice;
 		buyHistory.Enqueue(new Transaction(1,_meanPrice));
 		sellHistory.Enqueue(new Transaction(1,_meanPrice));
 		productionRate = _production;
@@ -91,15 +94,24 @@ public class CommodityStock {
         //Assert.IsTrue(Quantity >= 0);
         return Quantity;
     }
+    public void ClearRoundStats() 
+    {
+        costThisRound = 0;
+        quantityTradedThisRound = 0;
+    }
 	public float Buy(float quant, float price)
 	{
-        UnityEngine.Debug.Log("buying " + commodityName + " " + quant.ToString("n2") + " for " + price.ToString("c2") + " currently have " + this.Quantity.ToString("n2"));
+        UnityEngine.Debug.Log("buying " + commodityName + " " + quant.ToString("n2") + " for " + price.ToString("c2") + " currently have " + Quantity.ToString("n2"));
 		//update meanCost of units in stock
         Assert.IsTrue(quant > 0);
 
-        var totalCost = meanCost * this.Quantity + price * quant;
-		this.Quantity += quant;
-        this.meanCost = (this.Quantity == 0) ? 0 : totalCost / this.Quantity;
+		Quantity += quant;
+        quantityTradedThisRound += quant;
+        costThisRound += price;
+        meanPriceThisRound = (quantityTradedThisRound == 0) ? 0 : costThisRound / quantityTradedThisRound;
+        var prevMinPriceBelief = minPriceBelief;
+        var prevMaxPriceBelief = maxPriceBelief;
+        last_price = price;
         buyHistory.Enqueue(new Transaction(price, quant));
 		//return adjusted quant;
 		return quant;
@@ -107,16 +119,17 @@ public class CommodityStock {
 	public void Sell(float quant, float price)
 	{
 		//update meanCost of units in stock
-        Assert.IsTrue(this.Quantity > 0);
-        if (quant == 0)
+        Assert.IsTrue(Quantity >= 0);
+        if (quant == 0 || Surplus() == 0)
             return;
-        UnityEngine.Debug.Log("sell quant is " + quant);
+        UnityEngine.Debug.Log("sell quant is " + quant + " and surplus is " + Surplus());
         quant = Mathf.Min(quant, Surplus());
-        UnityEngine.Debug.Log("sell quant is " + quant);
         Assert.IsTrue(quant > 0);
-        var totalCost = meanCost * this.Quantity + price * quant;
-		this.Quantity -= quant;
-        this.meanCost = (this.Quantity == 0) ? 0 : totalCost / this.Quantity;
+		Quantity -= quant;
+        quantityTradedThisRound += quant;
+        costThisRound += price;
+        meanPriceThisRound = (quantityTradedThisRound == 0) ? 0 : costThisRound / quantityTradedThisRound;
+        last_price = price;
         sellHistory.Enqueue(new Transaction(price, quant));
 	}
 	public float GetPrice()
@@ -127,18 +140,18 @@ public class CommodityStock {
 	}
 	void SanePriceBeliefs()
 	{
-
-		minPriceBelief = Mathf.Max(cost, minPriceBelief);
+		//minPriceBelief = Mathf.Max(cost, minPriceBelief); TODO maybe consider this eventually?
 		minPriceBelief = Mathf.Clamp(minPriceBelief, 0.1f, 900f);
 		maxPriceBelief = Mathf.Max(minPriceBelief*1.1f, maxPriceBelief);
 		maxPriceBelief = Mathf.Clamp(maxPriceBelief, 1.1f, 1000f);
         Assert.IsTrue(minPriceBelief < maxPriceBelief);
 	}
 	
-    public void UpdateBuyerPriceBelief(in Trade trade, in Commodity commodity)
+    public void UpdateBuyerPriceBelief(String agentName, in Trade trade, in Commodity commodity)
     {
+        var prevMinPriceBelief = minPriceBelief;
+        var prevMaxPriceBelief = maxPriceBelief;
 		//SanePriceBeliefs();
-        Assert.IsTrue(minPriceBelief < maxPriceBelief);
 
         // implementation following paper
         // TODO consolidate update to once per auction round per agent per commodity 
@@ -187,11 +200,15 @@ public class CommodityStock {
         }
 
         SanePriceBeliefs();
-    }
-public void UpdateSellerPriceBelief(in Trade trade, in Commodity commodity)
-    {
-		//SanePriceBeliefs();
+        UnityEngine.Debug.Log("buyer " + agentName + " stock: " + commodityName + " min price belief: " + prevMinPriceBelief + " -> " + minPriceBelief);
+        UnityEngine.Debug.Log("buyer " + agentName + " stock: " + commodityName + " max price belief: " + prevMaxPriceBelief + " -> " + maxPriceBelief);
         Assert.IsTrue(minPriceBelief < maxPriceBelief);
+    }
+public void UpdateSellerPriceBelief(String agentName, in Trade trade, in Commodity commodity)
+    {
+        var prevMinPriceBelief = minPriceBelief;
+        var prevMaxPriceBelief = maxPriceBelief;
+		//SanePriceBeliefs();
 
 		var meanBeliefPrice = (minPriceBelief + maxPriceBelief) / 2;
 		var deltaMean = meanBeliefPrice - trade.clearingPrice; //TODO or use auction house mean price?
@@ -232,6 +249,9 @@ public void UpdateSellerPriceBelief(in Trade trade, in Commodity commodity)
 
 		SanePriceBeliefs();
 		Assert.IsFalse(float.IsNaN(minPriceBelief));
+        UnityEngine.Debug.Log("seller " + agentName + " stock: " + commodityName + " min price belief: " + prevMinPriceBelief + " -> " + minPriceBelief);
+        UnityEngine.Debug.Log("seller " + agentName + " stock: " + commodityName + " max price belief: " + prevMaxPriceBelief + " -> " + maxPriceBelief);
+        Assert.IsTrue(minPriceBelief < maxPriceBelief);
 	}
 	//TODO change quantity based on historical price ranges & deficit
 	public float Deficit() { 

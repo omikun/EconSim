@@ -15,11 +15,11 @@ public class EconAgent : MonoBehaviour {
 	float maxStock = 1;
 	ESList profits = new ESList();
 	//has a set of commodities in stock
-	public Dictionary<string, CommodityStock> stockPile = new Dictionary<string, CommodityStock>(); //commodities stockpiled
-	Dictionary<string, float> stockPileCost = new Dictionary<string, float>(); //commodities stockpiled
+	public Dictionary<string, inventoryItem> inventory = new Dictionary<string, inventoryItem>(); //commodities stockpiled
+	Dictionary<string, float> perItemCost = new Dictionary<string, float>(); //commodities stockpiled
 
 	//can produce a set of commodities
-	public List<string> buildables { get; private set; }
+	public List<string> outputs { get; private set; }
 	//production has dependencies on commodities->populates stock
 	//production rate is limited by assembly lines (queues/event lists)
 	
@@ -33,8 +33,8 @@ public class EconAgent : MonoBehaviour {
 	public String Stats(String header)
 	{
 		String msg = "";
-		header += uid.ToString() + ", " + buildables[0] + ", "; //profession
-		foreach (var stock in stockPile)
+		header += uid.ToString() + ", " + outputs[0] + ", "; //profession
+		foreach (var stock in inventory)
 		{
 			msg += stock.Value.Stats(header);
 		}
@@ -45,16 +45,16 @@ public class EconAgent : MonoBehaviour {
 	void Start () {
 		cash = 0;
 	}
-	void AddToStockPile(string name, float num, float max, float price, float production)
+	void AddToInventory(string name, float num, float max, float price, float production)
 	{
-		if (stockPile.ContainsKey(name))
+		if (inventory.ContainsKey(name))
 			return;
 
-        stockPile.Add(name, new CommodityStock(name, num, max, price, production));
+        inventory.Add(name, new inventoryItem(name, num, max, price, production));
 
 		//book keeping
 		//Debug.Log(gameObject.name + " adding " + name + " to stockpile");
-		stockPileCost[name] = com[name].price * num;
+		perItemCost[name] = com[name].price * num;
 	}
 	public void Init(float initCash, List<string> b, float initNum=5, float maxstock=10) {
 		uid = uid_idx++;
@@ -65,13 +65,13 @@ public class EconAgent : MonoBehaviour {
 			com = Commodities.Instance.com;
 		//list of commodities self can produce
 		//get initial stockpiles
-		buildables = b;
+		outputs = b;
 		cash = initCash;
 		prevCash = cash;
 		maxStock = maxstock;
-		foreach (var buildable in buildables)
+		foreach (var buildable in outputs)
 		{
-            Debug.Log("New " + gameObject.name + " has " + cash.ToString("c2") + " builds: " + buildable);
+			Debug.Log("New " + gameObject.name + " has " + cash.ToString("c2") + " builds: " + buildable);
 
 			if (!com.ContainsKey(buildable))
 				Debug.Log("commodity not recognized: " + buildable);
@@ -83,9 +83,11 @@ public class EconAgent : MonoBehaviour {
 			{
 				var commodity = dep.Key;
                 //Debug.Log("::" + commodity);
-				AddToStockPile(commodity, initNum, maxStock, com[commodity].price, com[commodity].production);
+				AddToInventory(commodity, initNum, maxStock, com[commodity].price, com[commodity].production);
+				Debug.Log("New " + gameObject.name + " has " + inventory[commodity].Quantity + " " + commodity);
 			}
-			AddToStockPile(buildable, 0, maxStock, com[buildable].price, com[buildable].production);
+			AddToInventory(buildable, 0, maxStock, com[buildable].price, com[buildable].production);
+			Debug.Log("New " + gameObject.name + " has " + inventory[buildable].Quantity + " " + buildable);
 		}
     }
 
@@ -115,27 +117,27 @@ public class EconAgent : MonoBehaviour {
 		float taxConsumed = 0;
 		bool starving = false;
 		#if true
-		if (stockPile.ContainsKey("Food"))
+		if (inventory.ContainsKey("Food"))
 		{
-            var food = stockPile["Food"].Decrease(0.5f);
+            var food = inventory["Food"].Decrease(0.5f);
             starving = food < 0;
 			//starting round will result in negative food
 		}
 		#endif
 		
-		foreach (var entry in stockPile)
+		foreach (var entry in inventory)
 		{
 			entry.Value.Tick();
         }
 
         if (IsBankrupt() || starving == true)
 		{
-			Debug.Log(name + ":" + buildables[0] + " is bankrupt: " + cash.ToString("c2") + " or starving where food=" + stockPile["Food"].Quantity);
+			Debug.Log(name + ":" + outputs[0] + " is bankrupt: " + cash.ToString("c2") + " or starving where food=" + inventory["Food"].Quantity);
 			taxConsumed = ChangeProfession();
 		}
-		foreach (var buildable in buildables)
+		foreach (var buildable in outputs)
 		{
-			stockPile[buildable].cost = GetCostOf(buildable);
+			inventory[buildable].cost = GetCostOf(buildable);
 		}
 		return taxConsumed;
 	}
@@ -143,7 +145,7 @@ public class EconAgent : MonoBehaviour {
 	float ChangeProfession()
 	{
 		string bestGood = Commodities.Instance.GetHottestGood(10);
-		string bestProf = Commodities.Instance.GetMostProfitableProfession(buildables[0], 10);
+		string bestProf = Commodities.Instance.GetMostProfitableProfession(outputs[0], 10);
 
 		string mostDemand = bestProf;
 		if (bestGood != "invalid")
@@ -151,10 +153,10 @@ public class EconAgent : MonoBehaviour {
             mostDemand = bestGood;
 		}
 				
-		Assert.AreEqual(buildables.Count, 1);
-		Debug.Log("changing from " + buildables[0] + " to " + mostDemand);
-		buildables[0] = mostDemand;
-		stockPile.Clear();
+		Assert.AreEqual(outputs.Count, 1);
+		Debug.Log(name + " changing from " + outputs[0] + " to " + mostDemand);
+		outputs[0] = mostDemand;
+		inventory.Clear();
 		List<string> b = new List<string>();
 		b.Add(mostDemand);
 		var initCash = 100f;
@@ -172,29 +174,36 @@ public class EconAgent : MonoBehaviour {
 	{
 	//	stockPile[commodity].quantity += quantity;
 	}
+	public void ClearRoundStats()
+	{
+		foreach( var item in inventory)
+		{
+			item.Value.ClearRoundStats();
+		}
+	}
 	public float Buy(string commodity, float quantity, float price)
 	{
 	Debug.Log(name + " has " + cash.ToString("c2") + " want to buy " + quantity.ToString("n2") + " " + commodity + " for " + price.ToString("c2"));
-		var boughtQuantity = stockPile[commodity].Buy(quantity, price);
+		var boughtQuantity = inventory[commodity].Buy(quantity, price);
 	Debug.Log(name + " has " + cash.ToString("c2") + " want to buy " + quantity.ToString("n2") + " " + commodity + " for " + price.ToString("c2") + " bought " + boughtQuantity.ToString("n2"));
 		cash -= price * boughtQuantity;
 		return boughtQuantity;
 	}
 	public void Sell(string commodity, float quantity, float price)
 	{
-		Assert.IsTrue(stockPile[commodity].Quantity >= 0);
-		stockPile[commodity].Sell(quantity, price);
-		Assert.IsTrue(stockPile[commodity].Quantity >= 0);
+		Assert.IsTrue(inventory[commodity].Quantity >= 0);
+		inventory[commodity].Sell(quantity, price);
+		Assert.IsTrue(inventory[commodity].Quantity >= 0);
 		//		Debug.Log(name + " has " + cash.ToString("c2") + " selling " + quantity.ToString("n2") +" " +  commodity + " for " + price.ToString("c2"));
 		cash += price * quantity;
 	}
 	public void UpdateSellerPriceBelief(in Trade trade, in Commodity commodity) 
 	{
-		stockPile[commodity.name].UpdateSellerPriceBelief(in trade, in commodity);
+		inventory[commodity.name].UpdateSellerPriceBelief(name, in trade, in commodity);
 	}
 	public void UpdateBuyerPriceBelief(in Trade trade, in Commodity commodity) 
 	{
-		stockPile[commodity.name].UpdateBuyerPriceBelief(in trade, in commodity);
+		inventory[commodity.name].UpdateBuyerPriceBelief(name, in trade, in commodity);
 	}
 
 	int historyCount = 10;
@@ -202,14 +211,14 @@ public class EconAgent : MonoBehaviour {
     float FindSellCount(string c)
 	{
 		var avgPrice = com[c].GetAvgPrice(historyCount);
-		var lowestPrice = stockPile[c].sellHistory.Min();
-		var highestPrice = stockPile[c].sellHistory.Max();
+		var lowestPrice = inventory[c].sellHistory.Min();
+		var highestPrice = inventory[c].sellHistory.Max();
 		//todo SANITY check
 		float favorability = Mathf.InverseLerp(lowestPrice, highestPrice, avgPrice);
 		favorability = Mathf.Clamp(favorability, 0, 1);
 		//float numAsks = (favorability) * stockPile[c].Surplus();
 		//TODO only do this for self consumables
-		float numAsks = Mathf.Max(0, stockPile[c].Surplus()-1); //make sure to leave some to eat if food
+		float numAsks = Mathf.Max(0, inventory[c].Surplus()); //make sure to leave some to eat if food
 		//why max of 1??? numAsks = Mathf.Max(1, numAsks);
 
 //		Debug.Log("avgPrice: " + avgPrice.ToString("c2") + " favoribility: " + favorability + " numAsks: " + numAsks.ToString("0.00"));
@@ -218,13 +227,13 @@ public class EconAgent : MonoBehaviour {
 	float FindBuyCount(string c)
 	{
 		var avgPrice = com[c].GetAvgPrice(historyCount);
-		var lowestPrice = stockPile[c].buyHistory.Min();
-		var highestPrice = stockPile[c].buyHistory.Max();
+		var lowestPrice = inventory[c].buyHistory.Min();
+		var highestPrice = inventory[c].buyHistory.Max();
 		//todo SANITY check
 		float favoribility = Mathf.InverseLerp(lowestPrice, highestPrice, avgPrice);
 		favoribility = Mathf.Clamp(favoribility, 0, 1);
-		//float numBids = (1 - favorability) * stockPile[c].Deficit();
-		float numBids = stockPile[c].Deficit();
+		//TODO float numBids = (1 - favorability) * stockPile[c].Deficit();
+		float numBids = inventory[c].Deficit();
 		//WHY??? 
 		//TODO find prices of all dependent commodities, then get relative importance, and split numBids on all commodities proportional to value (num needed/price)
 		//numBids = Mathf.Max(1, numBids);
@@ -236,24 +245,25 @@ public class EconAgent : MonoBehaviour {
 	public TradeSubmission Consume(Dictionary<string, Commodity> com) {
         var bids = new TradeSubmission();
         //replenish depended commodities
-        foreach (var stock in stockPile)
+        foreach (var stock in inventory)
 		{
 			//don't buy agent output
 			// TODO speculate and buy if it's cheaper than historical average 
 			// (for 1 or more commodities)
-			if (buildables.Contains(stock.Key)) continue;
+			if (outputs.Contains(stock.Key)) continue;
 
 			var numBids = FindBuyCount(stock.Key);
 			if (numBids > 0)
 			{
 				//maybe buy less if expensive?
 				float buyPrice = stock.Value.GetPrice();
+                float maxPrice = Mathf.Min(cash / numBids, stock.Value.GetPrice());
 				if (buyPrice > 1000)
 				{
 					Debug.Log(stock.Key + "buyPrice: " + buyPrice.ToString("c2") + " : " + stock.Value.minPriceBelief.ToString("n2") + "<" + stock.Value.maxPriceBelief.ToString("n2"));
 					Assert.IsFalse(buyPrice > 1000);
 				}
-				Debug.Log(this.name + " buying " + numBids.ToString("n2") + stock.Key + " for " + buyPrice.ToString("c2") + " each");
+				Debug.Log(this.name + " wants to buy " + numBids.ToString("n2") + stock.Key + " for " + buyPrice.ToString("c2") + " each");
 				Assert.IsFalse(numBids < 0);
 				bids.Add(stock.Key, new Trade(stock.Value.commodityName, buyPrice, numBids, this));
 			}
@@ -267,9 +277,9 @@ public class EconAgent : MonoBehaviour {
 		//build as many as one can TODO don't build things that won't earn a profit
 		float producedThisRound = 0;
 		float revenueThisRound = 0;
-		foreach (var buildable in buildables)
+		foreach (var buildable in outputs)
 		{
-			Debug.Log(name + " producing " + buildable + " currently in stock " + stockPile[buildable].Quantity);
+			Debug.Log(name + " producing " + buildable + " currently in stock " + inventory[buildable].Quantity);
 			//get list of dependent commodities
 			float numProduced = float.MaxValue; //amt agent can produce for commodity buildable
 			string sStock = ", has in stock";
@@ -279,15 +289,15 @@ public class EconAgent : MonoBehaviour {
 			{
 				//get num commodities you can build
 				var numNeeded = dep.Value;
-				var numAvail = stockPile[dep.Key].Quantity;
+				var numAvail = inventory[dep.Key].Quantity;
 				numProduced = Mathf.Min(numProduced, numAvail/numNeeded);
 				Debug.Log(name + "can produce " + numProduced + " w/" + numAvail + "/" + numNeeded + dep.Key );
 			}
 			//can only build fixed rate at a time
 			//can't produce more than what's in stock
-			var upperBound = Mathf.Min(stockPile[buildable].productionRate, stockPile[buildable].Deficit());
+			var upperBound = Mathf.Min(inventory[buildable].productionRate, inventory[buildable].Deficit());
 			numProduced = Mathf.Clamp(numProduced, 0, upperBound);
-			Debug.Log(name + " upperbound: " + upperBound + " production rate: " + stockPile[buildable].productionRate + " room: " + stockPile[buildable].Deficit());
+			Debug.Log(name + " upperbound: " + upperBound + " production rate: " + inventory[buildable].productionRate + " room: " + inventory[buildable].Deficit());
 			numProduced = Mathf.Floor(numProduced);
 			Debug.Log(name + " upperbound: " + upperBound + " can produce: " + numProduced);
 			if (numProduced == 0)
@@ -299,22 +309,22 @@ public class EconAgent : MonoBehaviour {
 			var buildable_cost = 0f;
 			foreach (var dep in com[buildable].dep)
 			{
-				var stock = stockPile[dep.Key].Quantity;
+				var stock = inventory[dep.Key].Quantity;
 				var numUsed = dep.Value * numProduced;
 				numUsed = Mathf.Clamp(numUsed, 0, stock);
-				buildable_cost += numUsed * stockPile[dep.Key].meanCost;
-                stockPile[dep.Key].Decrease(numUsed);
+				buildable_cost += numUsed * inventory[dep.Key].meanPriceThisRound;
+                inventory[dep.Key].Decrease(numUsed);
 			}
 			// WTF is production?? numProduced *= stockPile[buildable].production;
 			//numProduced = Mathf.Max(numProduced, 0);
-			stockPile[buildable].Increase(numProduced);
+			inventory[buildable].Increase(numProduced);
 			Assert.IsFalse(float.IsNaN(numProduced));
 			Assert.IsTrue(numProduced >= 0);
-			Assert.IsTrue(stockPile[buildable].Quantity >= 0);
+			Assert.IsTrue(inventory[buildable].Quantity >= 0);
 
-            var buildStock = stockPile[buildable];
+            var buildStock = inventory[buildable];
             float sellQuantity = FindSellCount(buildable);
-            float sellPrice = Mathf.Max(buildable_cost, buildStock.GetPrice());
+            float sellPrice = buildStock.GetPrice(); 
 			//HACK, so economy is always flowing somewhere
 			//numProduced = Mathf.Max(1, numProduced);
 			//sellPrice = Mathf.Max(1, sellPrice);
@@ -322,7 +332,7 @@ public class EconAgent : MonoBehaviour {
 
 			if (sellQuantity > 0 && sellPrice > 0)
 			{
-				Debug.Log(name + " has " + cash.ToString("c2") + " made " + numProduced.ToString("n2") + " " + buildable + " selling " + sellQuantity + " for " + sellPrice.ToString("c2") + sStock + stockPile[buildable].Surplus());
+				Debug.Log(name + " has " + cash.ToString("c2") + " made " + numProduced.ToString("n2") + " " + buildable + " wants to sell for " + sellQuantity + " for " + sellPrice.ToString("c2") + sStock + inventory[buildable].Surplus());
 				asks.Add(buildable, new Trade(buildable, sellPrice, sellQuantity, this));
 			}
 
@@ -337,7 +347,7 @@ public class EconAgent : MonoBehaviour {
 #endif
 
 		//alternative build: only make what is most profitable...?
-		foreach (var buildable in buildables)
+		foreach (var buildable in outputs)
 		{
 			//cost to make c = price of dependents + overhead (labor, other)
 			//profit = price of c - cost of c
@@ -360,7 +370,7 @@ public class EconAgent : MonoBehaviour {
 			var depCommodity = dep.Key;
 			var numDep = dep.Value;
 			// TODO take average of stock pile history instead of last price
-			var depCost = stockPile[depCommodity].buyHistory.Last();
+			var depCost = inventory[depCommodity].buyHistory.Last();
 			cost += numDep * depCost.price;
 		}
 		return cost;
