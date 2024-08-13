@@ -116,7 +116,7 @@ public class EconAgent : MonoBehaviour {
 		Debug.Log("agents ticking!");
 		float taxConsumed = 0;
 		bool starving = false;
-		#if true
+		#if false
 		if (inventory.ContainsKey("Food"))
 		{
             var food = inventory["Food"].Decrease(0.5f);
@@ -159,7 +159,7 @@ public class EconAgent : MonoBehaviour {
 		Assert.AreEqual(outputs.Count, 1);
 		Debug.Log(name + " changing from " + outputs[0] + " to " + mostDemand);
 		outputs[0] = mostDemand;
-		inventory.Clear();
+		//inventory.Clear();
 		List<string> b = new List<string>();
 		b.Add(mostDemand);
 		var initCash = 100f;
