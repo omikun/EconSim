@@ -38,8 +38,8 @@ public class EconAgent : MonoBehaviour {
 		{
 			msg += stock.Value.Stats(header);
 		}
-		msg += header + "cash, stock, " + cash + "\n";
-		msg += header + "profit, stock, " + (cash - prevCash) + "\n";
+		msg += header + "cash, stock, " + cash + ", n/a\n";
+		msg += header + "profit, stock, " + (cash - prevCash) + ", n/a\n";
 		return msg; 
 	}
 	void Start () {
@@ -151,6 +151,9 @@ public class EconAgent : MonoBehaviour {
 		if (bestGood != "invalid")
         {
             mostDemand = bestGood;
+		} else {
+			//no good profession?? probably should assert
+			return 0;
 		}
 				
 		Assert.AreEqual(outputs.Count, 1);

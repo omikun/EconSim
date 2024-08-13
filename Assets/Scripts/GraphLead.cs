@@ -52,7 +52,6 @@ public class GraphLead : MonoBehaviour {
 	}
 	// Use this for initialization
 	void Start () {
-		
 		//axis labels (text)
 		tYmin = transform.Find("ymin").GetComponent<Text>();
 		tXmin = transform.Find("xmin").GetComponent<Text>();

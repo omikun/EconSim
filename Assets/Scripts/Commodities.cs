@@ -47,6 +47,10 @@ public class ESList : List<float>
 		}
         var skip = Mathf.Min(base.Count-1, Mathf.Max(0, base.Count - history));
 		var end = Mathf.Min(base.Count-1, history);
+		if (end == skip)
+		{
+			return 0;
+		}
         var newList = base.GetRange(skip, end);
         avg = newList.Average();
         return avg;

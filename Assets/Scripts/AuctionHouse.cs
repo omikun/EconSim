@@ -146,6 +146,7 @@ public class AuctionHouse : MonoBehaviour {
 		lastTick = 0;
 		int count = 0;
 		var com = Commodities.Instance.com;
+		#if false
         gMeanPrice = new List<GraphMe>(com.Count);
         gUnitsExchanged = new List<GraphMe>(com.Count);
         gProfessions = new List<GraphMe>(com.Count);
@@ -169,8 +170,6 @@ public class AuctionHouse : MonoBehaviour {
 			AddLine(i, gCash, gc);
 			AddLine(i, gCapital, gtc);
 		}
-		irs = 0; //GetComponent<EconAgent>();
-		#if false
 			gMeanPrice.Add(gmp.transform.Find("line"+i).GetComponent<GraphMe>());
 			gUnitsExchanged.Add(gue.transform.Find("line"+i).GetComponent<GraphMe>());
 			gProfessions.Add(gp.transform.Find("line"+i).GetComponent<GraphMe>());
@@ -180,6 +179,7 @@ public class AuctionHouse : MonoBehaviour {
 		}
 		#endif
 
+		irs = 0; //GetComponent<EconAgent>();
 		var prefab = Resources.Load("Agent");
 		for (int i = transform.childCount; i < numAgents; i++)
 		{
@@ -261,16 +261,16 @@ public class AuctionHouse : MonoBehaviour {
 		buildables.Add(type);
 		var _initStock = UnityEngine.Random.Range(initStock/2, initStock*2);
 		_initStock = Mathf.Floor(_initStock);
-		//_initStock = 10;
+		_initStock = 10;
 		var _maxStock = Mathf.Max(initStock, maxStock);
 
         agent.Init(initCash, buildables, _initStock, _maxStock);
 	}
 	
 	// Update is called once per frame
-	int roundNumber = 0;
 	void FixedUpdate () {
-		if (roundNumber > 100)
+		var com = Commodities.Instance.com;
+		if (Commodities.Instance.round > 100)
 		{
 			CloseWriteFile();
 #if UNITY_EDITOR
@@ -285,11 +285,12 @@ public class AuctionHouse : MonoBehaviour {
 		//wait 1s before update
 		if (Time.time - lastTick > tickInterval)
 		{
-			Debug.Log("v1.3 Round: " + roundNumber++);
+			Debug.Log("v1.3 Round: " + Commodities.Instance.round);
 			//sampler.BeginSample("AuctionHouseTick");
             Tick();
 			//sampler.EndSample();
 			lastTick = Time.time;
+			Commodities.Instance.nextRound();
 		}
 	}
 	void Tick()
@@ -317,17 +318,12 @@ public class AuctionHouse : MonoBehaviour {
 			Debug.Log(entry.Key + ": goods: " + entry.Value.trades[^1] + " at price: " + entry.Value.prices[^1]);
 		}
 		
-		Debug.Log("post resolve prices");
 
-		//PrintToFile("round, " + roundNumber + ", commodity, " + commodity + ", price, " + averagePrice);
+		//PrintToFile("round, " + Commodities.Instance.round + ", commodity, " + commodity + ", price, " + averagePrice);
 		AgentsStats();
-		Debug.Log("post agent stats");
 		CountProfits();
-		Debug.Log("post count profits");
 		CountProfessions();
-		Debug.Log("post count professions");
 		CountStockPileAndCash();
-		Debug.Log("post count stock pile and cash");
 		//SetGraph(gCapital, "Debt", defaulted);
 		
 		//PrintTrackBids();
@@ -336,9 +332,9 @@ public class AuctionHouse : MonoBehaviour {
 
 	void PrintAuctionStats(String c, float buy, float sell)
 	{
-		String header = roundNumber + ", auction, none, " + c + ", ";
-		String msg = header + "bid, " + buy + "\n";
-		msg += header + "ask, " + sell + "\n";
+		String header = Commodities.Instance.round + ", auction, none, " + c + ", ";
+		String msg = header + "bid, " + buy + ", n/a\n";
+		msg += header + "ask, " + sell + ", n/a\n";
 		PrintToFile(msg);
 	}
 	void ResolveOffers(Commodity commodity)
@@ -476,7 +472,7 @@ public class AuctionHouse : MonoBehaviour {
 			Debug.Log(commodity.name + ": average price is nan");
 			Assert.IsFalse(float.IsNaN(averagePrice));
 		}
-		Debug.Log(roundNumber + ": " + commodity.name + ": " + goodsExchanged + " traded at average price of " + averagePrice);
+		Debug.Log(Commodities.Instance.round + ": " + commodity.name + ": " + goodsExchanged + " traded at average price of " + averagePrice);
 		commodity.trades.Add(goodsExchanged);
 		commodity.prices.Add(averagePrice);
 		commodity.Update(averagePrice, agentDemandRatio);
@@ -522,7 +518,7 @@ public class AuctionHouse : MonoBehaviour {
 
 	void OpenFileForWrite() {
 		sw = new StreamWriter("log2.csv");
-		String header_row = "round, agent, produces, commodity_stock, type, cs_amount\n";
+		String header_row = "round, agent, produces, commodity_stock, type, cs_amount, reason\n";
 		PrintToFile(header_row);
 	}
 	void PrintToFile(String msg) {
@@ -534,7 +530,7 @@ public class AuctionHouse : MonoBehaviour {
 	}
 
 	void AgentsStats() {
-		String header = roundNumber + ", ";
+		String header = Commodities.Instance.round + ", ";
 		String msg = "";
 		foreach (var agent in agents)
 		{

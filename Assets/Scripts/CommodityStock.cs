@@ -48,17 +48,23 @@ public class inventoryItem {
 	public float meanPriceThisRound; //total cost spent to acquire stock
 	//number of units produced per turn = production * productionRate
 	public float productionRate = 1; //# of assembly lines
+    List<string> debug_msgs = new List<string>();
 
 
     public String Stats(String header) 
     {
-        String ret = header + commodityName + ", stock, " + Quantity + "\n"; 
-        ret += header + commodityName + ", max_stock, " + maxQuantity + "\n"; 
-        ret += header + commodityName + ", meanPrice, " + meanPriceThisRound + "\n"; 
-        ret += header + commodityName + ", minPriceBelief, " + minPriceBelief + "\n";
-        ret += header + commodityName + ", maxPriceBelief, " + maxPriceBelief + "\n";
-        ret += header + commodityName + ", sellQuant, " + sellHistory.Peek().quantity + "\n";
-        ret += header + commodityName + ", buyQuant, " + buyHistory.Peek().quantity + "\n";
+        String ret = header + commodityName + ", stock, " + Quantity + ",n/a\n"; 
+        ret += header + commodityName + ", max_stock, " + maxQuantity + ",n/a\n"; 
+        ret += header + commodityName + ", meanPrice, " + meanPriceThisRound + ",n/a\n"; 
+        ret += header + commodityName + ", sellQuant, " + sellHistory.Peek().quantity + ",n/a\n";
+        ret += header + commodityName + ", buyQuant, " + buyHistory.Peek().quantity + ",n/a\n";
+        foreach( var msg in debug_msgs )
+        {
+            //ret += header + commodityName + ", " + msg + "\n";
+            ret += header + commodityName + ", minPriceBelief, " + minPriceBelief + ", " + msg + "\n";
+            ret += header + commodityName + ", maxPriceBelief, " + maxPriceBelief + ", " + msg + "\n";
+        }
+        debug_msgs.Clear();
         return ret;
     }
 	public inventoryItem (string _name, float _quantity=1, float _maxQuantity=10, 
@@ -164,6 +170,7 @@ public class inventoryItem {
         var quantityBought = trade.offerQuantity - trade.remainingQuantity;
         var historicalMeanPrice = commodity.prices.LastAverage(10);
         Assert.IsTrue(historicalMeanPrice >= 0);
+        string reason_msg = "none";
 
         if ( quantityBought * 2 > trade.offerQuantity ) //at least 50% offer filled
         {
@@ -171,15 +178,18 @@ public class inventoryItem {
             var range = Mathf.Abs(maxPriceBelief - minPriceBelief);
             maxPriceBelief -= range / 20;
             minPriceBelief += range / 20;
+            reason_msg = "buy>.5";
         }
         else 
         {
             maxPriceBelief *= 1.1f;
+            reason_msg = "buy<=.5";
         }
         if ( commodity.bids[^1] > commodity.asks[^1] && Quantity < maxQuantity/4 ) //more bids than asks and inventory < 1/4 max
         {
             maxPriceBelief += deltaMean;
             minPriceBelief += deltaMean;
+            reason_msg += "_supply<demand_and_low_inv";
         }
         else if ( trade.price > trade.clearingPrice || commodity.bids[^1] < commodity.asks[^1])   //bid price > trade price
                             // or (supply > demand and offer > historical mean)
@@ -187,22 +197,26 @@ public class inventoryItem {
             var overbid = Mathf.Abs(trade.price - trade.clearingPrice); //bid price - trade price
             maxPriceBelief -= overbid * 1.1f;
             minPriceBelief -= overbid * 1.1f;
+            reason_msg += "_supply>demand_and_overbid";
         }
         else if (commodity.bids[^1] > commodity.asks[^1])     //demand > supply
         {
             //translate belief range up 1/5th of historical mean price
             maxPriceBelief += historicalMeanPrice/5;
             minPriceBelief += historicalMeanPrice/5;
+            reason_msg += "_supply<demand";
         } else {
             //translate belief range down 1/5th of historical mean price
             maxPriceBelief -= historicalMeanPrice/5;
             minPriceBelief -= historicalMeanPrice/5;
+            reason_msg += "_supply>demand";
         }
 
         SanePriceBeliefs();
         UnityEngine.Debug.Log("buyer " + agentName + " stock: " + commodityName + " min price belief: " + prevMinPriceBelief + " -> " + minPriceBelief);
         UnityEngine.Debug.Log("buyer " + agentName + " stock: " + commodityName + " max price belief: " + prevMaxPriceBelief + " -> " + maxPriceBelief);
         Assert.IsTrue(minPriceBelief < maxPriceBelief);
+        debug_msgs.Add(reason_msg);
     }
 public void UpdateSellerPriceBelief(String agentName, in Trade trade, in Commodity commodity)
     {
@@ -218,31 +232,38 @@ public void UpdateSellerPriceBelief(String agentName, in Trade trade, in Commodi
         var offer_price = trade.price;
         var weight = quantitySold / trade.offerQuantity; //quantitySold / quantityAsked
         var displacement = weight * meanBeliefPrice;
+
+        string reason_msg = "none";
         if (weight == 0)
         {
             maxPriceBelief -= displacement / 6;
             minPriceBelief -= displacement / 6;
+            reason_msg = "seller_sold_none";
         }
         else if (market_share < .75f)
         {
             maxPriceBelief -= displacement / 7;
             minPriceBelief -= displacement / 7;
+            reason_msg = "seller_market_share_<.75";
         }
         else if (offer_price < trade.clearingPrice)
         {
-            var overbid = offer_price - trade.clearingPrice;
-            maxPriceBelief += overbid * 1.2f;
-            minPriceBelief += overbid * 1.2f;
+            var underbid = trade.clearingPrice - offer_price;
+            maxPriceBelief += underbid * 1.2f;
+            minPriceBelief += underbid * 1.2f;
+            reason_msg = "seller_under_bid";
         }
         else if (commodity.bids[^1] > commodity.asks[^1])     //demand > supply
         {
             //translate belief range up 1/5th of historical mean price
             maxPriceBelief += historicalMeanPrice/5;
             minPriceBelief += historicalMeanPrice/5;
+            reason_msg = "seller_demand>supply";
         } else {
             //translate belief range down 1/5th of historical mean price
             maxPriceBelief -= historicalMeanPrice/5;
             minPriceBelief -= historicalMeanPrice/5;
+            reason_msg = "seller_demand<=supply";
         }
 		
         //ensure buildable price at least cost of input commodities
@@ -252,6 +273,7 @@ public void UpdateSellerPriceBelief(String agentName, in Trade trade, in Commodi
         UnityEngine.Debug.Log("seller " + agentName + " stock: " + commodityName + " min price belief: " + prevMinPriceBelief + " -> " + minPriceBelief);
         UnityEngine.Debug.Log("seller " + agentName + " stock: " + commodityName + " max price belief: " + prevMaxPriceBelief + " -> " + maxPriceBelief);
         Assert.IsTrue(minPriceBelief < maxPriceBelief);
+        debug_msgs.Add(reason_msg);
 	}
 	//TODO change quantity based on historical price ranges & deficit
 	public float Deficit() { 
