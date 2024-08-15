@@ -113,8 +113,15 @@ public class TradeTable : Dictionary<string, Trades>
 }
 public class AuctionHouse : MonoBehaviour {
     public float tickInterval = .001f;
-    public int numAgents = 100;
+	public int maxRounds = 10;
+    public const int numAgents = 100;
+	public int numFarmers = 10;
+	public int numLoggers = 10;
+	public int numMiners = 10;
+	public int numRefiners = 10;
+	public int numSmiths = 10;
 	public float initCash = 100;
+	public bool simpleInitStock = false;
 	public float initStock = 10;
 	public float maxStock = 20;
 	List<EconAgent> agents = new List<EconAgent>();
@@ -188,6 +195,17 @@ public class AuctionHouse : MonoBehaviour {
 			go.name = "agent" + i.ToString();
 		}
 		/* initialize agents */
+		int index = numFarmers;
+		int farmerIndex = index;
+		index += numLoggers;
+		int loggerIndex = index;
+		index += numMiners;
+		int minerIndex = index;
+		index += numRefiners;
+		int refinerIndex = index;
+		index += numSmiths;
+		int smithIndex = index;
+		Assert.IsTrue(numAgents >= index);
 		foreach (Transform tChild in transform)
 		{
 			GameObject child = tChild.gameObject;
@@ -197,13 +215,11 @@ public class AuctionHouse : MonoBehaviour {
 			int numPerType = 2; //transform.childCount / 5;
 			int typeNum = 1;
 
-			if (count < 3) 		type = "Food";
-			else if (count < 4) 	type = "Wood";  //woodcutter
-#if false
-			else if (count < numPerType*3) 	type = "Ore";	//miner
-			else if (count < numPerType*4) 	type = "Metal";	//refiner
-			else if (count < numPerType*5) 	type = "Tool";	//blacksmith
-#endif
+			if (count < farmerIndex) 		type = "Food";
+			else if (count < loggerIndex) 	type = "Wood";  //woodcutter
+			else if (count < minerIndex) 	type = "Ore";	//miner
+			else if (count < refinerIndex) 	type = "Metal";	//refiner
+			else if (count < smithIndex) 	type = "Tool";	//blacksmith
 
 			Debug.Log("agent type: " + type);
 			if (type == "invalid")
@@ -261,7 +277,10 @@ public class AuctionHouse : MonoBehaviour {
 		buildables.Add(type);
 		var _initStock = UnityEngine.Random.Range(initStock/2, initStock*2);
 		_initStock = Mathf.Floor(_initStock);
-		_initStock = 10;
+		if (simpleInitStock)
+		{
+			_initStock = initStock;
+		}
 		var _maxStock = Mathf.Max(initStock, maxStock);
 
         agent.Init(initCash, buildables, _initStock, _maxStock);
@@ -269,7 +288,7 @@ public class AuctionHouse : MonoBehaviour {
 	
 	// Update is called once per frame
 	void FixedUpdate () {
-		if (Commodities.Instance.round > 100)
+		if (Commodities.Instance.round > maxRounds)
 		{
 			CloseWriteFile();
 #if UNITY_EDITOR
@@ -396,11 +415,11 @@ public class AuctionHouse : MonoBehaviour {
 			var clearingPrice = (bid.price + ask.price) / 2;
 			bid.clearingPrice = clearingPrice;
 			ask.clearingPrice = clearingPrice;
-			Assert.IsTrue(clearingPrice > 0);
-			if (clearingPrice < 0 || clearingPrice > 1000)
+			if (clearingPrice <= 0)
 			{
-				Debug.Log(commodity.name + " clearingPrice: " + clearingPrice + " ask: " + ask.price + " bid: " + bid.price);
+				Debug.Log(Commodities.Instance.round + " " + commodity.name + " asker: " + ask.agent.name + " asking price: " + ask.price + "bidder: " + bid.agent.name + " bidding price: " + bid.price + " clearingPrice: " + clearingPrice);
 			}
+			Assert.IsTrue(clearingPrice > 0);
 			//go to next ask/bid if fullfilled
 			// DEBUG this should not be necessary!?
 			if (ask.remainingQuantity == 0)
@@ -516,7 +535,7 @@ public class AuctionHouse : MonoBehaviour {
 	}
 
 	void OpenFileForWrite() {
-		sw = new StreamWriter("log2.csv");
+		sw = new StreamWriter("log.csv");
 		String header_row = "round, agent, produces, inventory_items, type, amount, reason\n";
 		PrintToFile(header_row);
 	}

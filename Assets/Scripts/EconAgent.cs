@@ -14,6 +14,9 @@ public class EconAgent : MonoBehaviour {
 	float prevCash = 0;
 	float maxStock = 1;
 	bool starvation = false;
+	bool simpleTradeAmountDet = false;
+	bool onlyBuyWhatsAffordable = false;
+	bool foodConsumption = false;
 	ESList profits = new ESList();
 	//has a set of commodities in stock
 	public Dictionary<string, InventoryItem> inventory = new Dictionary<string, InventoryItem>(); //commodities stockpiled
@@ -60,6 +63,9 @@ public class EconAgent : MonoBehaviour {
 	public void Init(float initCash, List<string> b, float initNum=5, float maxstock=10) {
 		uid = uid_idx++;
 		starvation = Commodities.Instance.starvation;
+		simpleTradeAmountDet = Commodities.Instance.simpleTradeAmountDet;
+		foodConsumption = Commodities.Instance.foodConsumption;
+		onlyBuyWhatsAffordable = Commodities.Instance.onlyBuyWhatsAffordable;
 		Reinit(initCash, b, initNum, maxstock);
 	}
 	public void Reinit(float initCash, List<string> b, float initNum=5, float maxstock=10) {
@@ -119,7 +125,7 @@ public class EconAgent : MonoBehaviour {
 		float taxConsumed = 0;
 
 		bool starving = false;
-		if (inventory.ContainsKey("Food"))
+		if (foodConsumption && inventory.ContainsKey("Food"))
 		{
             var food = inventory["Food"].Decrease(0.5f);
             starving = food < 0;
@@ -241,7 +247,10 @@ public class EconAgent : MonoBehaviour {
 		//TODO only do this for self consumables
 		numAsks = Mathf.Max(0, inventory[c].Surplus()); //make sure to leave some to eat if food
 		numAsks = Mathf.Floor(numAsks);
-		Debug.Log("avgPrice: " + avgPrice.ToString("c2") + " favorability: " + favorability + " numBids: " + numAsks.ToString("n2") + " highestPrice: " + highestPrice + ", lowestPrice: " + lowestPrice);
+		if (simpleTradeAmountDet) {
+			numAsks = inventory[c].Surplus();
+		}
+		Debug.Log("avgPrice: " + avgPrice.ToString("c2") + " favorability: " + favorability + " numAsks: " + numAsks.ToString("n2") + " highestPrice: " + highestPrice + ", lowestPrice: " + lowestPrice);
 		return numAsks;
 	}
 	float FindBuyCount(string c)
@@ -258,6 +267,9 @@ public class EconAgent : MonoBehaviour {
 		//float favorability = FindTradeFavorability(c);
 		float numBids = (1 - favorability) * inventory[c].Deficit();
 		numBids = Mathf.Floor(numBids);
+		if (simpleTradeAmountDet) {
+			numBids = inventory[c].Deficit();
+		}
 		
 		Debug.Log("avgPrice: " + avgPrice.ToString("c2") + " favorability: " + (1-favorability) + " numBids: " + numBids.ToString("n2") + " highestPrice: " + highestPrice + ", lowestPrice: " + lowestPrice);
 		return numBids;
@@ -273,12 +285,16 @@ public class EconAgent : MonoBehaviour {
 			if (outputs.Contains(stock.Key)) continue;
 
 			var numBids = FindBuyCount(stock.Key);
-			if (numBids > 0)
+			if (numBids > 0 && cash > 0)
 			{
 				//maybe buy less if expensive?
 				float buyPrice = stock.Value.GetPrice();
-                float maxPrice = Mathf.Min(cash / numBids, stock.Value.GetPrice());
-				buyPrice = Mathf.Min(buyPrice, maxPrice);
+				if (onlyBuyWhatsAffordable)
+				{
+					float maxPrice = Mathf.Min(cash / numBids, stock.Value.GetPrice());
+					buyPrice = Mathf.Min(buyPrice, maxPrice);
+				}
+				Assert.IsTrue(buyPrice > 0);
 				if (buyPrice > 1000)
 				{
 					Debug.Log(stock.Key + "buyPrice: " + buyPrice.ToString("c2") + " : " + stock.Value.minPriceBelief.ToString("n2") + "<" + stock.Value.maxPriceBelief.ToString("n2"));

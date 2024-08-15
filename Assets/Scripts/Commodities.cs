@@ -132,7 +132,14 @@ public class Commodities : MonoBehaviour
 
 	public Dictionary<string, Commodity> com { get; private set; }
 	public int round { get; private set; }
-	public bool starvation { get; private set; }
+	public bool starvation = false;
+	public bool simpleTradeAmountDet = false;
+	public bool onlyBuyWhatsAffordable = false;
+	public bool foodConsumption = false;
+	public float numWoodToFood = 1f;
+	public float foodProductionRate = 2;
+	public float numFoodToWood = 1f;
+	public float woodProductionRate = 3;
 	
 	public void nextRound()
 	{
@@ -238,12 +245,12 @@ public class Commodities : MonoBehaviour
 		Debug.Log("Initializing commodities");
 #if true
 		Dependency foodDep = new Dependency();
-		foodDep.Add("Wood", 1);
-		Add("Food", 2, foodDep);
+		foodDep.Add("Wood", numWoodToFood);
+		Add("Food", foodProductionRate, foodDep);
 
 		Dependency woodDep = new Dependency();
-		woodDep.Add("Food", 1);
-		Add("Wood", 3, woodDep);
+		woodDep.Add("Food", numFoodToWood);
+		Add("Wood", woodProductionRate, woodDep);
 #elif false
 		//replicate paper
 		Dependency foodDep = new Dependency();
