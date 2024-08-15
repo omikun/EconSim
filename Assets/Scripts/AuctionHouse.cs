@@ -142,7 +142,7 @@ public class AuctionHouse : MonoBehaviour {
 		Debug.unityLogger.logEnabled=EnableDebug;
 		OpenFileForWrite();
 
-		UnityEngine.Random.seed = 42;
+		UnityEngine.Random.InitState(42);
 		lastTick = 0;
 		int count = 0;
 		var com = Commodities.Instance.com;
@@ -269,7 +269,6 @@ public class AuctionHouse : MonoBehaviour {
 	
 	// Update is called once per frame
 	void FixedUpdate () {
-		var com = Commodities.Instance.com;
 		if (Commodities.Instance.round > 100)
 		{
 			CloseWriteFile();
@@ -418,7 +417,7 @@ public class AuctionHouse : MonoBehaviour {
 				watchdog_timer = 0;
 				continue;
 			}
-			//trade
+			// =========== trade ============== 
 			var tradeQuantity = Mathf.Min(bid.remainingQuantity, ask.remainingQuantity);
 			Debug.Log(commodity.name + " asked: " + ask.remainingQuantity + " bided: " + bid.remainingQuantity);
 			Assert.IsTrue(tradeQuantity > 0);
@@ -518,7 +517,7 @@ public class AuctionHouse : MonoBehaviour {
 
 	void OpenFileForWrite() {
 		sw = new StreamWriter("log2.csv");
-		String header_row = "round, agent, produces, commodity_stock, type, cs_amount, reason\n";
+		String header_row = "round, agent, produces, inventory_items, type, amount, reason\n";
 		PrintToFile(header_row);
 	}
 	void PrintToFile(String msg) {

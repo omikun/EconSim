@@ -13,9 +13,10 @@ public class EconAgent : MonoBehaviour {
 	public float cash { get; private set; }
 	float prevCash = 0;
 	float maxStock = 1;
+	bool starvation = false;
 	ESList profits = new ESList();
 	//has a set of commodities in stock
-	public Dictionary<string, inventoryItem> inventory = new Dictionary<string, inventoryItem>(); //commodities stockpiled
+	public Dictionary<string, InventoryItem> inventory = new Dictionary<string, InventoryItem>(); //commodities stockpiled
 	Dictionary<string, float> perItemCost = new Dictionary<string, float>(); //commodities stockpiled
 
 	//can produce a set of commodities
@@ -50,7 +51,7 @@ public class EconAgent : MonoBehaviour {
 		if (inventory.ContainsKey(name))
 			return;
 
-        inventory.Add(name, new inventoryItem(name, num, max, price, production));
+        inventory.Add(name, new InventoryItem(name, num, max, price, production));
 
 		//book keeping
 		//Debug.Log(gameObject.name + " adding " + name + " to stockpile");
@@ -58,6 +59,7 @@ public class EconAgent : MonoBehaviour {
 	}
 	public void Init(float initCash, List<string> b, float initNum=5, float maxstock=10) {
 		uid = uid_idx++;
+		starvation = Commodities.Instance.starvation;
 		Reinit(initCash, b, initNum, maxstock);
 	}
 	public void Reinit(float initCash, List<string> b, float initNum=5, float maxstock=10) {
@@ -115,22 +117,21 @@ public class EconAgent : MonoBehaviour {
 	{
 		Debug.Log("agents ticking!");
 		float taxConsumed = 0;
+
 		bool starving = false;
-		#if false
 		if (inventory.ContainsKey("Food"))
 		{
             var food = inventory["Food"].Decrease(0.5f);
             starving = food < 0;
 			//starting round will result in negative food
 		}
-		#endif
 		
 		foreach (var entry in inventory)
 		{
 			entry.Value.Tick();
         }
 
-        if (IsBankrupt() || starving == true)
+        if (IsBankrupt() || (starvation && starving) == true)
 		{
 			Debug.Log(name + ":" + outputs[0] + " is bankrupt: " + cash.ToString("c2") + " or starving where food=" + inventory["Food"].Quantity);
 			taxConsumed = ChangeProfession();
@@ -211,39 +212,55 @@ public class EconAgent : MonoBehaviour {
 
 	int historyCount = 10;
     /*********** Produce and consume; enter asks and bids to auction house *****/
-    float FindSellCount(string c)
+	float FindTradeFavorability(string c)
 	{
-		var avgPrice = com[c].GetAvgPrice(historyCount);
+		//var avgPrice = com[c].GetAvgPrice(historyCount);
+		var avgPrice = com[c].prices.LastAverage(historyCount);
 		var lowestPrice = inventory[c].sellHistory.Min();
 		var highestPrice = inventory[c].sellHistory.Max();
+		if (lowestPrice == highestPrice) {
+			//no history, default to half
+			return .5f;
+		}
 		//todo SANITY check
 		float favorability = Mathf.InverseLerp(lowestPrice, highestPrice, avgPrice);
-		favorability = Mathf.Clamp(favorability, 0, 1);
-		//float numAsks = (favorability) * stockPile[c].Surplus();
+		return favorability;
+	}
+    float FindSellCount(string c)
+	{
+		var avgPrice = com[c].prices.LastAverage(historyCount);
+		var lowestPrice = inventory[c].sellHistory.Min();
+		var highestPrice = inventory[c].sellHistory.Max();
+		float favorability = .5f;
+		if (lowestPrice != highestPrice) {
+			favorability = Mathf.InverseLerp(lowestPrice, highestPrice, avgPrice);
+			favorability = Mathf.Clamp(favorability, 0, 1);
+		}
+		UnityEngine.Debug.Log(name + ": selling favorability: " + favorability);
+		float numAsks = favorability * inventory[c].Surplus();
 		//TODO only do this for self consumables
-		float numAsks = Mathf.Max(0, inventory[c].Surplus()); //make sure to leave some to eat if food
-		//why max of 1??? numAsks = Mathf.Max(1, numAsks);
-
-//		Debug.Log("avgPrice: " + avgPrice.ToString("c2") + " favoribility: " + favorability + " numAsks: " + numAsks.ToString("0.00"));
-		return Mathf.Floor(numAsks);
+		numAsks = Mathf.Max(0, inventory[c].Surplus()); //make sure to leave some to eat if food
+		numAsks = Mathf.Floor(numAsks);
+		Debug.Log("avgPrice: " + avgPrice.ToString("c2") + " favorability: " + favorability + " numBids: " + numAsks.ToString("n2") + " highestPrice: " + highestPrice + ", lowestPrice: " + lowestPrice);
+		return numAsks;
 	}
 	float FindBuyCount(string c)
 	{
-		var avgPrice = com[c].GetAvgPrice(historyCount);
+		var avgPrice = com[c].prices.LastAverage(historyCount);
 		var lowestPrice = inventory[c].buyHistory.Min();
 		var highestPrice = inventory[c].buyHistory.Max();
 		//todo SANITY check
-		float favoribility = Mathf.InverseLerp(lowestPrice, highestPrice, avgPrice);
-		favoribility = Mathf.Clamp(favoribility, 0, 1);
-		//TODO float numBids = (1 - favorability) * stockPile[c].Deficit();
-		float numBids = inventory[c].Deficit();
-		//WHY??? 
-		//TODO find prices of all dependent commodities, then get relative importance, and split numBids on all commodities proportional to value (num needed/price)
-		//numBids = Mathf.Max(1, numBids);
+		float favorability = .5f;
+		if (lowestPrice != highestPrice) {
+			favorability = Mathf.InverseLerp(lowestPrice, highestPrice, avgPrice);
+			favorability = Mathf.Clamp(favorability, 0, 1);
+		}
+		//float favorability = FindTradeFavorability(c);
+		float numBids = (1 - favorability) * inventory[c].Deficit();
+		numBids = Mathf.Floor(numBids);
 		
-
-//		Debug.Log("avgPrice: " + avgPrice.ToString("c2") + " favoribility: " + favoribility + " numBids: " + numBids.ToString("n2"));
-		return Mathf.Floor(numBids);
+		Debug.Log("avgPrice: " + avgPrice.ToString("c2") + " favorability: " + (1-favorability) + " numBids: " + numBids.ToString("n2") + " highestPrice: " + highestPrice + ", lowestPrice: " + lowestPrice);
+		return numBids;
 	}
 	public TradeSubmission Consume(Dictionary<string, Commodity> com) {
         var bids = new TradeSubmission();
@@ -261,6 +278,7 @@ public class EconAgent : MonoBehaviour {
 				//maybe buy less if expensive?
 				float buyPrice = stock.Value.GetPrice();
                 float maxPrice = Mathf.Min(cash / numBids, stock.Value.GetPrice());
+				buyPrice = Mathf.Min(buyPrice, maxPrice);
 				if (buyPrice > 1000)
 				{
 					Debug.Log(stock.Key + "buyPrice: " + buyPrice.ToString("c2") + " : " + stock.Value.minPriceBelief.ToString("n2") + "<" + stock.Value.maxPriceBelief.ToString("n2"));

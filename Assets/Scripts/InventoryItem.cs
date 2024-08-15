@@ -16,19 +16,36 @@ public class Transaction {
     public float price;
     public float quantity;
 }
-public class History : Queue<Transaction>
+public class History : List<Transaction>
 {
-    public float min = 0;
-    public float max = 0;
+    float min = 0;
+    float max = 0;
+    float avg = 0;
+    public int history_size = 10;
+    ESList prices = new ESList();
     public float Min() { return min; }
 	public float Max() { return max; }
-	public void Tick()
-	{
-		min = Min();
-		max = Max();
-	}
+    public new void Add(Transaction t)
+    {
+
+        base.Add(t);
+  
+        float sum = 0;
+        int count = 0;
+        min = t.price;
+        max = t.price;
+        for (int i = base.Count-1; i > 0 && i > (base.Count - history_size); i--)
+        {
+            min = Mathf.Min(base[i].price, min);
+            max = Mathf.Max(base[i].price, max);
+            sum += base[i].price;
+            count++;
+        }
+        avg = (count == 0) ? 0 : sum / (float)count;
+
+    }
 }
-public class inventoryItem {
+public class InventoryItem {
 	public string commodityName { get; private set; }
 	const float significant = 0.25f;
 	const float sig_imbalance = .33f;
@@ -56,8 +73,8 @@ public class inventoryItem {
         String ret = header + commodityName + ", stock, " + Quantity + ",n/a\n"; 
         ret += header + commodityName + ", max_stock, " + maxQuantity + ",n/a\n"; 
         ret += header + commodityName + ", meanPrice, " + meanPriceThisRound + ",n/a\n"; 
-        ret += header + commodityName + ", sellQuant, " + sellHistory.Peek().quantity + ",n/a\n";
-        ret += header + commodityName + ", buyQuant, " + buyHistory.Peek().quantity + ",n/a\n";
+        ret += header + commodityName + ", sellQuant, " + sellHistory[^1].quantity + ",n/a\n";
+        ret += header + commodityName + ", buyQuant, " + buyHistory[^1].quantity + ",n/a\n";
         foreach( var msg in debug_msgs )
         {
             //ret += header + commodityName + ", " + msg + "\n";
@@ -67,7 +84,7 @@ public class inventoryItem {
         debug_msgs.Clear();
         return ret;
     }
-	public inventoryItem (string _name, float _quantity=1, float _maxQuantity=10, 
+	public InventoryItem (string _name, float _quantity=1, float _maxQuantity=10, 
 					float _meanPrice=1, float _production=1)
 	{
 		buyHistory = new History();
@@ -79,14 +96,12 @@ public class inventoryItem {
 		minPriceBelief = _meanPrice / 2;
 		maxPriceBelief = _meanPrice * 2;
 		meanPriceThisRound = _meanPrice;
-		buyHistory.Enqueue(new Transaction(1,_meanPrice));
-		sellHistory.Enqueue(new Transaction(1,_meanPrice));
+		buyHistory.Add(new Transaction(1,_meanPrice));
+		sellHistory.Add(new Transaction(1,_meanPrice));
 		productionRate = _production;
 	}
 	public void Tick()
 	{
-        sellHistory.Tick();
-        buyHistory.Tick();
 	}
     public float Increase(float quant)
     {
@@ -118,7 +133,7 @@ public class inventoryItem {
         var prevMinPriceBelief = minPriceBelief;
         var prevMaxPriceBelief = maxPriceBelief;
         last_price = price;
-        buyHistory.Enqueue(new Transaction(price, quant));
+        buyHistory.Add(new Transaction(price, quant));
 		//return adjusted quant;
 		return quant;
 	}
@@ -136,7 +151,7 @@ public class inventoryItem {
         costThisRound += price;
         meanPriceThisRound = (quantityTradedThisRound == 0) ? 0 : costThisRound / quantityTradedThisRound;
         last_price = price;
-        sellHistory.Enqueue(new Transaction(price, quant));
+        sellHistory.Add(new Transaction(price, quant));
 	}
 	public float GetPrice()
 	{

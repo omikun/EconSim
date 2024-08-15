@@ -117,7 +117,7 @@ public class Dependency : Dictionary<string, float>
 	{
 		com = Commodities.Instance.com;
 	}
-	void Add(string name, float quantity)
+	new void Add(string name, float quantity)
 	{
         //Debug.Assert(com.ContainsKey(name));
 		if (!com.ContainsKey(name))
@@ -132,6 +132,7 @@ public class Commodities : MonoBehaviour
 
 	public Dictionary<string, Commodity> com { get; private set; }
 	public int round { get; private set; }
+	public bool starvation { get; private set; }
 	
 	public void nextRound()
 	{
