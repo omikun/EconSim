@@ -132,6 +132,7 @@ public class Commodities : MonoBehaviour
 
 	public Dictionary<string, Commodity> com { get; private set; }
 	public int round { get; private set; }
+	public bool twoCommodities = true;
 	public bool starvation = false;
 	public bool simpleTradeAmountDet = false;
 	public bool onlyBuyWhatsAffordable = false;
@@ -243,7 +244,7 @@ public class Commodities : MonoBehaviour
     // Use this for initialization
     void Init () {
 		Debug.Log("Initializing commodities");
-#if true
+#if false
 		Dependency foodDep = new Dependency();
 		foodDep.Add("Wood", numWoodToFood);
 		Add("Food", foodProductionRate, foodDep);
@@ -251,28 +252,29 @@ public class Commodities : MonoBehaviour
 		Dependency woodDep = new Dependency();
 		woodDep.Add("Food", numFoodToWood);
 		Add("Wood", woodProductionRate, woodDep);
-#elif false
+#elif true
 		//replicate paper
 		Dependency foodDep = new Dependency();
-		foodDep.Add("Wood", 2);
-		Add("Food", 5, foodDep);
+		foodDep.Add("Wood", 0.25f);
+		foodDep.Add("Tool", 0.025f);
+		Add("Food", 4, foodDep);
 
 		Dependency woodDep = new Dependency();
 		woodDep.Add("Food", 1);
-		woodDep.Add("Tool", 1f);
+		woodDep.Add("Tool", .1f);
 		Add("Wood", 3, woodDep);
 
 		Dependency oreDep = new Dependency();
-		oreDep.Add("Food", 2f);
+		oreDep.Add("Food", .25f);
 		Add("Ore", 2, oreDep);
 
 		Dependency metalDep = new Dependency();
-		metalDep.Add("Food", 2);
+		metalDep.Add("Food", .25f);
 		metalDep.Add("Ore", 2);
 		Add("Metal", 1, metalDep);
 
 		Dependency toolDep = new Dependency();
-		toolDep.Add("Food", 2.3f);
+		toolDep.Add("Food", .25f);
 		toolDep.Add("Metal", 2);
 		Add("Tool", 1, toolDep);
 

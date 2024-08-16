@@ -127,8 +127,11 @@ public class EconAgent : MonoBehaviour {
 		bool starving = false;
 		if (foodConsumption && inventory.ContainsKey("Food"))
 		{
-            var food = inventory["Food"].Decrease(0.5f);
-            starving = food < 0;
+			if (inventory["Food"].Quantity >= 0.5f)
+			{
+				var food = inventory["Food"].Decrease(0.5f);
+				starving = food < 0;
+			}
 			//starting round will result in negative food
 		}
 		
