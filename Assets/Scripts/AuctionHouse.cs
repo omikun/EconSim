@@ -24,93 +24,8 @@ public static class IListExtensions {
     }
 }
 
-public class MarketStats {
-	public float totalSupply;
-	public float totalDemand;
-	public float agentDemandRatio;
-	public float meanPrice;
-}
-public class Trade
-{
-	public Trade(string c, float p, float q, EconAgent a)
-	{
-		commodity = c;
-		price = p;
-		clearingPrice = p;
-		remainingQuantity = q;
-		offerQuantity = q;
-		agent = a;
-	}
-	public float Reduce(float q)
-	{
-		remainingQuantity -= q;
-		return remainingQuantity;
-	}
-	public void Print()
-	{
-		Debug.Log(agent.gameObject.name + ": " + commodity + " trade: " + price + ", " + remainingQuantity);
-	}
-	public string commodity { get; private set; }
-	public float price { get; private set; }
-	public float clearingPrice;
-	public float remainingQuantity { get; private set; }
-	public float offerQuantity { get; private set; }
-	public EconAgent agent{ get; private set; }
-}
-public class TradeSubmission : Dictionary<string, Trade> { }
-public class Trades : List<Trade> { 
-	public new void RemoveAt(int index)
-	{
-		int before = base.Count;
-		base.RemoveAt(index);
-        if (before != base.Count + 1) 
-			Debug.Log("did not remove trade correctly! before: " 
-			+ before + " after: " + base.Count);
-    }
-    public void Shuffle()
-    {
-        var count = base.Count;
-        var last = count - 1;
-        for (var i = 0; i < last; ++i) {
-            var r = UnityEngine.Random.Range(i, count);
-            var tmp = base[i];
-            base[i] = base[r];
-            base[r] = tmp;
-        }
-    }
-	public void Print()
-	{
-		var enumerator = base.GetEnumerator();
-        while (enumerator.MoveNext())
-        {
-            var item = enumerator.Current;
-			item.Print();
-		}
-	}
-
-
-}
+public class Offer : Dictionary<string, Trade> { }
 //commodities["commodity"] = ordered list<price, quantity, seller>
-public class TradeTable : Dictionary<string, Trades>
-{
-	public TradeTable() 
-	{
-        var com = Commodities.Instance.com;
-        foreach (var c in com)
-        {
-            base.Add(c.Key, new Trades());
-        }
-    }
-	public void Add(TradeSubmission ts)
-	{
-		foreach (var entry in ts)
-		{
-			var commodity = entry.Key;
-			var trade = entry.Value;
-			base[commodity].Add(trade);
-		}
-	}
-}
 public class AuctionHouse : MonoBehaviour {
     public float tickInterval = .001f;
 	public int maxRounds = 10;
@@ -129,9 +44,6 @@ public class AuctionHouse : MonoBehaviour {
     TradeTable askTable, bidTable;
 	StreamWriter sw;
 
-    //gmp = Graph Mean Price
-    List<GraphMe> gMeanPrice, gUnitsExchanged, gProfessions, gStocks, gCash, gCapital;
-	//trackBids[selling_commodity][buyer's producing commodity] = price buyer paid for seller * number of selling_commodity bought
 	Dictionary<string, Dictionary<string, float>> trackBids = new Dictionary<string, Dictionary<string, float>>();
 	float lastTick;
 	public bool EnableDebug = false;
@@ -143,9 +55,7 @@ public class AuctionHouse : MonoBehaviour {
 			gmList.Add(line.GetComponent<GraphMe>());
 		}
 	}
-	// Use this for initialization
 	void Start () {
-		//sampler = new CustomSampler("AuctionHouseTick");
 		Debug.unityLogger.logEnabled=EnableDebug;
 		OpenFileForWrite();
 
@@ -153,38 +63,7 @@ public class AuctionHouse : MonoBehaviour {
 		lastTick = 0;
 		int count = 0;
 		var com = Commodities.Instance.com;
-		#if false
-        gMeanPrice = new List<GraphMe>(com.Count);
-        gUnitsExchanged = new List<GraphMe>(com.Count);
-        gProfessions = new List<GraphMe>(com.Count);
-        gStocks = new List<GraphMe>(com.Count);
-        gCash = new List<GraphMe>(com.Count);
-        gCapital = new List<GraphMe>(com.Count);
-
-		/* initialize graphs */
-		var gmp = GameObject.Find("AvgPriceGraph");
-		var gue = GameObject.Find("UnitsExchangedGraph");
-		var gp = GameObject.Find("ProfessionsGraph");
-		var gs = GameObject.Find("StockPileGraph");
-		var gc = GameObject.Find("CashGraph");
-		var gtc = GameObject.Find("TotalCapitalGraph");
-		for (int i = 0; i < com.Count+3; i++) 
-		{
-			AddLine(i, gMeanPrice, gmp);
-			AddLine(i, gUnitsExchanged, gue);
-			AddLine(i, gProfessions, gp);
-			AddLine(i, gStocks,  gs);
-			AddLine(i, gCash, gc);
-			AddLine(i, gCapital, gtc);
-		}
-			gMeanPrice.Add(gmp.transform.Find("line"+i).GetComponent<GraphMe>());
-			gUnitsExchanged.Add(gue.transform.Find("line"+i).GetComponent<GraphMe>());
-			gProfessions.Add(gp.transform.Find("line"+i).GetComponent<GraphMe>());
-			gStocks.Add(gs.transform.Find("line"+i).GetComponent<GraphMe>());
-			gCash.Add(gc.transform.Find("line"+i).GetComponent<GraphMe>());
-			gCapital.Add(gtc.transform.Find("line"+i).GetComponent<GraphMe>());
-		}
-		#endif
+	
 
 		irs = 0; //GetComponent<EconAgent>();
 		var prefab = Resources.Load("Agent");
@@ -212,8 +91,6 @@ public class AuctionHouse : MonoBehaviour {
 			var agent = child.GetComponent<EconAgent>();
 
 			string type = "invalid";
-			int numPerType = 2; //transform.childCount / 5;
-			int typeNum = 1;
 
 			if (count < farmerIndex) 		type = "Food";
 			else if (count < loggerIndex) 	type = "Wood";  //woodcutter
@@ -272,7 +149,6 @@ public class AuctionHouse : MonoBehaviour {
 	
 	void InitAgent(EconAgent agent, string type)
 	{
-        agent.debug++;
         List<string> buildables = new List<string>();
 		buildables.Add(type);
 		var _initStock = UnityEngine.Random.Range(initStock/2, initStock*2);
@@ -300,10 +176,10 @@ public class AuctionHouse : MonoBehaviour {
 #endif
 			return;
 		}
-		//wait 1s before update
+		//wait before update
 		if (Time.time - lastTick > tickInterval)
 		{
-			Debug.Log("v1.3 Round: " + Commodities.Instance.round);
+			Debug.Log("v1.4 Round: " + Commodities.Instance.round);
 			//sampler.BeginSample("AuctionHouseTick");
             Tick();
 			//sampler.EndSample();
@@ -342,10 +218,6 @@ public class AuctionHouse : MonoBehaviour {
 		CountProfits();
 		CountProfessions();
 		CountStockPileAndCash();
-		//SetGraph(gCapital, "Debt", defaulted);
-		
-		//PrintTrackBids();
-		//ClearTrackBids();
 	}
 
 	void PrintAuctionStats(String c, float buy, float sell)
@@ -708,15 +580,4 @@ public class AuctionHouse : MonoBehaviour {
 			//SetGraph(gProfessions, entry.Key, entry.Value);
 		}
 	}
-	void SetGraph(List<GraphMe> graphs, string commodity, float input)
-	{
-        if (commodity == "Food") graphs[0].Tick(input);
-        if (commodity == "Wood") graphs[1].Tick(input);
-        if (commodity == "Ore") graphs[2].Tick(input);
-        if (commodity == "Metal") graphs[3].Tick(input);
-        if (commodity == "Tool") graphs[4].Tick(input);
-        if (commodity == "Total") graphs[5].Tick(input);
-        if (commodity == "Debt") graphs[6].Tick(input);
-        if (commodity == "IRS") graphs[7].Tick(input);
-    }
 }

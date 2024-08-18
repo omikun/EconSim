@@ -1,7 +1,10 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
+using UnityEngine.Assertions;
+using System.Linq;
+using UnityEngine.XR;
+using System;
 
 public class Utilities : MonoBehaviour
 {
@@ -23,3 +26,23 @@ public class Utilities : MonoBehaviour
     }
 }
 
+public class ESList : List<float>
+{
+    float avg;
+    public float LastAverage(int history)
+    {
+		if (base.Count == 0)
+		{
+			return 0;
+		}
+        var skip = Mathf.Min(base.Count-1, Mathf.Max(0, base.Count - history));
+		var end = Mathf.Min(base.Count-1, history);
+		if (end == skip)
+		{
+			return 0;
+		}
+        var newList = base.GetRange(skip, end);
+        avg = newList.Average();
+        return avg;
+    }
+}
