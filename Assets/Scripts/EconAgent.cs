@@ -189,7 +189,6 @@ public class EconAgent : MonoBehaviour {
 	}
 	public float Buy(string commodity, float quantity, float price)
 	{
-	Debug.Log(name + " has " + cash.ToString("c2") + " want to buy " + quantity.ToString("n2") + " " + commodity + " for " + price.ToString("c2"));
 		var boughtQuantity = inventory[commodity].Buy(quantity, price);
 	Debug.Log(name + " has " + cash.ToString("c2") + " want to buy " + quantity.ToString("n2") + " " + commodity + " for " + price.ToString("c2") + " bought " + boughtQuantity.ToString("n2"));
 		cash -= price * boughtQuantity;
@@ -327,11 +326,7 @@ public class EconAgent : MonoBehaviour {
 			Debug.Log(name + " upperbound: " + upperBound + " production rate: " + inventory[buildable].productionRate + " room: " + inventory[buildable].Deficit());
 			numProduced = Mathf.Floor(numProduced);
 			Debug.Log(name + " upperbound: " + upperBound + " can produce: " + numProduced);
-			if (numProduced == 0)
-			{
-				continue;
-			}
-			Assert.IsTrue(numProduced > 0);
+			Assert.IsTrue(numProduced >= 0);
 			//build and add to stockpile
 			var buildable_cost = 0f;
 			foreach (var dep in com[buildable].dep)
@@ -344,7 +339,6 @@ public class EconAgent : MonoBehaviour {
 			}
 			inventory[buildable].Increase(numProduced);
 			Assert.IsFalse(float.IsNaN(numProduced));
-			Assert.IsTrue(numProduced >= 0);
 			Assert.IsTrue(inventory[buildable].Quantity >= 0);
 
             var buildStock = inventory[buildable];

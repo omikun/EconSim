@@ -218,6 +218,11 @@ public class AuctionHouse : MonoBehaviour {
 		CountProfits();
 		CountProfessions();
 		CountStockPileAndCash();
+
+		foreach (var agent in agents)
+		{
+			agent.ClearRoundStats();
+		}
 	}
 
 	void PrintAuctionStats(String c, float buy, float sell)
@@ -385,10 +390,6 @@ public class AuctionHouse : MonoBehaviour {
 			bid.agent.UpdateBuyerPriceBelief(in bid, in commodity);
 		}
 		bids.Clear();
-		foreach (var agent in agents)
-		{
-			agent.ClearRoundStats();
-		}
 
 		//SetGraph(gMeanPrice, commodity.name, averagePrice);
 		//SetGraph(gUnitsExchanged, commodity.name, goodsExchanged);
