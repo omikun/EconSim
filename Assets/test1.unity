@@ -288,6 +288,37 @@ MonoBehaviour:
   foodProductionRate: 2
   numFoodToWood: 1
   woodProductionRate: 3
+  initialization:
+    _serializedList:
+    - Key: Wood
+      Value:
+        _serializedList:
+        - Key: Food
+          Value: 0.25
+        - Key: Tool
+          Value: 0.025
+        - Key: Prod_rate
+          Value: 4
+    - Key: Wood
+      Value:
+        _serializedList: []
+    - Key: Food
+      Value:
+        _serializedList: []
+  food_dep_wood: 0.25
+  food_dep_tool: 0.025
+  food_prod_rate: 4
+  wood_dep_food: 1
+  wood_dep_tool: 0.1
+  wood_prod_rate: 3
+  ore_dep_food: 0.05
+  ore_prod_rate: 2
+  metal_dep_food: 0.25
+  metal_dep_ore: 2
+  metal_prod_rate: 1
+  tool_dep_food: 0.25
+  tool_dep_metal: 2
+  tool_prod_rate: 1
 --- !u!4 &194909951
 Transform:
   m_ObjectHideFlags: 0

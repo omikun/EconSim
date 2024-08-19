@@ -2,57 +2,20 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Net.Http.Headers;
 using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.Assertions;
 
 
-public class Transaction {
-    public Transaction(float p, float q)
-    {
-        price = p;
-        quantity = q;
-    }
-    public float price;
-    public float quantity;
-}
-public class History : List<Transaction>
-{
-    float min = 0;
-    float max = 0;
-    float avg = 0;
-    public int history_size = 10;
-    ESList prices = new ESList();
-    public float Min() { return min; }
-	public float Max() { return max; }
-    public new void Add(Transaction t)
-    {
-
-        base.Add(t);
-  
-        float sum = 0;
-        int count = 0;
-        min = t.price;
-        max = t.price;
-        for (int i = base.Count-1; i > 0 && i > (base.Count - history_size); i--)
-        {
-            min = Mathf.Min(base[i].price, min);
-            max = Mathf.Max(base[i].price, max);
-            sum += base[i].price;
-            count++;
-        }
-        avg = (count == 0) ? 0 : sum / (float)count;
-
-    }
-}
 public class InventoryItem {
 	public string commodityName { get; private set; }
 	const float significant = 0.25f;
 	const float sig_imbalance = .33f;
 	const float lowInventory = .1f;
 	const float highInventory = 2f;
-	public History buyHistory;
-	public History sellHistory;
+	public TransactionHistory buyHistory;
+	public TransactionHistory sellHistory;
 	public float cost = 1;
     public float last_price = 1;
 	public float wobble = .02f;
@@ -66,15 +29,12 @@ public class InventoryItem {
 	//number of units produced per turn = production * productionRate
 	public float productionRate = 1; //# of assembly lines
     List<string> debug_msgs = new List<string>();
+    bool participatedThisRound = false;
 
 
     public String Stats(String header) 
     {
         String ret = header + commodityName + ", stock, " + Quantity + ",n/a\n"; 
-        ret += header + commodityName + ", max_stock, " + maxQuantity + ",n/a\n"; 
-        ret += header + commodityName + ", meanPrice, " + meanPriceThisRound + ",n/a\n"; 
-        ret += header + commodityName + ", sellQuant, " + sellHistory[^1].quantity + ",n/a\n";
-        ret += header + commodityName + ", buyQuant, " + buyHistory[^1].quantity + ",n/a\n";
         foreach( var msg in debug_msgs )
         {
             //ret += header + commodityName + ", " + msg + "\n";
@@ -82,13 +42,21 @@ public class InventoryItem {
             ret += header + commodityName + ", maxPriceBelief, " + maxPriceBelief + ", " + msg + "\n";
         }
         debug_msgs.Clear();
+        //ret += header + commodityName + ", max_stock, " + maxQuantity + ",n/a\n"; 
+        if (!participatedThisRound) 
+        {
+            return ret;
+        }
+        ret += header + commodityName + ", meanPrice, " + meanPriceThisRound + ",n/a\n"; 
+        ret += header + commodityName + ", sellQuant, " + sellHistory[^1].quantity + ",n/a\n";
+        ret += header + commodityName + ", buyQuant, " + buyHistory[^1].quantity + ",n/a\n";
         return ret;
     }
 	public InventoryItem (string _name, float _quantity=1, float _maxQuantity=10, 
 					float _meanPrice=1, float _production=1)
 	{
-		buyHistory = new History();
-		sellHistory = new History();
+		buyHistory = new TransactionHistory();
+		sellHistory = new TransactionHistory();
 		commodityName = _name;
 		Quantity = _quantity;
 		maxQuantity = _maxQuantity;
@@ -119,9 +87,11 @@ public class InventoryItem {
     {
         costThisRound = 0;
         quantityTradedThisRound = 0;
+        participatedThisRound = false;
     }
 	public float Buy(float quant, float price)
 	{
+        participatedThisRound = true;
         UnityEngine.Debug.Log("buying " + commodityName + " " + quant.ToString("n2") + " for " + price.ToString("c2") + " currently have " + Quantity.ToString("n2"));
 		//update meanCost of units in stock
         Assert.IsTrue(quant > 0);
@@ -139,6 +109,7 @@ public class InventoryItem {
 	}
 	public void Sell(float quant, float price)
 	{
+        participatedThisRound = true;
 		//update meanCost of units in stock
         Assert.IsTrue(Quantity >= 0);
         if (quant == 0 || Surplus() == 0)
