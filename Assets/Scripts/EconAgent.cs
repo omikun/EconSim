@@ -202,11 +202,11 @@ public class EconAgent : MonoBehaviour {
 		//		Debug.Log(name + " has " + cash.ToString("c2") + " selling " + quantity.ToString("n2") +" " +  commodity + " for " + price.ToString("c2"));
 		cash += price * quantity;
 	}
-	public void UpdateSellerPriceBelief(in Trade trade, in Commodity commodity) 
+	public void UpdateSellerPriceBelief(in Offer trade, in Commodity commodity) 
 	{
 		inventory[commodity.name].UpdateSellerPriceBelief(name, in trade, in commodity);
 	}
-	public void UpdateBuyerPriceBelief(in Trade trade, in Commodity commodity) 
+	public void UpdateBuyerPriceBelief(in Offer trade, in Commodity commodity) 
 	{
 		inventory[commodity.name].UpdateBuyerPriceBelief(name, in trade, in commodity);
 	}
@@ -268,8 +268,8 @@ public class EconAgent : MonoBehaviour {
 		Debug.Log("avgPrice: " + avgPrice.ToString("c2") + " favorability: " + (1-favorability) + " numBids: " + numBids.ToString("n2") + " highestPrice: " + highestPrice + ", lowestPrice: " + lowestPrice);
 		return numBids;
 	}
-	public Offer Consume(Dictionary<string, Commodity> com) {
-        var bids = new Offer();
+	public Offers Consume(Dictionary<string, Commodity> com) {
+        var bids = new Offers();
         //replenish depended commodities
         foreach (var stock in inventory)
 		{
@@ -293,13 +293,13 @@ public class EconAgent : MonoBehaviour {
 				}
 				Debug.Log(this.name + " wants to buy " + numBids.ToString("n2") + stock.Key + " for " + buyPrice.ToString("c2") + " each");
 				Assert.IsFalse(numBids < 0);
-				bids.Add(stock.Key, new Trade(stock.Value.commodityName, buyPrice, numBids, this));
+				bids.Add(stock.Key, new Offer(stock.Value.commodityName, buyPrice, numBids, this));
 			}
         }
         return bids;
 	}
-	public Offer Produce(Dictionary<string, Commodity> com, ref float idleTax) {
-        var asks = new Offer();
+	public Offers Produce(Dictionary<string, Commodity> com, ref float idleTax) {
+        var asks = new Offers();
 		//TODO sort buildables by profit
 
 		//build as many as one can TODO don't build things that won't earn a profit
@@ -341,14 +341,14 @@ public class EconAgent : MonoBehaviour {
 			Assert.IsFalse(float.IsNaN(numProduced));
 			Assert.IsTrue(inventory[buildable].Quantity >= 0);
 
-            var buildStock = inventory[buildable];
+            var sellStock = inventory[buildable];
             float sellQuantity = FindSellCount(buildable);
-            float sellPrice = buildStock.GetPrice(); 
+            float sellPrice = sellStock.GetPrice(); 
 
 			if (sellQuantity > 0 && sellPrice > 0)
 			{
 				Debug.Log(name + " has " + cash.ToString("c2") + " made " + numProduced.ToString("n2") + " " + buildable + " wants to sell for " + sellQuantity + " for " + sellPrice.ToString("c2") + sStock + inventory[buildable].Surplus());
-				asks.Add(buildable, new Trade(buildable, sellPrice, sellQuantity, this));
+				asks.Add(buildable, new Offer(buildable, sellPrice, sellQuantity, this));
 			}
 
 			producedThisRound += numProduced;
@@ -364,6 +364,11 @@ public class EconAgent : MonoBehaviour {
 		//alternative build: only make what is most profitable...?
 
 		return asks;
+	}
+
+	void CreateAsks(ref Offers asks)
+	{
+		
 	}
     //get the cost of a commodity
     float GetCostOf(string commodity)

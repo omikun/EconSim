@@ -24,7 +24,6 @@ public static class IListExtensions {
     }
 }
 
-public class Offer : Dictionary<string, Trade> { }
 //commodities["commodity"] = ordered list<price, quantity, seller>
 public class AuctionHouse : MonoBehaviour {
     public float tickInterval = .001f;
@@ -41,7 +40,7 @@ public class AuctionHouse : MonoBehaviour {
 	public float maxStock = 20;
 	List<EconAgent> agents = new List<EconAgent>();
 	float irs;
-    TradeTable askTable, bidTable;
+    OfferTable askTable, bidTable;
 	StreamWriter sw;
 
 	Dictionary<string, Dictionary<string, float>> trackBids = new Dictionary<string, Dictionary<string, float>>();
@@ -64,7 +63,6 @@ public class AuctionHouse : MonoBehaviour {
 		int count = 0;
 		var com = Commodities.Instance.com;
 	
-
 		irs = 0; //GetComponent<EconAgent>();
 		var prefab = Resources.Load("Agent");
 		for (int i = transform.childCount; i < numAgents; i++)
@@ -107,8 +105,8 @@ public class AuctionHouse : MonoBehaviour {
 			}
 			count++;
 		}
-		askTable = new TradeTable();
-        bidTable = new TradeTable();
+		askTable = new OfferTable();
+        bidTable = new OfferTable();
 
 		foreach (var entry in com)
 		{
@@ -192,8 +190,6 @@ public class AuctionHouse : MonoBehaviour {
 		Debug.Log("auction house ticking");
 
 		var com = Commodities.Instance.com;
-		//get all agents asks
-		//get all agents bids
 		foreach (var agent in agents)
 		{
 			float idleTax = 0;
@@ -202,9 +198,6 @@ public class AuctionHouse : MonoBehaviour {
 			bidTable.Add(agent.Consume(com));
 		}
 
-		//was at bottom of tick
-		EnactBankruptcy();
-
 		//resolve prices
 		foreach (var entry in com)
 		{
@@ -212,8 +205,7 @@ public class AuctionHouse : MonoBehaviour {
 			Debug.Log(entry.Key + ": goods: " + entry.Value.trades[^1] + " at price: " + entry.Value.prices[^1]);
 		}
 		
-
-		//PrintToFile("round, " + Commodities.Instance.round + ", commodity, " + commodity + ", price, " + averagePrice);
+		EnactBankruptcy();
 		AgentsStats();
 		CountProfits();
 		CountProfessions();
@@ -238,23 +230,21 @@ public class AuctionHouse : MonoBehaviour {
 		float goodsExchanged = 0;
 		var asks = askTable[commodity.name];
 		var bids = bidTable[commodity.name];
-		var acceptedAsks = new Trades();
-		var acceptedBids = new Trades();
 		var agentDemandRatio = bids.Count / Mathf.Max(.01f, (float)asks.Count); //demand by num agents bid/
 
 		/******* debug */
 		if (bids.Count > 0)
 		{
-			Trade hTrade = bids[0];
+			Offer hTrade = bids[0];
 			foreach (var bid in bids)
 			{
-				if (bid.price > hTrade.price)
+				if (bid.offerPrice > hTrade.offerPrice)
 				{
 					hTrade = bid;
 				}
 			}
-			if (hTrade.price > 1000)
-				Debug.Log(hTrade.agent.name + " bid " + commodity.name + " more than $1000: " + hTrade.price);
+			if (hTrade.offerPrice > 1000)
+				Debug.Log(hTrade.agent.name + " bid " + commodity.name + " more than $1000: " + hTrade.offerPrice);
 		}
 		/******* end debug */
 
@@ -269,8 +259,8 @@ public class AuctionHouse : MonoBehaviour {
 		asks.Shuffle();
 		bids.Shuffle();
 
-		asks.Sort((x, y) => x.price.CompareTo(y.price)); //inc
-		bids.Sort((x, y) => y.price.CompareTo(x.price)); //dec
+		asks.Sort((x, y) => x.offerPrice.CompareTo(y.offerPrice)); //inc
+		bids.Sort((x, y) => y.offerPrice.CompareTo(x.offerPrice)); //dec
 
 		float watchdog_timer = 0;
 
@@ -289,12 +279,12 @@ public class AuctionHouse : MonoBehaviour {
 			var bid = bidIt.Current;
 
 			//set price
-			var clearingPrice = (bid.price + ask.price) / 2;
+			var clearingPrice = (bid.offerPrice + ask.offerPrice) / 2;
 			bid.clearingPrice = clearingPrice;
 			ask.clearingPrice = clearingPrice;
 			if (clearingPrice <= 0)
 			{
-				Debug.Log(Commodities.Instance.round + " " + commodity.name + " asker: " + ask.agent.name + " asking price: " + ask.price + "bidder: " + bid.agent.name + " bidding price: " + bid.price + " clearingPrice: " + clearingPrice);
+				Debug.Log(Commodities.Instance.round + " " + commodity.name + " asker: " + ask.agent.name + " asking price: " + ask.offerPrice + "bidder: " + bid.agent.name + " bidding price: " + bid.offerPrice + " clearingPrice: " + clearingPrice);
 			}
 			Assert.IsTrue(clearingPrice > 0);
 			//go to next ask/bid if fullfilled
@@ -323,8 +313,8 @@ public class AuctionHouse : MonoBehaviour {
 #else
 			var boughtQuantity = bid.agent.Buy(commodity.name, tradeQuantity, clearingPrice);
 			ask.agent.Sell(commodity.name, boughtQuantity, clearingPrice);
-			Debug.Log(ask.agent.name + " ask " + ask.remainingQuantity + "x" + ask.price 
-					+ " | " + bid.agent.name + " bid: " + bid.remainingQuantity + "x" + bid.price 
+			Debug.Log(ask.agent.name + " ask " + ask.remainingQuantity + "x" + ask.offerPrice 
+					+ " | " + bid.agent.name + " bid: " + bid.remainingQuantity + "x" + bid.offerPrice 
 					+ " -- " + commodity.name + " offer quantity: " + tradeQuantity + " bought quantity: " + boughtQuantity);
 #endif
 			//track who bought what

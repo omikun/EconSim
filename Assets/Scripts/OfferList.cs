@@ -6,7 +6,8 @@ using UnityEngine;
 using System.Linq;
 using System;
 
-public class Trades : List<Trade> { 
+//Assumes all offers in list are of same commodity
+public class OfferList : List<Offer> { 
 	public new void RemoveAt(int index)
 	{
 		int before = base.Count;

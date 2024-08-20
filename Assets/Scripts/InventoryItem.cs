@@ -139,7 +139,7 @@ public class InventoryItem {
         Assert.IsTrue(minPriceBelief < maxPriceBelief);
 	}
 	
-    public void UpdateBuyerPriceBelief(String agentName, in Trade trade, in Commodity commodity)
+    public void UpdateBuyerPriceBelief(String agentName, in Offer trade, in Commodity commodity)
     {
         var prevMinPriceBelief = minPriceBelief;
         var prevMaxPriceBelief = maxPriceBelief;
@@ -177,10 +177,10 @@ public class InventoryItem {
             minPriceBelief += deltaMean;
             reason_msg += "_supply<demand_and_low_inv";
         }
-        else if ( trade.price > trade.clearingPrice || commodity.bids[^1] < commodity.asks[^1])   //bid price > trade price
+        else if ( trade.offerPrice > trade.clearingPrice || commodity.bids[^1] < commodity.asks[^1])   //bid price > trade price
                             // or (supply > demand and offer > historical mean)
         {
-            var overbid = Mathf.Abs(trade.price - trade.clearingPrice); //bid price - trade price
+            var overbid = Mathf.Abs(trade.offerPrice - trade.clearingPrice); //bid price - trade price
             maxPriceBelief -= overbid * 1.1f;
             minPriceBelief -= overbid * 1.1f;
             reason_msg += "_supply>demand_and_overbid";
@@ -204,7 +204,7 @@ public class InventoryItem {
         Assert.IsTrue(minPriceBelief < maxPriceBelief);
         debug_msgs.Add(reason_msg);
     }
-public void UpdateSellerPriceBelief(String agentName, in Trade trade, in Commodity commodity)
+public void UpdateSellerPriceBelief(String agentName, in Offer trade, in Commodity commodity)
     {
         var prevMinPriceBelief = minPriceBelief;
         var prevMaxPriceBelief = maxPriceBelief;
@@ -215,7 +215,7 @@ public void UpdateSellerPriceBelief(String agentName, in Trade trade, in Commodi
         var quantitySold = trade.offerQuantity - trade.remainingQuantity;
         var historicalMeanPrice = commodity.prices.LastAverage(10);
         var market_share = quantitySold / commodity.trades[^1];
-        var offer_price = trade.price;
+        var offer_price = trade.offerPrice;
         var weight = quantitySold / trade.offerQuantity; //quantitySold / quantityAsked
         var displacement = weight * meanBeliefPrice;
 

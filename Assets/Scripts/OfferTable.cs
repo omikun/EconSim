@@ -6,17 +6,19 @@ using UnityEngine;
 using System.Linq;
 using System;
 
-public class TradeTable : Dictionary<string, Trades>
+//all asks or bids
+using CommodityName = System.String;
+public class OfferTable : Dictionary<CommodityName, OfferList>
 {
-	public TradeTable() 
+	public OfferTable() 
 	{
         var com = Commodities.Instance.com;
         foreach (var c in com)
         {
-            base.Add(c.Key, new Trades());
+            base.Add(c.Key, new OfferList());
         }
     }
-	public void Add(Offer ts)
+	public void Add(Offers ts)
 	{
 		foreach (var entry in ts)
 		{
