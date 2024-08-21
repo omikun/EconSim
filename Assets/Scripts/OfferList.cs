@@ -5,6 +5,7 @@ using UnityEngine.Assertions;
 using UnityEngine;
 using System.Linq;
 using System;
+using System.Security.Cryptography.X509Certificates;
 
 //Assumes all offers in list are of same commodity
 public class OfferList : List<Offer> { 
@@ -27,6 +28,23 @@ public class OfferList : List<Offer> {
             base[r] = tmp;
         }
     }
+    /*
+    public float AverageOfferPrice()
+    {
+        float totalQuantity = 0;
+        float totalPrice = 0;
+        foreach (var offer in base)
+        {
+            totalQuantity += offer.offerQuantity;
+            totalPrice += offer.offerPrice;
+        }
+        if (totalQuantity == 0)
+        {
+            return 0;
+        }
+        return totalPrice / totalQuantity;
+    }
+    */
 	public void Print()
 	{
 		var enumerator = base.GetEnumerator();

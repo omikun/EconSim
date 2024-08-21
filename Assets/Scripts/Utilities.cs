@@ -5,6 +5,7 @@ using UnityEngine.Assertions;
 using System.Linq;
 using UnityEngine.XR;
 using System;
+using System.Net.WebSockets;
 
 public class Utilities : MonoBehaviour
 {
@@ -29,6 +30,17 @@ public class Utilities : MonoBehaviour
 public class ESList : List<float>
 {
     float avg;
+    int lastRound = 0;
+    Commodities comInstance;
+    public ESList()
+    {
+        comInstance = Commodities.Instance;
+    }
+    new public void Add(float num)
+    {
+        base.Add(num);
+        lastRound = comInstance.round;
+    }
     public float LastAverage(int history)
     {
 		if (base.Count == 0)

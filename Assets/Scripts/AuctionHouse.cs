@@ -8,24 +8,8 @@ using UnityEngine.Assertions;
 using UnityEngine.UIElements;
 
 
-public static class IListExtensions {
-    /// <summary>
-    /// Shuffles the element order of the specified list.
-    /// </summary>
-    public static void Shuffle<T>(this IList<T> ts) {
-        var count = ts.Count;
-        var last = count - 1;
-        for (var i = 0; i < last; ++i) {
-            var r = UnityEngine.Random.Range(i, count);
-            var tmp = ts[i];
-            ts[i] = ts[r];
-            ts[r] = tmp;
-        }
-    }
-}
-
-//commodities["commodity"] = ordered list<price, quantity, seller>
 public class AuctionHouse : MonoBehaviour {
+	public int seed = 42;
     public float tickInterval = .001f;
 	public int maxRounds = 10;
     public const int numAgents = 100;
@@ -40,6 +24,7 @@ public class AuctionHouse : MonoBehaviour {
 	public float maxStock = 20;
 	List<EconAgent> agents = new List<EconAgent>();
 	float irs;
+	bool timeToQuit = false;
     OfferTable askTable, bidTable;
 	StreamWriter sw;
 
@@ -58,7 +43,7 @@ public class AuctionHouse : MonoBehaviour {
 		Debug.unityLogger.logEnabled=EnableDebug;
 		OpenFileForWrite();
 
-		UnityEngine.Random.InitState(42);
+		UnityEngine.Random.InitState(seed);
 		lastTick = 0;
 		int count = 0;
 		var com = Commodities.Instance.com;
@@ -124,26 +109,6 @@ public class AuctionHouse : MonoBehaviour {
 		//CloseWriteFile();
 	}
 
-	void PrintTrackBids()
-	{
-        string print = "Track Wood: ";
-		foreach (var entry in trackBids["Wood"])
-		{
-			print += entry.Key + "," + entry.Value.ToString("c2") + " ";
-		}
-		Debug.Log(print);
-	}
-
-	void ClearTrackBids()
-	{
-		foreach (var item in trackBids)
-		{
-			foreach (var item2 in item.Value)
-			{
-				item.Value[item2.Key] = 0;
-			}
-		}
-	}
 	
 	void InitAgent(EconAgent agent, string type)
 	{
@@ -162,7 +127,7 @@ public class AuctionHouse : MonoBehaviour {
 	
 	// Update is called once per frame
 	void FixedUpdate () {
-		if (Commodities.Instance.round > maxRounds)
+		if (Commodities.Instance.round > maxRounds || timeToQuit)
 		{
 			CloseWriteFile();
 #if UNITY_EDITOR
@@ -193,7 +158,8 @@ public class AuctionHouse : MonoBehaviour {
 		foreach (var agent in agents)
 		{
 			float idleTax = 0;
-			askTable.Add(agent.Produce(com, ref idleTax));
+			agent.Produce(com, ref idleTax);
+			askTable.Add(agent.CreateAsks());
 			//Utilities.TransferQuantity(idleTax, agent, irs);
 			bidTable.Add(agent.Consume(com));
 		}
@@ -202,7 +168,7 @@ public class AuctionHouse : MonoBehaviour {
 		foreach (var entry in com)
 		{
 			ResolveOffers(entry.Value);
-			Debug.Log(entry.Key + ": goods: " + entry.Value.trades[^1] + " at price: " + entry.Value.prices[^1]);
+			Debug.Log(entry.Key + ": goods: " + entry.Value.trades[^1] + " at price: " + entry.Value.avgClearingPrice[^1]);
 		}
 		
 		EnactBankruptcy();
@@ -222,6 +188,8 @@ public class AuctionHouse : MonoBehaviour {
 		String header = Commodities.Instance.round + ", auction, none, " + c + ", ";
 		String msg = header + "bid, " + buy + ", n/a\n";
 		msg += header + "ask, " + sell + ", n/a\n";
+		msg += header + "avgAskPrice, " + Commodities.Instance.com[c].avgAskPrice[^1] + ", n/a\n";
+		msg += header + "avgBidPrice, " + Commodities.Instance.com[c].avgBidPrice[^1] + ", n/a\n";
 		PrintToFile(msg);
 	}
 	void ResolveOffers(Commodity commodity)
@@ -232,28 +200,24 @@ public class AuctionHouse : MonoBehaviour {
 		var bids = bidTable[commodity.name];
 		var agentDemandRatio = bids.Count / Mathf.Max(.01f, (float)asks.Count); //demand by num agents bid/
 
-		/******* debug */
-		if (bids.Count > 0)
-		{
-			Offer hTrade = bids[0];
-			foreach (var bid in bids)
-			{
-				if (bid.offerPrice > hTrade.offerPrice)
-				{
-					hTrade = bid;
-				}
-			}
-			if (hTrade.offerPrice > 1000)
-				Debug.Log(hTrade.agent.name + " bid " + commodity.name + " more than $1000: " + hTrade.offerPrice);
-		}
-		/******* end debug */
-
 		var quantityToBuy = bids.Sum(item => item.remainingQuantity);
 		var quantityToSell = asks.Sum(item => item.remainingQuantity);
 		commodity.bids.Add(quantityToBuy);
 		commodity.asks.Add(quantityToSell);
 		commodity.buyers.Add(bids.Count);
 		commodity.sellers.Add(asks.Count);
+		if (quantityToSell == 0)
+		{
+			commodity.avgAskPrice.Add(0);
+		} else {
+			commodity.avgAskPrice.Add(asks.Sum((x) => x.offerPrice * x.offerQuantity) / quantityToSell);
+		}
+		if (quantityToBuy == 0)
+		{
+			commodity.avgBidPrice.Add(0);
+		} else {
+			commodity.avgBidPrice.Add(asks.Sum((x) => x.offerPrice * x.offerQuantity) / quantityToBuy);
+		}
 		PrintAuctionStats(commodity.name, quantityToBuy, quantityToSell);
 
 		asks.Shuffle();
@@ -352,14 +316,9 @@ public class AuctionHouse : MonoBehaviour {
 
 		var denom = (goodsExchanged == 0) ? 1 : goodsExchanged;
 		var averagePrice = moneyExchanged / denom;
-		if (float.IsNaN(averagePrice))
-		{
-			Debug.Log(commodity.name + ": average price is nan");
-			Assert.IsFalse(float.IsNaN(averagePrice));
-		}
 		Debug.Log(Commodities.Instance.round + ": " + commodity.name + ": " + goodsExchanged + " traded at average price of " + averagePrice);
 		commodity.trades.Add(goodsExchanged);
-		commodity.prices.Add(averagePrice);
+		commodity.avgClearingPrice.Add(averagePrice);
 		commodity.Update(averagePrice, agentDemandRatio);
 
 		//calculate supply/demand
@@ -520,16 +479,22 @@ public class AuctionHouse : MonoBehaviour {
 		foreach (var entry in com)
 		{
 			var commodity = entry.Key;
-			var profit = totalProfits[commodity];// / numAgents[commodity];
+			var profit = totalProfits[commodity];
 			if (profit == 0)
 			{
 				Debug.Log(commodity + " no profit earned this round");
 			} else {
                 entry.Value.profits.Add(profit);
 			}
+			if (Commodities.Instance.round > 100 && entry.Value.profits.LastAverage(100) == 0)
+			{
+				timeToQuit = true;
+				Assert.IsTrue(false); // a profession has zero profit for n rounds
+				//TODO should be no trades in n rounds
+			}
 			if (float.IsNaN(profit) || profit > 10000)
 			{
-				profit = -42; //special case to use last value in graph
+				profit = -42; //special case
 			}
             //SetGraph(gCash, commodity, profit);
 		}

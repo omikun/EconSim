@@ -6,6 +6,7 @@ using System.Linq;
 using System;
 
 using AYellowpaper.SerializedCollections;
+using System.Security.Cryptography.X509Certificates;
 //using Dependency = System.Collections.Generic.Dictionary<string, float>;
 
 public class Commodities : MonoBehaviour
@@ -18,6 +19,8 @@ public class Commodities : MonoBehaviour
 	public bool foodConsumption = false;
 	public bool simpleTradeAmountDet = false;
 	public bool onlyBuyWhatsAffordable = false;
+	public bool changeToMostDemandedGood = false;
+	public int historySize = 10;
 
 	[SerializedDictionary("ID", "Dependency")]
 	public SerializedDictionary<string, SerializedDictionary<string, float>> initialization;
@@ -33,7 +36,7 @@ public class Commodities : MonoBehaviour
 		round = 0;
 		Init();
     }
-    public string GetMostProfitableProfession(String exclude_key, int history = 10)
+    public string GetMostProfitableProfession(String exclude_key)
 	{
 		string prof = "invalid";
 		float most = 0;
@@ -47,7 +50,7 @@ public class Commodities : MonoBehaviour
 			}
 			var profitHistory = entry.Value.profits;
 			//WARNING this history refers to the last # agents' profits, not last # rounds... short history if popular profession...
-			var profit = profitHistory.LastAverage(history);
+			var profit = profitHistory.LastAverage(historySize);
 			if (profit > most)
 			{
 				prof = commodity;
@@ -58,27 +61,41 @@ public class Commodities : MonoBehaviour
 	//get price of good
 	float GetRelativeDemand(Commodity c, int history=10)
 	{
-        var averagePrice = c.prices.LastAverage(history);
-        var minPrice = c.prices.Min();
-		var price = c.prices[c.prices.Count-1];
+        var averagePrice = c.avgClearingPrice.LastAverage(history);
+        var minPrice = c.avgClearingPrice.Min();
+		var price = c.avgClearingPrice[c.avgClearingPrice.Count-1];
 		var relativeDemand = (price - minPrice) / (averagePrice - minPrice);
 		//Debug.Log("avgPrice: " + averagePrice.ToString("c2") + " min: " + minPrice.ToString("c2") + " curr: " + price.ToString("c2"));
 		return relativeDemand;
 	}
-	public string GetHottestGood(int history=10)
+	public string GetHottestGood()
 	{
-		var rand = new System.Random();
 		string mostDemand = "invalid";
 		float max = 1.1f;
 		string mostRDDemand = "invalid";
 		float maxRD = max;
+
+		if (changeToMostDemandedGood)
+		{
+			float mostBid = 0;
+			foreach (var c in com)
+			{
+				var bid = c.Value.avgBidPrice.LastAverage(historySize);
+				if (bid > mostBid)
+				{
+					mostBid = bid;
+					mostDemand = c.Key;
+				}
+			}
+			return mostDemand;
+		}
 		foreach (var c in com)
 		{
-			var asks = c.Value.asks.LastAverage(history);
-			var bids = c.Value.bids.LastAverage(history);
+			var asks = c.Value.asks.LastAverage(historySize);
+			var bids = c.Value.bids.LastAverage(historySize);
             asks = Mathf.Max(.5f, asks);
 			var ratio = bids / asks;
-			var relDemand = GetRelativeDemand(c.Value, history);
+			var relDemand = GetRelativeDemand(c.Value, historySize);
 
 			if ( maxRD < relDemand)
 			{

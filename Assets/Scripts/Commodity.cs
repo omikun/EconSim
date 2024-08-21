@@ -9,13 +9,13 @@ public class Dependency : Dictionary<string, float> {}
 public class Commodity
 {
 	const float defaultPrice = 1;
-	public ESList buyers, sellers, bids, asks, prices, trades, profits;
+	public ESList buyers, sellers, bids, asks, avgBidPrice, avgAskPrice, avgClearingPrice, trades, profits;
 	
 	float avgPrice = 1;
 	public float GetAvgPrice(int history) //average of last history size
 	{
-        var skip = Mathf.Max(0, prices.Count - history);
-        avgPrice = prices.Skip(skip).Average();
+        var skip = Mathf.Max(0, avgClearingPrice.Count - history);
+        avgPrice = avgClearingPrice.Skip(skip).Average();
         return avgPrice;
 	}
 	public Commodity(string n, float p, Dependency d)
@@ -36,8 +36,12 @@ public class Commodity
 		asks.Add(1);
 		trades = new  ESList();
 		trades.Add(1);
-		prices = new  ESList();
-		prices.Add(1);
+		avgAskPrice = new  ESList();
+		avgAskPrice.Add(1);
+		avgBidPrice = new  ESList();
+		avgBidPrice.Add(1);
+		avgClearingPrice = new  ESList();
+		avgClearingPrice.Add(1);
 		profits = new ESList();
 		profits.Add(1);
 	}
