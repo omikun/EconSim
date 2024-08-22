@@ -1,40 +1,26 @@
-﻿using System;
-using System.Collections;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Assertions;
-using UnityEngine.UIElements;
-
-
-public static class IListExtensions {
-    /// <summary>
-    /// Shuffles the element order of the specified list.
-    /// </summary>
-    public static void Shuffle<T>(this IList<T> ts) {
-        var count = ts.Count;
-        var last = count - 1;
-        for (var i = 0; i < last; ++i) {
-            var r = UnityEngine.Random.Range(i, count);
-            var tmp = ts[i];
-            ts[i] = ts[r];
-            ts[r] = tmp;
-        }
-    }
-}
+using AYellowpaper.SerializedCollections;
 
 public class Offer : Dictionary<string, Trade> { }
-//commodities["commodity"] = ordered list<price, quantity, seller>
 public class AuctionHouse : MonoBehaviour {
     public float tickInterval = .001f;
 	public int maxRounds = 10;
-    public const int numAgents = 100;
-	public int numFarmers = 10;
-	public int numLoggers = 10;
-	public int numMiners = 10;
-	public int numRefiners = 10;
-	public int numSmiths = 10;
+	
+	[SerializedDictionary("Comm", "numAgents")]
+	public SerializedDictionary<string, int> numAgents = new()
+	{
+		{ "Food", 3 },
+		{ "Wood", 3 },
+		{ "Ore", 3 },
+		{ "Metal", 4 },
+		{ "Tool", 4 }
+	};
+
 	public float initCash = 100;
 	public bool simpleInitStock = false;
 	public float initStock = 10;
@@ -44,69 +30,41 @@ public class AuctionHouse : MonoBehaviour {
     TradeTable askTable, bidTable;
 	StreamWriter sw;
 
-	Dictionary<string, Dictionary<string, float>> trackBids = new Dictionary<string, Dictionary<string, float>>();
+	Dictionary<string, Dictionary<string, float>> trackBids = new();
 	float lastTick;
 	public bool EnableDebug = false;
-	void AddLine(int i, List<GraphMe> gmList, GameObject graph)
-	{
-		var line = graph.transform.Find("line"+i);
-		if (line != null)
-		{
-			gmList.Add(line.GetComponent<GraphMe>());
-		}
-	}
 	void Start () {
 		Debug.unityLogger.logEnabled=EnableDebug;
 		OpenFileForWrite();
 
 		UnityEngine.Random.InitState(42);
 		lastTick = 0;
-		int count = 0;
 		var com = Commodities.Instance.com;
-	
 
 		irs = 0; //GetComponent<EconAgent>();
 		var prefab = Resources.Load("Agent");
-		for (int i = transform.childCount; i < numAgents; i++)
+
+		for (int i = transform.childCount; i < numAgents.Values.Sum(); i++)
 		{
-            GameObject go = Instantiate(prefab) as GameObject; 
+		    GameObject go = Instantiate(prefab) as GameObject;
 			go.transform.parent = transform;
 			go.name = "agent" + i.ToString();
 		}
-		/* initialize agents */
-		int index = numFarmers;
-		int farmerIndex = index;
-		index += numLoggers;
-		int loggerIndex = index;
-		index += numMiners;
-		int minerIndex = index;
-		index += numRefiners;
-		int refinerIndex = index;
-		index += numSmiths;
-		int smithIndex = index;
-		Assert.IsTrue(numAgents >= index);
-		foreach (Transform tChild in transform)
+		
+		int agentIndex = 0;
+		var professions = numAgents.Keys;
+		foreach (string profession in professions)
 		{
-			GameObject child = tChild.gameObject;
-			var agent = child.GetComponent<EconAgent>();
-
-			string type = "invalid";
-
-			if (count < farmerIndex) 		type = "Food";
-			else if (count < loggerIndex) 	type = "Wood";  //woodcutter
-			else if (count < minerIndex) 	type = "Ore";	//miner
-			else if (count < refinerIndex) 	type = "Metal";	//refiner
-			else if (count < smithIndex) 	type = "Tool";	//blacksmith
-
-			Debug.Log("agent type: " + type);
-			if (type == "invalid")
-				Debug.Log("2agent type: " + type);
-			else {
-				InitAgent(agent, type);
+			for (int i = 0; i < numAgents[profession]; ++i)
+			{
+				GameObject child = transform.GetChild(agentIndex).gameObject;
+				var agent = child.GetComponent<EconAgent>();
+				InitAgent(agent, profession);
 				agents.Add(agent);
+				++agentIndex;
 			}
-			count++;
 		}
+		
 		askTable = new TradeTable();
         bidTable = new TradeTable();
 
@@ -120,43 +78,24 @@ public class AuctionHouse : MonoBehaviour {
 			}
 		}
 	}
-
 	void OnApplicationQuit() 
 	{
 		//CloseWriteFile();
 	}
-
-	void PrintTrackBids()
-	{
-        string print = "Track Wood: ";
-		foreach (var entry in trackBids["Wood"])
-		{
-			print += entry.Key + "," + entry.Value.ToString("c2") + " ";
-		}
-		Debug.Log(print);
-	}
-
-	void ClearTrackBids()
-	{
-		foreach (var item in trackBids)
-		{
-			foreach (var item2 in item.Value)
-			{
-				item.Value[item2.Key] = 0;
-			}
-		}
-	}
-	
 	void InitAgent(EconAgent agent, string type)
 	{
         List<string> buildables = new List<string>();
 		buildables.Add(type);
-		var _initStock = UnityEngine.Random.Range(initStock/2, initStock*2);
-		_initStock = Mathf.Floor(_initStock);
+		float _initStock = 0;
 		if (simpleInitStock)
 		{
 			_initStock = initStock;
+		} else {
+			_initStock = UnityEngine.Random.Range(initStock/2, initStock*2);
+			_initStock = Mathf.Floor(_initStock);
 		}
+
+		// TODO: This may cause uneven maxStock between agents
 		var _maxStock = Mathf.Max(initStock, maxStock);
 
         agent.Init(initCash, buildables, _initStock, _maxStock);
