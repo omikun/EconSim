@@ -87,6 +87,7 @@ public class GraphLead : MonoBehaviour {
 	// Update is called once per frame
 	void LateUpdate () {
 		return;
+		/*
 		firstThisUpdate = true;
 		//TODO roll this back: rn getting null ref exception
 		//tXmin.text = (lMin.x.ToString("n2"));
@@ -106,6 +107,7 @@ public class GraphLead : MonoBehaviour {
 		axis.positionCount = 4;
 		Debug.Log(hi + " numPos: " + axis.positionCount + " pos3: " + tmp.ToString());
 		axis.SetPosition(3, tmp);
+		*/
     }
 	string Hierarchy(GameObject go, int num=0)
 	{

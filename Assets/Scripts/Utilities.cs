@@ -53,8 +53,21 @@ public class ESList : List<float>
 		{
 			return 0;
 		}
-        var newList = base.GetRange(skip, end);
-        avg = newList.Average();
-        return avg;
+        return base.GetRange(skip, end).Average();
+    }
+
+    public float LastSum(int history)
+    {
+		if (base.Count == 0)
+		{
+			return 0;
+		}
+        var skip = Mathf.Min(base.Count-1, Mathf.Max(0, base.Count - history));
+		var end = Mathf.Min(base.Count-1, history);
+		if (end == skip)
+		{
+			return 0;
+		}
+        return base.GetRange(skip, end).Sum();
     }
 }

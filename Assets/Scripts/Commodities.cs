@@ -19,6 +19,7 @@ public class Commodities : MonoBehaviour
 	public bool foodConsumption = false;
 	public bool simpleTradeAmountDet = false;
 	public bool onlyBuyWhatsAffordable = false;
+	[Tooltip("Use highest bid good vs most demand to supply good")]
 	public bool changeToMostDemandedGood = false;
 	public int historySize = 10;
 
@@ -54,6 +55,7 @@ public class Commodities : MonoBehaviour
 			if (profit > most)
 			{
 				prof = commodity;
+				most = profit;
 			}
 		}
 		return prof;

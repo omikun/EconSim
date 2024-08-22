@@ -99,7 +99,7 @@ public class InventoryItem {
 	public float Buy(float quant, float price)
 	{
         boughtThisRound = true;
-        UnityEngine.Debug.Log("buying " + commodityName + " " + quant.ToString("n2") + " for " + price.ToString("c2") + " currently have " + Quantity.ToString("n2"));
+        // UnityEngine.Debug.Log("buying " + commodityName + " " + quant.ToString("n2") + " for " + price.ToString("c2") + " currently have " + Quantity.ToString("n2"));
 		//update meanCost of units in stock
         Assert.IsTrue(quant > 0);
 
@@ -121,7 +121,7 @@ public class InventoryItem {
         Assert.IsTrue(Quantity >= 0);
         if (quant == 0 || Surplus() == 0)
             return;
-        UnityEngine.Debug.Log("sell quant is " + quant + " and surplus is " + Surplus());
+        // UnityEngine.Debug.Log("sell quant is " + quant + " and surplus is " + Surplus());
         quant = Mathf.Min(quant, Surplus());
         Assert.IsTrue(quant > 0);
 		Quantity -= quant;
@@ -206,8 +206,8 @@ public class InventoryItem {
         }
 
         SanePriceBeliefs();
-        UnityEngine.Debug.Log("buyer " + agentName + " stock: " + commodityName + " min price belief: " + prevMinPriceBelief + " -> " + minPriceBelief);
-        UnityEngine.Debug.Log("buyer " + agentName + " stock: " + commodityName + " max price belief: " + prevMaxPriceBelief + " -> " + maxPriceBelief);
+        // UnityEngine.Debug.Log("buyer " + agentName + " stock: " + commodityName + " min price belief: " + prevMinPriceBelief + " -> " + minPriceBelief);
+        // UnityEngine.Debug.Log("buyer " + agentName + " stock: " + commodityName + " max price belief: " + prevMaxPriceBelief + " -> " + maxPriceBelief);
         Assert.IsTrue(minPriceBelief < maxPriceBelief);
         debug_msgs.Add(reason_msg);
     }
@@ -224,7 +224,7 @@ public void UpdateSellerPriceBelief(String agentName, in Offer trade, in Commodi
         var market_share = quantitySold / commodity.trades[^1];
         var offer_price = trade.offerPrice;
         var weight = quantitySold / trade.offerQuantity; //quantitySold / quantityAsked
-        var displacement = weight * meanBeliefPrice;
+        var displacement = (1 - weight) * meanBeliefPrice;
 
         string reason_msg = "none";
         if (weight == 0)
@@ -263,8 +263,8 @@ public void UpdateSellerPriceBelief(String agentName, in Offer trade, in Commodi
 
 		SanePriceBeliefs();
 		Assert.IsFalse(float.IsNaN(minPriceBelief));
-        UnityEngine.Debug.Log("seller " + agentName + " stock: " + commodityName + " min price belief: " + prevMinPriceBelief + " -> " + minPriceBelief);
-        UnityEngine.Debug.Log("seller " + agentName + " stock: " + commodityName + " max price belief: " + prevMaxPriceBelief + " -> " + maxPriceBelief);
+        // UnityEngine.Debug.Log("seller " + agentName + " stock: " + commodityName + " min price belief: " + prevMinPriceBelief + " -> " + minPriceBelief);
+        // UnityEngine.Debug.Log("seller " + agentName + " stock: " + commodityName + " max price belief: " + prevMaxPriceBelief + " -> " + maxPriceBelief);
         Assert.IsTrue(minPriceBelief < maxPriceBelief);
         debug_msgs.Add(reason_msg);
 	}
