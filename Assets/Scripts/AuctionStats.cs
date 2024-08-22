@@ -20,7 +20,7 @@ public class AuctionStats : MonoBehaviour
 	public bool simpleTradeAmountDet = false;
 	public bool onlyBuyWhatsAffordable = false;
 	[Tooltip("Use highest bid good vs most demand to supply good")]
-	public bool changeToHIghestBidGood = false;
+	public bool changeToHighestBidGood = false;
 	public int historySize = 10;
 
 	[SerializedDictionary("ID", "Dependency")]
@@ -77,7 +77,7 @@ public class AuctionStats : MonoBehaviour
 		string mostRDDemand = "invalid";
 		float maxRD = max;
 
-		if (changeToHIghestBidGood)
+		if (changeToHighestBidGood)
 		{
 			float mostBid = 0;
 			foreach (var c in book)

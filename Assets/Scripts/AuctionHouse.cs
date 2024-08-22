@@ -218,7 +218,7 @@ public class AuctionHouse : MonoBehaviour {
 		{
 			commodity.avgBidPrice.Add(0);
 		} else {
-			commodity.avgBidPrice.Add(asks.Sum((x) => x.offerPrice * x.offerQuantity) / quantityToBuy);
+			commodity.avgBidPrice.Add(bids.Sum((x) => x.offerPrice * x.offerQuantity) / quantityToBuy);
 		}
 		PrintAuctionStats(commodity.name, quantityToBuy, quantityToSell);
 
