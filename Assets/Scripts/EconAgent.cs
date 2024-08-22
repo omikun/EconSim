@@ -63,17 +63,17 @@ public class EconAgent : MonoBehaviour {
 		uid = uid_idx++;
 		initStock = _initStock;
 		initCash = _initCash;
-		starvation = Commodities.Instance.starvation;
+		starvation = AuctionStats.Instance.starvation;
 		maxStock = maxstock;
-		simpleTradeAmountDet = Commodities.Instance.simpleTradeAmountDet;
-		foodConsumption = Commodities.Instance.foodConsumption;
-		onlyBuyWhatsAffordable = Commodities.Instance.onlyBuyWhatsAffordable;
+		simpleTradeAmountDet = AuctionStats.Instance.simpleTradeAmountDet;
+		foodConsumption = AuctionStats.Instance.foodConsumption;
+		onlyBuyWhatsAffordable = AuctionStats.Instance.onlyBuyWhatsAffordable;
 		Reinit(initCash, b);
 	}
 	public void Reinit(float initCash, List<string> b)
 	{
         if (com == null)
-			com = Commodities.Instance.com;
+			com = AuctionStats.Instance.book;
 		//list of commodities self can produce
 		//get initial stockpiles
 		outputs = b;
@@ -155,8 +155,8 @@ public class EconAgent : MonoBehaviour {
 
 	float ChangeProfession()
 	{
-		string bestGood = Commodities.Instance.GetHottestGood();
-		string bestProf = Commodities.Instance.GetMostProfitableProfession(outputs[0]);
+		string bestGood = AuctionStats.Instance.GetHottestGood();
+		string bestProf = AuctionStats.Instance.GetMostProfitableProfession(outputs[0]);
 
 		string mostDemand = bestProf;
 		Debug.Log("bestGood: " + bestGood + " bestProfession: " + bestProf);
@@ -287,8 +287,7 @@ public class EconAgent : MonoBehaviour {
 				float buyPrice = stock.Value.GetPrice();
 				if (onlyBuyWhatsAffordable)
 				{
-					float maxPrice = Mathf.Min(cash / numBids, stock.Value.GetPrice());
-					buyPrice = Mathf.Min(buyPrice, maxPrice);
+					buyPrice = Mathf.Min(cash / numBids, buyPrice);
 				}
 				Assert.IsTrue(buyPrice > 0);
 				if (buyPrice > 1000)
@@ -296,9 +295,12 @@ public class EconAgent : MonoBehaviour {
 					Debug.Log(stock.Key + "buyPrice: " + buyPrice.ToString("c2") + " : " + stock.Value.minPriceBelief.ToString("n2") + "<" + stock.Value.maxPriceBelief.ToString("n2"));
 					Assert.IsFalse(buyPrice > 1000);
 				}
-				Debug.Log(this.name + " wants to buy " + numBids.ToString("n2") + stock.Key + " for " + buyPrice.ToString("c2") + " each");
+				Debug.Log(this.name + " wants to buy " + numBids.ToString("n2") + stock.Key + " for " + buyPrice.ToString("c2") + " each" + " min/maxPriceBeliefs " + stock.Value.minPriceBelief.ToString("c2") + "/" + stock.Value.maxPriceBelief.ToString("c2"));
 				Assert.IsFalse(numBids < 0);
 				bids.Add(stock.Key, new Offer(stock.Value.commodityName, buyPrice, numBids, this));
+				stock.Value.bidPrice = buyPrice;
+				stock.Value.bidQuantity = numBids;
+
 			}
         }
         return bids;
@@ -378,8 +380,10 @@ public class EconAgent : MonoBehaviour {
 
 			if (sellQuantity > 0 && sellPrice > 0)
 			{
-				Debug.Log(name + " wants to sell for " + sellQuantity + " for " + sellPrice.ToString("c2") + ", has in stock" + inventory[commodityName].Surplus());
+				Debug.Log(name + " wants to sell " + sellQuantity + " " + commodityName + " for " + sellPrice.ToString("c2") + ", has in stock" + inventory[commodityName].Surplus());
 				asks.Add(commodityName, new Offer(commodityName, sellPrice, sellQuantity, this));
+				sellStock.askPrice = sellPrice;
+				sellStock.askQuantity = sellQuantity;
 			}
 		}
 		return asks;
@@ -387,7 +391,7 @@ public class EconAgent : MonoBehaviour {
     //get the cost of a commodity
     float GetCostOf(string commodity)
 	{
-		var com = Commodities.Instance.com;
+		var com = AuctionStats.Instance.book;
 		float cost = 0;
 		foreach (var dep in com[commodity].dep)
 		{

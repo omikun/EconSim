@@ -26,7 +26,7 @@ public class AuctionHouse : MonoBehaviour {
 	bool timeToQuit = false;
     OfferTable askTable, bidTable;
 	StreamWriter sw;
-	Commodities auctionTracker;
+	AuctionStats auctionTracker;
 
 	Dictionary<string, Dictionary<string, float>> trackBids = new Dictionary<string, Dictionary<string, float>>();
 	float lastTick;
@@ -46,8 +46,8 @@ public class AuctionHouse : MonoBehaviour {
 		UnityEngine.Random.InitState(seed);
 		lastTick = 0;
 		int count = 0;
-		auctionTracker = Commodities.Instance;
-		var com = auctionTracker.com;
+		auctionTracker = AuctionStats.Instance;
+		var com = auctionTracker.book;
 	
 		irs = 0; //GetComponent<EconAgent>();
 		var prefab = Resources.Load("Agent");
@@ -155,7 +155,7 @@ public class AuctionHouse : MonoBehaviour {
 	{
 		Debug.Log("auction house ticking");
 
-		var com = auctionTracker.com;
+		var com = auctionTracker.book;
 		foreach (var agent in agents)
 		{
 			float idleTax = 0;
@@ -190,8 +190,8 @@ public class AuctionHouse : MonoBehaviour {
 		String header = auctionTracker.round + ", auction, none, " + c + ", ";
 		String msg = header + "bid, " + buy + ", n/a\n";
 		msg += header + "ask, " + sell + ", n/a\n";
-		msg += header + "avgAskPrice, " + auctionTracker.com[c].avgAskPrice[^1] + ", n/a\n";
-		msg += header + "avgBidPrice, " + auctionTracker.com[c].avgBidPrice[^1] + ", n/a\n";
+		msg += header + "avgAskPrice, " + auctionTracker.book[c].avgAskPrice[^1] + ", n/a\n";
+		msg += header + "avgBidPrice, " + auctionTracker.book[c].avgBidPrice[^1] + ", n/a\n";
 		PrintToFile(msg);
 	}
 	void ResolveOffers(Commodity commodity)
@@ -202,8 +202,8 @@ public class AuctionHouse : MonoBehaviour {
 		var bids = bidTable[commodity.name];
 		var agentDemandRatio = bids.Count / Mathf.Max(.01f, (float)asks.Count); //demand by num agents bid/
 
-		var quantityToBuy = bids.Sum(item => item.remainingQuantity);
-		var quantityToSell = asks.Sum(item => item.remainingQuantity);
+		var quantityToBuy = bids.Sum(item => item.offerQuantity);
+		var quantityToSell = asks.Sum(item => item.offerQuantity);
 		commodity.bids.Add(quantityToBuy);
 		commodity.asks.Add(quantityToSell);
 		commodity.buyers.Add(bids.Count);
@@ -239,7 +239,7 @@ public class AuctionHouse : MonoBehaviour {
 		run &= askIt.MoveNext();
 		run &= bidIt.MoveNext();
 
-		while (true && run)
+		while (run)
 		{
 			var ask = askIt.Current;
 			var bid = bidIt.Current;
@@ -255,7 +255,6 @@ public class AuctionHouse : MonoBehaviour {
 			}
 			Assert.IsTrue(clearingPrice > 0);
 			//go to next ask/bid if fullfilled
-			// DEBUG this should not be necessary!?
 			if (ask.remainingQuantity == 0)
 			{
 				if (askIt.MoveNext() == false)
@@ -280,7 +279,7 @@ public class AuctionHouse : MonoBehaviour {
 #else
 			var boughtQuantity = bid.agent.Buy(commodity.name, tradeQuantity, clearingPrice);
 			ask.agent.Sell(commodity.name, boughtQuantity, clearingPrice);
-			Debug.Log(ask.agent.name + " ask " + ask.remainingQuantity.ToString("n2") + "x" + ask.offerPrice.ToString("c2") 
+			Debug.Log(auctionTracker.round + ": " + ask.agent.name + " ask " + ask.remainingQuantity.ToString("n2") + "x" + ask.offerPrice.ToString("c2") 
 					+ " | " + bid.agent.name + " bid: " + bid.remainingQuantity.ToString("n2") + "x" + bid.offerPrice.ToString("c2") 
 					+ " -- " + commodity.name + " offer quantity: " + tradeQuantity.ToString("n2") + " bought quantity: " + boughtQuantity.ToString("n2"));
 #endif
@@ -388,7 +387,7 @@ public class AuctionHouse : MonoBehaviour {
 		Dictionary<string, float> stockPile = new Dictionary<string, float>();
 		Dictionary<string, List<float>> stockList = new Dictionary<string, List<float>>();
 		Dictionary<string, List<float>> cashList = new Dictionary<string, List<float>>();
-		var com = auctionTracker.com;
+		var com = auctionTracker.book;
 		float totalCash = 0;
 		foreach(var entry in com)
 		{
@@ -459,7 +458,7 @@ public class AuctionHouse : MonoBehaviour {
 	float taxRate = .15f;
 	void CountProfits()
 	{
-		var com = auctionTracker.com;
+		var com = auctionTracker.book;
 		//count profit per profession/commodity
 		//first get total profit earned this round
         Dictionary<string, float> totalProfits = new Dictionary<string, float>();
@@ -507,7 +506,7 @@ public class AuctionHouse : MonoBehaviour {
 	}
 	void QuitIf()
 	{
-		foreach (var entry in auctionTracker.com)
+		foreach (var entry in auctionTracker.book)
 		{
 			var commodity = entry.Key;
 			int historySize = 100;
@@ -538,7 +537,7 @@ public class AuctionHouse : MonoBehaviour {
 	}
 	void CountProfessions()
 	{
-		var com = auctionTracker.com;
+		var com = auctionTracker.book;
 		//count number of agents per professions
 		Dictionary<string, float> professions = new Dictionary<string, float>();
 		//initialize professions

@@ -12,7 +12,7 @@ public class OfferTable : Dictionary<CommodityName, OfferList>
 {
 	public OfferTable() 
 	{
-        var com = Commodities.Instance.com;
+        var com = AuctionStats.Instance.book;
         foreach (var c in com)
         {
             base.Add(c.Key, new OfferList());

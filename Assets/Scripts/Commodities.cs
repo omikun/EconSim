@@ -9,18 +9,18 @@ using AYellowpaper.SerializedCollections;
 using System.Security.Cryptography.X509Certificates;
 //using Dependency = System.Collections.Generic.Dictionary<string, float>;
 
-public class Commodities : MonoBehaviour
+public class AuctionStats : MonoBehaviour
 {
-    public static Commodities Instance { get; private set; }
+    public static AuctionStats Instance { get; private set; }
 
-	public Dictionary<string, Commodity> com { get; private set; }
+	public Dictionary<string, Commodity> book { get; private set; }
 	public int round { get; private set; }
 	public bool starvation = false;
 	public bool foodConsumption = false;
 	public bool simpleTradeAmountDet = false;
 	public bool onlyBuyWhatsAffordable = false;
 	[Tooltip("Use highest bid good vs most demand to supply good")]
-	public bool changeToMostDemandedGood = false;
+	public bool changeToHIghestBidGood = false;
 	public int historySize = 10;
 
 	[SerializedDictionary("ID", "Dependency")]
@@ -33,7 +33,7 @@ public class Commodities : MonoBehaviour
     private void Awake()
     {
         Instance = this;
-		com = new Dictionary<string, Commodity>(); //names, market price
+		book = new Dictionary<string, Commodity>(); //names, market price
 		round = 0;
 		Init();
     }
@@ -42,7 +42,7 @@ public class Commodities : MonoBehaviour
 		string prof = "invalid";
 		float most = 0;
 
-		foreach (var entry in com)
+		foreach (var entry in book)
 		{
 			var commodity = entry.Key;
 			if (exclude_key == commodity) 
@@ -77,10 +77,10 @@ public class Commodities : MonoBehaviour
 		string mostRDDemand = "invalid";
 		float maxRD = max;
 
-		if (changeToMostDemandedGood)
+		if (changeToHIghestBidGood)
 		{
 			float mostBid = 0;
-			foreach (var c in com)
+			foreach (var c in book)
 			{
 				var bid = c.Value.avgBidPrice.LastAverage(historySize);
 				if (bid > mostBid)
@@ -91,7 +91,7 @@ public class Commodities : MonoBehaviour
 			}
 			return mostDemand;
 		}
-		foreach (var c in com)
+		foreach (var c in book)
 		{
 			var asks = c.Value.asks.LastAverage(historySize);
 			var bids = c.Value.bids.LastAverage(historySize);
@@ -117,15 +117,15 @@ public class Commodities : MonoBehaviour
 	}
 	bool Add(string name, float production, Dependency dep)
 	{
-		if (com.ContainsKey(name)) { return false; }
+		if (book.ContainsKey(name)) { return false; }
 		Assert.IsNotNull(dep);
 
-		com.Add(name, new Commodity(name, production, dep));
+		book.Add(name, new Commodity(name, production, dep));
 		return true;
 	}
     void PrintStat()
     {
-		foreach (var item in com)
+		foreach (var item in book)
 		{
 			Debug.Log(item.Key + ": " + item.Value.price);
 			if (item.Value.dep != null)

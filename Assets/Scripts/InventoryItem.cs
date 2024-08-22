@@ -31,6 +31,11 @@ public class InventoryItem {
     List<string> debug_msgs = new List<string>();
     bool boughtThisRound = false;
     bool soldThisRound = false;
+    public float bidPrice = 0;
+    public float bidQuantity = 0;
+    public float askPrice = 0;
+    public float askQuantity = 0;
+
 
 
     public String Stats(String header) 
@@ -56,6 +61,15 @@ public class InventoryItem {
         {
             ret += header + commodityName + ", meanPrice, " + meanPriceThisRound + ",n/a\n";
         }
+        ret += header + commodityName + ", bidPrice, " + bidPrice + ",n/a\n";
+        ret += header + commodityName + ", bidQuantity, " + bidQuantity + ",n/a\n";
+        ret += header + commodityName + ", askPrice, " + askPrice + ",n/a\n";
+        ret += header + commodityName + ", askQuantity, " + askQuantity + ",n/a\n";
+
+        bidPrice = 0;
+        bidQuantity = 0;
+        askPrice = 0;
+        askQuantity = 0;
         return ret;
     }
 	public InventoryItem (string _name, float _quantity=1, float _maxQuantity=10, 

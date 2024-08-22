@@ -31,10 +31,10 @@ public class ESList : List<float>
 {
     float avg;
     int lastRound = 0;
-    Commodities comInstance;
+    AuctionStats comInstance;
     public ESList()
     {
-        comInstance = Commodities.Instance;
+        comInstance = AuctionStats.Instance;
     }
     new public void Add(float num)
     {
