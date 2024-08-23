@@ -138,6 +138,7 @@ public class AuctionHouse : MonoBehaviour {
 		{
 			float idleTax = 0;
 			agent.Produce(com, ref idleTax);
+			irs += idleTax;
 			askTable.Add(agent.CreateAsks());
 			//Utilities.TransferQuantity(idleTax, agent, irs);
 			bidTable.Add(agent.Consume(com));
@@ -170,6 +171,7 @@ public class AuctionHouse : MonoBehaviour {
 		msg += header + "ask, " + sell + ", n/a\n";
 		msg += header + "avgAskPrice, " + auctionTracker.book[c].avgAskPrice[^1] + ", n/a\n";
 		msg += header + "avgBidPrice, " + auctionTracker.book[c].avgBidPrice[^1] + ", n/a\n";
+		msg += header + "irs, " + irs + ", n/a\n";
 		PrintToFile(msg);
 	}
 	void ResolveOffers(Commodity commodity)
@@ -510,12 +512,8 @@ public class AuctionHouse : MonoBehaviour {
 	{
         foreach (var agent in agents)
         {
-			if (agent.IsBankrupt())
-			{
-				defaulted += agent.cash;
-			}
-			agent.Tick();
-            //irs -= agent.Tick();
+			//agent.Tick();
+            irs -= agent.Tick();
         }
 	}
 	void CountProfessions()

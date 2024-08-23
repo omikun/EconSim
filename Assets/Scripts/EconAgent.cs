@@ -68,10 +68,7 @@ public class EconAgent : MonoBehaviour {
 		simpleTradeAmountDet = AuctionStats.Instance.simpleTradeAmountDet;
 		foodConsumption = AuctionStats.Instance.foodConsumption;
 		onlyBuyWhatsAffordable = AuctionStats.Instance.onlyBuyWhatsAffordable;
-		Reinit(initCash, b);
-	}
-	public void Reinit(float initCash, List<string> b)
-	{
+
         if (com == null)
 			com = AuctionStats.Instance.book;
 		//list of commodities self can produce
@@ -98,6 +95,43 @@ public class EconAgent : MonoBehaviour {
 			}
 			AddToInventory(buildable, 0, maxStock, com[buildable].price, com[buildable].production);
 			Debug.Log("New " + gameObject.name + " has " + inventory[buildable].Quantity + " " + buildable);
+		}
+    }
+	public void Reinit(float initCash, List<string> b)
+	{
+        if (com == null)
+			com = AuctionStats.Instance.book;
+		//list of commodities self can produce
+		//get initial stockpiles
+		outputs = b;
+		cash = initCash;
+		prevCash = cash;
+		inputs.Clear();
+		foreach (var buildable in outputs)
+		{
+
+			if (!com.ContainsKey(buildable))
+				Debug.Log("commodity not recognized: " + buildable);
+
+            if (com[buildable].dep == null)
+				Debug.Log(buildable + ": null dep!");
+
+			string msg = "";
+			foreach (var entry in inventory)
+			{
+				msg += entry.Value.Quantity + " " + entry.Key + ", ";
+			}
+			Debug.Log(AuctionStats.Instance.round + ": " + name + " reinit2: " + msg );
+			foreach (var dep in com[buildable].dep)
+			{
+				var commodity = dep.Key;
+				inputs.Add(commodity);
+                //Debug.Log("::" + commodity);
+				AddToInventory(commodity, initStock, maxStock, com[commodity].price, com[commodity].production);
+			}
+			AddToInventory(buildable, 0, maxStock, com[buildable].price, com[buildable].production);
+			//Debug.Log("New " + gameObject.name + " has " + inventory[buildable].Quantity + " " + buildable);
+			Debug.Log(AuctionStats.Instance.round + ": " + name + " post reinit2: " + msg );
 		}
     }
 
@@ -144,7 +178,7 @@ public class EconAgent : MonoBehaviour {
         if (IsBankrupt() || (starvation && starving))
 		{
 			Debug.Log(name + " producing " + outputs[0] + " is bankrupt: " + cash.ToString("c2") + " or starving where food=" + inventory["Food"].Quantity);
-			taxConsumed = ChangeProfession();
+			taxConsumed = cash + ChangeProfession(); //existing debt + 
 		}
 		foreach (var buildable in outputs)
 		{
@@ -163,15 +197,16 @@ public class EconAgent : MonoBehaviour {
 		if (bestGood != "invalid")
         {
             mostDemand = bestGood;
+			outputs[0] = mostDemand;
 		} else {
 			//no good profession?? probably should assert
 			//Assert.IsTrue(bestProf != "invalid");
-			return 0;
+			//return 0;
 		}
+		//TODO need to plan better what this should be about
 				
 		Assert.AreEqual(outputs.Count, 1);
 		Debug.Log(name + " changing from " + outputs[0] + " to " + mostDemand);
-		outputs[0] = mostDemand;
 		//inventory.Clear();
 		List<string> b = new List<string>();
 		b.Add(mostDemand);
@@ -347,10 +382,11 @@ public class EconAgent : MonoBehaviour {
 			producedThisRound += numProduced;
 		}
 
-#if false //this is in the paper
-		if (producedThisRound > 0 && revenueThisRound > 0)
+#if true //this is in the paper
+		if (producedThisRound > 0 && cash > 0)
 		{
-			idleTax = Mathf.Abs(cash * .05f); 
+			idleTax = Mathf.Floor(cash * .05f); 
+			cash -= idleTax;
 		}
 #endif
 	}
