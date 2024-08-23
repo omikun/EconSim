@@ -34,4 +34,11 @@ public class TransactionHistory : List<Transaction>
         }
         avg = (count == 0) ? 0 : sum / (float)count;
     }
+    public void UpdateLast(Transaction t)
+    {
+        var priceVolume = base[^1].quantity * base[^1].price;
+        priceVolume += t.price * t.quantity;
+        base[^1].quantity += t.quantity;
+        base[^1].price = priceVolume / base[^1].quantity;
+    }
 }

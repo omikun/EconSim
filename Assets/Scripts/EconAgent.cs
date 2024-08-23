@@ -194,6 +194,9 @@ public class EconAgent : MonoBehaviour {
 
 		string mostDemand = bestProf;
 		Debug.Log("bestGood: " + bestGood + " bestProfession: " + bestProf);
+		Assert.AreEqual(outputs.Count, 1);
+		Debug.Log(name + " changing from " + outputs[0] + " to " + mostDemand);
+
 		if (bestGood != "invalid")
         {
             mostDemand = bestGood;
@@ -205,8 +208,6 @@ public class EconAgent : MonoBehaviour {
 		}
 		//TODO need to plan better what this should be about
 				
-		Assert.AreEqual(outputs.Count, 1);
-		Debug.Log(name + " changing from " + outputs[0] + " to " + mostDemand);
 		//inventory.Clear();
 		List<string> b = new List<string>();
 		b.Add(mostDemand);
@@ -327,7 +328,7 @@ public class EconAgent : MonoBehaviour {
 				Assert.IsFalse(numBids < 0);
 				bids.Add(stock.Key, new Offer(stock.Value.commodityName, buyPrice, numBids, this));
 				stock.Value.bidPrice = buyPrice;
-				stock.Value.bidQuantity = numBids;
+				stock.Value.bidQuantity += numBids;
 
 			}
         }

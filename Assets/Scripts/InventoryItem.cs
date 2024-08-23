@@ -112,7 +112,6 @@ public class InventoryItem {
     }
 	public float Buy(float quant, float price)
 	{
-        boughtThisRound = true;
         // UnityEngine.Debug.Log("buying " + commodityName + " " + quant.ToString("n2") + " for " + price.ToString("c2") + " currently have " + Quantity.ToString("n2"));
 		//update meanCost of units in stock
         Assert.IsTrue(quant > 0);
@@ -124,13 +123,18 @@ public class InventoryItem {
         var prevMinPriceBelief = minPriceBelief;
         var prevMaxPriceBelief = maxPriceBelief;
         last_price = price;
-        buyHistory.Add(new Transaction(price, quant));
+        if (boughtThisRound)
+        {
+            buyHistory.UpdateLast(new Transaction(price, quant));
+        } else {
+            buyHistory.Add(new Transaction(price, quant));
+        }
+        boughtThisRound = true;
 		//return adjusted quant;
 		return quant;
 	}
 	public void Sell(float quant, float price)
 	{
-        soldThisRound = true;
 		//update meanCost of units in stock
         Assert.IsTrue(Quantity >= 0);
         if (quant == 0 || Surplus() == 0)
@@ -143,7 +147,13 @@ public class InventoryItem {
         costThisRound += price;
         meanPriceThisRound = (quantityTradedThisRound == 0) ? 0 : costThisRound / quantityTradedThisRound;
         last_price = price;
-        sellHistory.Add(new Transaction(price, quant));
+        if (soldThisRound)
+        {
+            sellHistory.UpdateLast(new Transaction(price, quant));
+        } else {
+            sellHistory.Add(new Transaction(price, quant));
+        }
+        soldThisRound = true;
 	}
 	public float GetPrice()
 	{
