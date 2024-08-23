@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -8,6 +8,7 @@ using AYellowpaper.SerializedCollections;
 
 public class AuctionHouse : MonoBehaviour {
 	public int seed = 42;
+	public bool appendTimeToLog = false;
     public float tickInterval = .001f;
 	public int maxRounds = 10;
 	
@@ -338,7 +339,12 @@ public class AuctionHouse : MonoBehaviour {
 
 	void OpenFileForWrite() {
 		var datepostfix = DateTime.Now.ToString(@"yyyy-MM-dd-h_mm_tt");
-		sw = new StreamWriter("log_" + datepostfix + ".csv");
+		if (appendTimeToLog)
+		{
+			sw = new StreamWriter("log_" + datepostfix + ".csv");
+		} else {
+			sw = new StreamWriter("log.csv");
+		}
 		String header_row = "round, agent, produces, inventory_items, type, amount, reason\n";
 		PrintToFile(header_row);
 	}

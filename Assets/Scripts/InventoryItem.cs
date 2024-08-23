@@ -173,7 +173,7 @@ public class InventoryItem {
         // demand vs supply, 
         //BUY
 		var meanBeliefPrice = (minPriceBelief + maxPriceBelief) / 2;
-		var deltaMean = meanBeliefPrice - trade.clearingPrice; //TODO or use auction house mean price?
+		var deltaMean = Mathf.Abs(meanBeliefPrice - trade.clearingPrice); //TODO or use auction house mean price?
         var quantityBought = trade.offerQuantity - trade.remainingQuantity;
         var historicalMeanPrice = commodity.avgClearingPrice.LastAverage(10);
         Assert.IsTrue(historicalMeanPrice >= 0);

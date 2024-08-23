@@ -41,33 +41,43 @@ public class ESList : List<float>
         base.Add(num);
         lastRound = comInstance.round;
     }
+    public float LastHighest(int history)
+    {
+        if (base.Count == 0)
+        {
+            return 0;
+        }
+        var skip = Mathf.Max(0, base.Count - history);
+        var end = Math.Min(history, base.Count);
+        if (skip == end)
+        {
+            return 0;
+        }
+        return base.GetRange(skip, end).Max();
+    }
     public float LastAverage(int history)
     {
-		if (base.Count == 0)
-		{
-			return 0;
-		}
-        var skip = Mathf.Min(base.Count-1, Mathf.Max(0, base.Count - history));
-		var end = Mathf.Min(base.Count-1, history);
-		if (end == skip)
-		{
-			return 0;
-		}
+        if (base.Count == 0)
+        {
+            return 0;
+        }
+        var skip = Mathf.Max(0, base.Count - history);
+        var end = Math.Min(history, base.Count);
         return base.GetRange(skip, end).Average();
     }
 
     public float LastSum(int history)
     {
-		if (base.Count == 0)
-		{
-			return 0;
-		}
-        var skip = Mathf.Min(base.Count-1, Mathf.Max(0, base.Count - history));
-		var end = Mathf.Min(base.Count-1, history);
-		if (end == skip)
-		{
-			return 0;
-		}
+        if (base.Count == 0)
+        {
+            return 0;
+        }
+        var skip = Mathf.Max(0, base.Count - history);
+        var end = Math.Min(history, base.Count);
+        if (skip == end)
+        {
+            return 0;
+        }
         return base.GetRange(skip, end).Sum();
     }
 }

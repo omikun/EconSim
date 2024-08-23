@@ -143,7 +143,7 @@ public class EconAgent : MonoBehaviour {
 
         if (IsBankrupt() || (starvation && starving))
 		{
-			Debug.Log(name + ":" + outputs[0] + " is bankrupt: " + cash.ToString("c2") + " or starving where food=" + inventory["Food"].Quantity);
+			Debug.Log(name + " producing " + outputs[0] + " is bankrupt: " + cash.ToString("c2") + " or starving where food=" + inventory["Food"].Quantity);
 			taxConsumed = ChangeProfession();
 		}
 		foreach (var buildable in outputs)
@@ -165,7 +165,8 @@ public class EconAgent : MonoBehaviour {
             mostDemand = bestGood;
 		} else {
 			//no good profession?? probably should assert
-			Assert.IsTrue(bestProf != "invalid");
+			//Assert.IsTrue(bestProf != "invalid");
+			return 0;
 		}
 				
 		Assert.AreEqual(outputs.Count, 1);
@@ -217,23 +218,9 @@ public class EconAgent : MonoBehaviour {
 	}
 
     /*********** Produce and consume; enter asks and bids to auction house *****/
-	float FindTradeFavorability(string c)
-	{
-		//var avgPrice = com[c].GetAvgPrice(historyCount);
-		var avgPrice = com[c].avgClearingPrice.LastAverage(historyCount);
-		var lowestPrice = inventory[c].sellHistory.Min();
-		var highestPrice = inventory[c].sellHistory.Max();
-		if (lowestPrice == highestPrice) {
-			//no history, default to half
-			return .5f;
-		}
-		//todo SANITY check
-		float favorability = Mathf.InverseLerp(lowestPrice, highestPrice, avgPrice);
-		return favorability;
-	}
     float FindSellCount(string c)
 	{
-		var avgPrice = com[c].avgClearingPrice.LastAverage(historyCount);
+		var avgPrice = com[c].avgBidPrice.LastAverage(historyCount);
 		var lowestPrice = inventory[c].sellHistory.Min();
 		var highestPrice = inventory[c].sellHistory.Max();
 		float favorability = .5f;
@@ -241,19 +228,24 @@ public class EconAgent : MonoBehaviour {
 			favorability = Mathf.InverseLerp(lowestPrice, highestPrice, avgPrice);
 			favorability = Mathf.Clamp(favorability, 0, 1);
 		}
-		float numAsks = favorability * inventory[c].Surplus();
+		//sell at least 1
+		float numAsks = Mathf.Max(1, favorability * inventory[c].Surplus());
 		//leave some to eat if food
-		numAsks = Mathf.Min(numAsks, inventory[c].Surplus()-1); 
+		if (c == "Food")
+		{
+			numAsks = Mathf.Min(numAsks, inventory[c].Surplus() - 1);
+		}
 		numAsks = Mathf.Floor(numAsks);
 		if (simpleTradeAmountDet) {
 			numAsks = inventory[c].Surplus();
 		}
-		Debug.Log("FindSellCount " + c + ": avgPrice: " + avgPrice.ToString("c2") + " favorability: " + favorability.ToString("n2") + " numAsks: " + numAsks.ToString("n2") + " highestPrice: " + highestPrice.ToString("c2") + ", lowestPrice: " + lowestPrice.ToString("c2"));
+		numAsks = Mathf.Max(0, numAsks);
+		Debug.Log(AuctionStats.Instance.round + " " + name + " FindSellCount " + c + ": avgPrice: " + avgPrice.ToString("c2") + " favorability: " + favorability.ToString("n2") + " numAsks: " + numAsks.ToString("n2") + " highestPrice: " + highestPrice.ToString("c2") + ", lowestPrice: " + lowestPrice.ToString("c2"));
 		return numAsks;
 	}
 	float FindBuyCount(string c)
 	{
-		var avgPrice = com[c].avgClearingPrice.LastAverage(historyCount);
+		var avgPrice = com[c].avgBidPrice.LastAverage(historyCount);
 		var lowestPrice = inventory[c].buyHistory.Min();
 		var highestPrice = inventory[c].buyHistory.Max();
 		//todo SANITY check
@@ -265,11 +257,12 @@ public class EconAgent : MonoBehaviour {
 		//float favorability = FindTradeFavorability(c);
 		float numBids = (1 - favorability) * inventory[c].Deficit();
 		numBids = Mathf.Floor(numBids);
+		numBids = Mathf.Max(0, numBids);
 		if (simpleTradeAmountDet) {
 			numBids = inventory[c].Deficit();
 		}
 		
-		Debug.Log("FindBuyCount " + c + ": avgPrice: " + avgPrice.ToString("c2") + " favorability: " + (1-favorability).ToString("n2") + " numBids: " + numBids.ToString("n2") + " highestPrice: " + highestPrice.ToString("c2") + ", lowestPrice: " + lowestPrice.ToString("c2"));
+		Debug.Log(AuctionStats.Instance.round + " " + name + " FindBuyCount " + c + ": avgPrice: " + avgPrice.ToString("c2") + " favorability: " + (1-favorability).ToString("n2") + " numBids: " + numBids.ToString("n2") + " highestPrice: " + highestPrice.ToString("c2") + ", lowestPrice: " + lowestPrice.ToString("c2"));
 		return numBids;
 	}
 	public Offers Consume(Dictionary<string, Commodity> com) {
@@ -295,7 +288,7 @@ public class EconAgent : MonoBehaviour {
 					Debug.Log(stock.Key + "buyPrice: " + buyPrice.ToString("c2") + " : " + stock.Value.minPriceBelief.ToString("n2") + "<" + stock.Value.maxPriceBelief.ToString("n2"));
 					Assert.IsFalse(buyPrice > 1000);
 				}
-				Debug.Log(this.name + " wants to buy " + numBids.ToString("n2") + stock.Key + " for " + buyPrice.ToString("c2") + " each" + " min/maxPriceBeliefs " + stock.Value.minPriceBelief.ToString("c2") + "/" + stock.Value.maxPriceBelief.ToString("c2"));
+				Debug.Log(AuctionStats.Instance.round + ": " + this.name + " wants to buy " + numBids.ToString("n2") + stock.Key + " for " + buyPrice.ToString("c2") + " each" + " min/maxPriceBeliefs " + stock.Value.minPriceBelief.ToString("c2") + "/" + stock.Value.maxPriceBelief.ToString("c2"));
 				Assert.IsFalse(numBids < 0);
 				bids.Add(stock.Key, new Offer(stock.Value.commodityName, buyPrice, numBids, this));
 				stock.Value.bidPrice = buyPrice;
@@ -380,7 +373,7 @@ public class EconAgent : MonoBehaviour {
 
 			if (sellQuantity > 0 && sellPrice > 0)
 			{
-				Debug.Log(name + " wants to sell " + sellQuantity + " " + commodityName + " for " + sellPrice.ToString("c2") + ", has in stock" + inventory[commodityName].Surplus());
+				Debug.Log(AuctionStats.Instance.round + ": " + name + " wants to sell " + sellQuantity + " " + commodityName + " for " + sellPrice.ToString("c2") + ", has in stock" + inventory[commodityName].Surplus());
 				asks.Add(commodityName, new Offer(commodityName, sellPrice, sellQuantity, this));
 				sellStock.askPrice = sellPrice;
 				sellStock.askQuantity = sellQuantity;
