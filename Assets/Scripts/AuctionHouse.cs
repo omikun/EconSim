@@ -136,9 +136,14 @@ public class AuctionHouse : MonoBehaviour {
 		var com = auctionTracker.book;
 		foreach (var agent in agents)
 		{
+			var numProduced = agent.Produce(com);
 			float idleTax = 0;
-			agent.Produce(com, ref idleTax);
-			irs += idleTax;
+			if (numProduced == 0)
+			{
+				idleTax = agent.PayTax(.1f);
+				irs += idleTax;
+			}
+			Debug.Log(AuctionStats.Instance.round + " " + agent.name + " has " + agent.cash.ToString("c2") + " produced " + numProduced + " goods and idle taxed " + idleTax.ToString("c2"));
 			askTable.Add(agent.CreateAsks());
 			//Utilities.TransferQuantity(idleTax, agent, irs);
 			bidTable.Add(agent.Consume(com));

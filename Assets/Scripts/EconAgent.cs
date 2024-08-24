@@ -61,6 +61,13 @@ public class EconAgent : MonoBehaviour {
 
 		perItemCost[name] = com[name].price * num;
 	}
+	public float PayTax(float taxRate)
+	{
+		var idleTax = cash * taxRate;
+		cash -= idleTax;
+		taxesPaidThisRound = idleTax;
+		return idleTax;
+	}
 	public void Init(float _initCash, List<string> b, float _initStock, float maxstock) {
 		uid = uid_idx++;
 		initStock = _initStock;
@@ -229,6 +236,7 @@ public class EconAgent : MonoBehaviour {
 		{
 			item.Value.ClearRoundStats();
 		}
+		taxesPaidThisRound = 0;
 	}
 	public float Buy(string commodity, float quantity, float price)
 	{
@@ -342,7 +350,7 @@ public class EconAgent : MonoBehaviour {
         }
         return bids;
 	}
-	public void Produce(Dictionary<string, Commodity> com, ref float idleTax) {
+	public float Produce(Dictionary<string, Commodity> com) {
 		//TODO sort buildables by profit
 
 		//build as many as one can TODO don't build things that won't earn a profit
@@ -390,15 +398,8 @@ public class EconAgent : MonoBehaviour {
 
 			producedThisRound += numProduced;
 		}
+		return producedThisRound;
 
-#if true //this is in the paper
-		if (producedThisRound > 0 && cash > 0)
-		{
-			idleTax = Mathf.Floor(cash * .1f); 
-			cash -= idleTax;
-			taxesPaidThisRound = idleTax;
-		}
-#endif
 	}
 
 	public Offers CreateAsks()

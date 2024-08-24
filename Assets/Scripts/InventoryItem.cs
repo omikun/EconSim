@@ -174,41 +174,38 @@ public class InventoryItem {
     {
         var prevMinPriceBelief = minPriceBelief;
         var prevMaxPriceBelief = maxPriceBelief;
-		//SanePriceBeliefs();
 
         // implementation following paper
-        // TODO consolidate update to once per auction round per agent per commodity 
-        // maybe multiple transactions depending on quantity bid/asked mismatch
-        // need offer price, clearing/trace price, market share, mean price
-        // demand vs supply, 
-        //BUY
 		var meanBeliefPrice = (minPriceBelief + maxPriceBelief) / 2;
 		var deltaMean = Mathf.Abs(meanBeliefPrice - trade.clearingPrice); //TODO or use auction house mean price?
         var quantityBought = trade.offerQuantity - trade.remainingQuantity;
         var historicalMeanPrice = commodity.avgClearingPrice.LastAverage(10);
+        var displacement = deltaMean / historicalMeanPrice;
         Assert.IsTrue(historicalMeanPrice >= 0);
         string reason_msg = "none";
 
         if ( quantityBought * 2 > trade.offerQuantity ) //at least 50% offer filled
         {
-            // move limits inward by 10%
-            var range = Mathf.Abs(maxPriceBelief - minPriceBelief);
-            maxPriceBelief -= range / 20;
-            minPriceBelief += range / 20;
+            // move limits inward by 10 of upper limit%
+            var adjustment = maxPriceBelief * 0.1f;
+            maxPriceBelief -= adjustment;
+            minPriceBelief += adjustment;
             reason_msg = "buy>.5";
         }
         else 
         {
+            // move upper limit by 10%
             maxPriceBelief *= 1.1f;
             reason_msg = "buy<=.5";
         }
-        if ( commodity.bids[^1] > commodity.asks[^1] && Quantity < maxQuantity/4 ) //more bids than asks and inventory < 1/4 max
+        if ( trade.offerQuantity < commodity.asks[^1] && Quantity < maxQuantity/4 ) //bid more than total asks and inventory < 1/4 max
         {
-            maxPriceBelief += deltaMean;
-            minPriceBelief += deltaMean;
+            maxPriceBelief *= displacement;
+            minPriceBelief *= displacement;
             reason_msg += "_supply<demand_and_low_inv";
         }
-        else if ( trade.offerPrice > trade.clearingPrice || commodity.bids[^1] < commodity.asks[^1])   //bid price > trade price
+        else if ( trade.offerPrice > trade.clearingPrice 
+            || (commodity.asks[^1] > commodity.bids[^1] && trade.offerPrice > historicalMeanPrice))   //bid price > trade price
                             // or (supply > demand and offer > historical mean)
         {
             var overbid = Mathf.Abs(trade.offerPrice - trade.clearingPrice); //bid price - trade price

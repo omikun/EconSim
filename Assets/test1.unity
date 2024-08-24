@@ -255,26 +255,26 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fcf52a7eecf2647fe978d330319f1f44, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  seed: 42
+  seed: 32
   appendTimeToLog: 1
   tickInterval: 0.001
   maxRounds: 800
   numAgents:
     _serializedList:
     - Key: Food
-      Value: 50
+      Value: 2
     - Key: Wood
-      Value: 50
+      Value: 2
     - Key: Ore
-      Value: 0
+      Value: 2
     - Key: Metal
-      Value: 0
+      Value: 2
     - Key: Tool
-      Value: 50
+      Value: 2
   initCash: 30
   simpleInitStock: 1
-  initStock: 3
-  maxStock: 5
+  initStock: 5
+  maxStock: 10
   EnableDebug: 1
 --- !u!114 &194909947
 MonoBehaviour:
@@ -288,8 +288,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9fbfddcd8453648f6818b2de9c3e20f2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  starvation: 1
-  foodConsumption: 1
+  starvation: 0
+  foodConsumption: 0
   simpleTradeAmountDet: 0
   onlyBuyWhatsAffordable: 1
   changeToHighestBidGood: 1
@@ -318,7 +318,7 @@ MonoBehaviour:
         - Key: Food
           Value: 1
         - Key: Prod_rate
-          Value: 1
+          Value: 3
     - Key: Metal
       Value:
         _serializedList:
@@ -327,12 +327,14 @@ MonoBehaviour:
         - Key: Ore
           Value: 3
         - Key: Prod_rate
-          Value: 1
+          Value: 2
     - Key: Tool
       Value:
         _serializedList:
         - Key: Food
           Value: 1
+        - Key: Metal
+          Value: 3
         - Key: Prod_rate
           Value: 1
 --- !u!4 &194909951
