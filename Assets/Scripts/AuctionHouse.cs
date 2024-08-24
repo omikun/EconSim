@@ -171,13 +171,14 @@ public class AuctionHouse : MonoBehaviour {
 		msg += header + "ask, " + sell + ", n/a\n";
 		msg += header + "avgAskPrice, " + auctionTracker.book[c].avgAskPrice[^1] + ", n/a\n";
 		msg += header + "avgBidPrice, " + auctionTracker.book[c].avgBidPrice[^1] + ", n/a\n";
+		header = auctionTracker.round + ", auction, none, none, ";
 		msg += header + "irs, " + irs + ", n/a\n";
 		PrintToFile(msg);
 	}
 	void ResolveOffers(Commodity commodity)
 	{
-		float moneyExchanged = 0;
-		float goodsExchanged = 0;
+		float moneyExchangedThisRound = 0;
+		float goodsExchangedThisRound = 0;
 		var asks = askTable[commodity.name];
 		var bids = bidTable[commodity.name];
 		var agentDemandRatio = bids.Count / Mathf.Max(.01f, (float)asks.Count); //demand by num agents bid/
@@ -226,8 +227,6 @@ public class AuctionHouse : MonoBehaviour {
 
 			//set price
 			var clearingPrice = (bid.offerPrice + ask.offerPrice) / 2;
-			bid.clearingPrice = clearingPrice;
-			ask.clearingPrice = clearingPrice;
 			if (clearingPrice <= 0)
 			{
 				Debug.Log(auctionTracker.round + " " + commodity.name + " asker: " + ask.agent.name + " asking price: " + ask.offerPrice + "bidder: " + bid.agent.name + " bidding price: " + bid.offerPrice + " clearingPrice: " + clearingPrice);
@@ -267,17 +266,21 @@ public class AuctionHouse : MonoBehaviour {
 			var buyers = trackBids[commodity.name];
 			buyers[bid.agent.outputs[0]] += clearingPrice * boughtQuantity;
 
-			moneyExchanged += clearingPrice * boughtQuantity;
-			goodsExchanged += boughtQuantity;
+			moneyExchangedThisRound += clearingPrice * boughtQuantity;
+			goodsExchangedThisRound += boughtQuantity;
+
+			//this is necessary for price belief updates after the big loop
+			ask.Accepted(clearingPrice, boughtQuantity);
+			bid.Accepted(clearingPrice, boughtQuantity);
 
 			//go to next ask/bid if fullfilled
-			if (ask.Reduce(boughtQuantity) == 0)
+			if (ask.remainingQuantity == 0)
 			{
 				if (askIt.MoveNext() == false)
 					break;
 				watchdog_timer = 0;
 			}
-			if (bid.Reduce(boughtQuantity) == 0)
+			if (bid.remainingQuantity == 0)
 			{
 				if (bidIt.MoveNext() == false)
 					break;
@@ -292,15 +295,15 @@ public class AuctionHouse : MonoBehaviour {
 					break;
 			}
 		}
-		Assert.IsFalse(goodsExchanged < 0);
+		Assert.IsFalse(goodsExchangedThisRound < 0);
 ////////////////////////////////////////////
 // END OF BIG LOOP
 ////////////////////////////////////////////
 
-		var denom = (goodsExchanged == 0) ? 1 : goodsExchanged;
-		var averagePrice = moneyExchanged / denom;
-		Debug.Log(auctionTracker.round + ": " + commodity.name + ": " + goodsExchanged + " traded at average price of " + averagePrice);
-		commodity.trades.Add(goodsExchanged);
+		var denom = (goodsExchangedThisRound == 0) ? 1 : goodsExchangedThisRound;
+		var averagePrice = moneyExchangedThisRound / denom;
+		Debug.Log(auctionTracker.round + ": " + commodity.name + ": " + goodsExchangedThisRound + " traded at average price of " + averagePrice);
+		commodity.trades.Add(goodsExchangedThisRound);
 		commodity.avgClearingPrice.Add(averagePrice);
 		commodity.Update(averagePrice, agentDemandRatio);
 

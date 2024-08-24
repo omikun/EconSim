@@ -18,19 +18,30 @@ public class Offer
 		offerQuantity = q;
 		agent = a;
 	}
-	public float Reduce(float q)
+	public void Accepted(float p, float q)
 	{
 		remainingQuantity -= q;
-		return remainingQuantity;
+		clearingPriceVolume += p * q;
+		CalculateClearingPrice();
 	}
 	public void Print()
 	{
 		Debug.Log(agent.gameObject.name + ": " + commodityName + " trade: " + offerPrice + ", " + remainingQuantity);
 	}
+	public void CalculateClearingPrice()
+	{
+		var tradedQuantity = offerQuantity - remainingQuantity;
+		if (tradedQuantity == 0)
+		{
+			return;
+		}
+		clearingPrice = clearingPriceVolume / tradedQuantity;
+	}
 	public CommodityName commodityName { get; private set; }
 	public float offerPrice { get; private set; }
 	public float offerQuantity { get; private set; }
-	public float clearingPrice;
+	public float clearingPrice { get; private set; }
+	float clearingPriceVolume; // total price of traded goods; sum of price of each good traded over multiple trades
 	public float remainingQuantity { get; private set; }
 	public EconAgent agent{ get; private set; }
 }
