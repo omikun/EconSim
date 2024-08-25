@@ -70,13 +70,13 @@ public class ESList : List<float>
     {
         if (base.Count == 0)
         {
-            return 0;
+            return -1;
         }
         var skip = Mathf.Max(0, base.Count - history);
         var end = Math.Min(history, base.Count);
         if (skip == end)
         {
-            return 0;
+            return -2;
         }
         return base.GetRange(skip, end).Sum();
     }

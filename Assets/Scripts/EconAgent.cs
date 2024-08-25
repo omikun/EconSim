@@ -7,6 +7,7 @@ using UnityEngine.XR;
 using System;
 
 public class EconAgent : MonoBehaviour {
+	AgentConfig config;
 	static int uid_idx = 0;
 	int uid;
 	public float cash { get; private set; }
@@ -14,14 +15,9 @@ public class EconAgent : MonoBehaviour {
 	float initStock = 1;
 	float prevCash = 0;
 	float maxStock = 1;
-	bool starvation = false;
-	bool simpleTradeAmountDet = false;
-	bool onlyBuyWhatsAffordable = false;
-	bool foodConsumption = false;
 	ESList profits = new ESList();
 	public Dictionary<string, InventoryItem> inventory = new Dictionary<string, InventoryItem>(); 
 	Dictionary<string, float> perItemCost = new Dictionary<string, float>(); //commodities stockpiled
-	int historyCount = 10;
 	float taxesPaidThisRound = 0;
 
 	public List<string> outputs { get; private set; } //can produce commodities
@@ -68,15 +64,12 @@ public class EconAgent : MonoBehaviour {
 		taxesPaidThisRound = idleTax;
 		return idleTax;
 	}
-	public void Init(float _initCash, List<string> b, float _initStock, float maxstock) {
+	public void Init(AgentConfig cfg, float _initCash, List<string> b, float _initStock, float maxstock) {
+		config = cfg;
 		uid = uid_idx++;
 		initStock = _initStock;
 		initCash = _initCash;
-		starvation = AuctionStats.Instance.starvation;
 		maxStock = maxstock;
-		simpleTradeAmountDet = AuctionStats.Instance.simpleTradeAmountDet;
-		foodConsumption = AuctionStats.Instance.foodConsumption;
-		onlyBuyWhatsAffordable = AuctionStats.Instance.onlyBuyWhatsAffordable;
 
         if (com == null)
 			com = AuctionStats.Instance.book;
@@ -170,7 +163,7 @@ public class EconAgent : MonoBehaviour {
 		float taxConsumed = 0;
 
 		bool starving = false;
-		if (foodConsumption && inventory.ContainsKey("Food"))
+		if (config.foodConsumption && inventory.ContainsKey("Food"))
 		{
 			if (inventory["Food"].Quantity >= 0.0f)
 			{
@@ -184,10 +177,10 @@ public class EconAgent : MonoBehaviour {
 			entry.Value.Tick();
         }
 
-        if (IsBankrupt() || (starvation && starving))
+        if (IsBankrupt() || (config.starvation && starving))
 		{
 			Debug.Log(name + " producing " + outputs[0] + " is bankrupt: " + cash.ToString("c2") + " or starving where food=" + inventory["Food"].Quantity);
-			taxConsumed = cash + ChangeProfession(); //existing debt + 
+			taxConsumed = -cash + ChangeProfession(); //existing debt + 
 		}
 		foreach (var buildable in outputs)
 		{
@@ -270,7 +263,7 @@ public class EconAgent : MonoBehaviour {
 		{
 			return 0;
 		}
-		var avgPrice = com[c].avgBidPrice.LastAverage(historyCount);
+		var avgPrice = com[c].avgBidPrice.LastAverage(config.historySize);
 		var lowestPrice = inventory[c].sellHistory.Min();
 		var highestPrice = inventory[c].sellHistory.Max();
 		float favorability = .5f;
@@ -281,13 +274,13 @@ public class EconAgent : MonoBehaviour {
 		//sell at least 1
 		float numAsks = Mathf.Max(1, favorability * inventory[c].Surplus());
 		//leave some to eat if food
-		if (c == "Food" && foodConsumption)
+		if (c == "Food" && config.foodConsumption)
 		{
 			numAsks = Mathf.Min(numAsks, inventory[c].Surplus() - 1);
 		}
 		numAsks = Mathf.Floor(numAsks);
 
-		if (simpleTradeAmountDet) {
+		if (config.simpleTradeAmountDet) {
 			numAsks = inventory[c].Surplus();
 		}
 		Debug.Log(AuctionStats.Instance.round + " " + name + " FindSellCount " + c + ": avgPrice: " + avgPrice.ToString("c2") + " favorability: " + favorability.ToString("n2") + " numAsks: " + numAsks.ToString("n2") + " highestPrice: " + highestPrice.ToString("c2") + ", lowestPrice: " + lowestPrice.ToString("c2"));
@@ -296,7 +289,7 @@ public class EconAgent : MonoBehaviour {
 	}
 	float FindBuyCount(string c)
 	{
-		var avgPrice = com[c].avgBidPrice.LastAverage(historyCount);
+		var avgPrice = com[c].avgBidPrice.LastAverage(config.historySize);
 		var lowestPrice = inventory[c].buyHistory.Min();
 		var highestPrice = inventory[c].buyHistory.Max();
 		//todo SANITY check
@@ -309,7 +302,7 @@ public class EconAgent : MonoBehaviour {
 		float numBids = (1 - favorability) * inventory[c].Deficit();
 		numBids = Mathf.Floor(numBids);
 		numBids = Mathf.Max(0, numBids);
-		if (simpleTradeAmountDet) {
+		if (config.simpleTradeAmountDet) {
 			numBids = inventory[c].Deficit();
 		}
 		
@@ -330,7 +323,7 @@ public class EconAgent : MonoBehaviour {
 			{
 				//maybe buy less if expensive?
 				float buyPrice = stock.Value.GetPrice();
-				if (onlyBuyWhatsAffordable)
+				if (config.onlyBuyWhatsAffordable)
 				{
 					buyPrice = Mathf.Min(cash / numBids, buyPrice);
 				}

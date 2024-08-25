@@ -7,10 +7,13 @@ using UnityEngine.Assertions;
 using AYellowpaper.SerializedCollections;
 
 public class AuctionHouse : MonoBehaviour {
+	AgentConfig config;
 	public int seed = 42;
 	public bool appendTimeToLog = false;
     public float tickInterval = .001f;
 	public int maxRounds = 10;
+	public bool exitAfterNoTrade = true;
+	public int numRoundsNoTrade = 100;
 	
 	[SerializedDictionary("Comm", "numAgents")]
 	public SerializedDictionary<string, int> numAgents = new()
@@ -22,10 +25,6 @@ public class AuctionHouse : MonoBehaviour {
 		{ "Tool", 4 }
 	};
 
-	public float initCash = 100;
-	public bool simpleInitStock = false;
-	public float initStock = 10;
-	public float maxStock = 20;
 	List<EconAgent> agents = new List<EconAgent>();
 	float irs;
 	bool timeToQuit = false;
@@ -45,6 +44,7 @@ public class AuctionHouse : MonoBehaviour {
 		auctionTracker = AuctionStats.Instance;
 		var com = auctionTracker.book;
 	
+		config = GetComponent<AgentConfig>();
 		irs = 0; //GetComponent<EconAgent>();
 		var prefab = Resources.Load("Agent");
 
@@ -89,19 +89,18 @@ public class AuctionHouse : MonoBehaviour {
 	{
         List<string> buildables = new List<string>();
 		buildables.Add(type);
-		float _initStock = 0;
-		if (simpleInitStock)
+		float initStock = config.initStock;
+		float initCash = config.initCash;
+		if (config.randomInitStock)
 		{
-			_initStock = initStock;
-		} else {
-			_initStock = UnityEngine.Random.Range(initStock/2, initStock*2);
-			_initStock = Mathf.Floor(_initStock);
+			initStock = UnityEngine.Random.Range(config.initStock/2, config.initStock*2);
+			initStock = Mathf.Floor(initStock);
 		}
 
 		// TODO: This may cause uneven maxStock between agents
-		var _maxStock = Mathf.Max(initStock, maxStock);
+		var maxStock = Mathf.Max(initStock, config.maxStock);
 
-        agent.Init(initCash, buildables, _initStock, _maxStock);
+        agent.Init(config, initCash, buildables, initStock, maxStock);
 	}
 	
 	// Update is called once per frame
@@ -499,18 +498,21 @@ public class AuctionHouse : MonoBehaviour {
 	}
 	void QuitIf()
 	{
+		if (!exitAfterNoTrade)
+		{
+			return;
+		}
 		foreach (var entry in auctionTracker.book)
 		{
 			var commodity = entry.Key;
-			int historySize = 100;
-			var tradeVolume = entry.Value.trades.LastSum(historySize);
-			if (auctionTracker.round > historySize && tradeVolume == 0)
+			var tradeVolume = entry.Value.trades.LastSum(numRoundsNoTrade);
+			if (auctionTracker.round > numRoundsNoTrade && tradeVolume == 0)
 			{
-				Debug.Log("quitting!! last " + historySize + " round average " + commodity + " was : " + tradeVolume);
+				Debug.Log("quitting!! last " + numRoundsNoTrade + " round average " + commodity + " was : " + tradeVolume);
 				timeToQuit = true;
 				//TODO should be no trades in n rounds
 			} else {
-				Debug.Log("last " + historySize + " round trade average for " + commodity + " was : " + tradeVolume);
+				Debug.Log("last " + numRoundsNoTrade + " round trade average for " + commodity + " was : " + tradeVolume);
 			}
 		}
 	}

@@ -11,17 +11,12 @@ using System.Security.Cryptography.X509Certificates;
 
 public class AuctionStats : MonoBehaviour
 {
+	public int historySize = 10;
+	public bool changeToHighestBidGood = false;
     public static AuctionStats Instance { get; private set; }
 
 	public Dictionary<string, Commodity> book { get; private set; }
 	public int round { get; private set; }
-	public bool starvation = false;
-	public bool foodConsumption = false;
-	public bool simpleTradeAmountDet = false;
-	public bool onlyBuyWhatsAffordable = false;
-	[Tooltip("Use highest bid good vs most demand to supply good")]
-	public bool changeToHighestBidGood = false;
-	public int historySize = 10;
 
 	[SerializedDictionary("ID", "Dependency")]
 	public SerializedDictionary<string, SerializedDictionary<string, float>> initialization;
