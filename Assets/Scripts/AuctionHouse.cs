@@ -7,7 +7,7 @@ using UnityEngine.Assertions;
 using AYellowpaper.SerializedCollections;
 
 public class AuctionHouse : MonoBehaviour {
-	AgentConfig config;
+	protected AgentConfig config;
 	public int seed = 42;
 	public bool appendTimeToLog = false;
     public float tickInterval = .001f;
@@ -25,15 +25,15 @@ public class AuctionHouse : MonoBehaviour {
 		{ "Tool", 4 }
 	};
 
-	List<EconAgent> agents = new List<EconAgent>();
-	float irs;
-	bool timeToQuit = false;
-    OfferTable askTable, bidTable;
-	StreamWriter sw;
-	AuctionStats auctionTracker;
+	protected List<EconAgent> agents = new List<EconAgent>();
+	protected float irs;
+	protected bool timeToQuit = false;
+    protected OfferTable askTable, bidTable;
+	protected StreamWriter sw;
+	protected AuctionStats auctionTracker;
 
-	Dictionary<string, Dictionary<string, float>> trackBids = new();
-	float lastTick;
+	protected Dictionary<string, Dictionary<string, float>> trackBids = new();
+	protected float lastTick;
 	public bool EnableDebug = false;
 	void Start () {
 		Debug.unityLogger.logEnabled=EnableDebug;
@@ -168,7 +168,7 @@ public class AuctionHouse : MonoBehaviour {
 		QuitIf();
 	}
 
-	void PrintAuctionStats(String c, float buy, float sell)
+	protected void PrintAuctionStats(String c, float buy, float sell)
 	{
 		String header = auctionTracker.round + ", auction, none, " + c + ", ";
 		String msg = header + "bid, " + buy + ", n/a\n";
@@ -179,7 +179,7 @@ public class AuctionHouse : MonoBehaviour {
 		msg += header + "irs, " + irs + ", n/a\n";
 		PrintToFile(msg);
 	}
-	void ResolveOffers(Commodity commodity)
+	protected void ResolveOffers(Commodity commodity)
 	{
 		float moneyExchangedThisRound = 0;
 		float goodsExchangedThisRound = 0;
@@ -336,7 +336,7 @@ public class AuctionHouse : MonoBehaviour {
 
 	// TODO decouple transfer of commodity with transfer of money
 	// TODO convert cash into another commodity
-	void Trade(String commodity, float clearingPrice, float quantity, EconAgent bidder, EconAgent seller) 
+	protected void Trade(String commodity, float clearingPrice, float quantity, EconAgent bidder, EconAgent seller) 
 	{
 		//transfer commodity
 		//transfer cash
@@ -346,7 +346,7 @@ public class AuctionHouse : MonoBehaviour {
 
 	}
 
-	void OpenFileForWrite() {
+	protected void OpenFileForWrite() {
 		var datepostfix = DateTime.Now.ToString(@"yyyy-MM-dd-h_mm_tt");
 		if (appendTimeToLog)
 		{
@@ -357,15 +357,15 @@ public class AuctionHouse : MonoBehaviour {
 		String header_row = "round, agent, produces, inventory_items, type, amount, reason\n";
 		PrintToFile(header_row);
 	}
-	void PrintToFile(String msg) {
+	protected void PrintToFile(String msg) {
 		sw.Write(msg);
 	}
 
-	void CloseWriteFile() {
+	protected void CloseWriteFile() {
 		sw.Close();
 	}
 
-	void AgentsStats() {
+	protected void AgentsStats() {
 		String header = auctionTracker.round + ", ";
 		String msg = "";
 		foreach (var agent in agents)
@@ -374,7 +374,7 @@ public class AuctionHouse : MonoBehaviour {
 		}
 		PrintToFile(msg);
 	}
-	void CountStockPileAndCash() 
+	protected void CountStockPileAndCash() 
 	{
 		Dictionary<string, float> stockPile = new Dictionary<string, float>();
 		Dictionary<string, List<float>> stockList = new Dictionary<string, List<float>>();
@@ -421,7 +421,7 @@ public class AuctionHouse : MonoBehaviour {
 		//SetGraph(gCapital, "IRS", irs+totalCash);
 		
 	}
-	float GetQuantile(List<float> list, int buckets=4, int index=0) //default lowest quartile
+	protected float GetQuantile(List<float> list, int buckets=4, int index=0) //default lowest quartile
 	{
 		float avg = 0;
 		if (buckets == 1)
@@ -447,8 +447,8 @@ public class AuctionHouse : MonoBehaviour {
         }
 		return avg;
     }
-	float taxRate = .15f;
-	void CountProfits()
+	public float taxRate = .15f;
+	protected void CountProfits()
 	{
 		var com = auctionTracker.book;
 		//count profit per profession/commodity
@@ -496,7 +496,7 @@ public class AuctionHouse : MonoBehaviour {
         //     //SetGraph(gCash, commodity, profit);
 		// }
 	}
-	void QuitIf()
+	protected void QuitIf()
 	{
 		if (!exitAfterNoTrade)
 		{
@@ -518,7 +518,7 @@ public class AuctionHouse : MonoBehaviour {
 	}
 
     float defaulted = 0;
-	void EnactBankruptcy()
+	protected void EnactBankruptcy()
 	{
         foreach (var agent in agents)
         {
@@ -526,7 +526,7 @@ public class AuctionHouse : MonoBehaviour {
             irs -= agent.Tick();
         }
 	}
-	void CountProfessions()
+	protected void CountProfessions()
 	{
 		var com = auctionTracker.book;
 		//count number of agents per professions
