@@ -123,7 +123,7 @@ public class AuctionStats : MonoBehaviour
 			{
 				best_ratio = ratio;
 				mostDemand = c.Key;
-				picker.AddItem(c.Key, Mathf.Sqrt(ratio));
+				picker.AddItem(c.Key, Mathf.Sqrt(ratio)); 
 			}
 			Debug.Log(round + " demand: " + c.Key + ": " + Mathf.Sqrt(best_ratio));
 			log_msg += round + ", auction, " + c.Key + ", none, demandsupplyratio, " + Mathf.Sqrt(ratio) + ", n/a\n";

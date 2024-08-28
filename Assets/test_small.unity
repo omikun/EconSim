@@ -233,10 +233,10 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 194909951}
-  - component: {fileID: 194909947}
-  - component: {fileID: 194909946}
-  - component: {fileID: 194909952}
   - component: {fileID: 194909953}
+  - component: {fileID: 194909946}
+  - component: {fileID: 194909947}
+  - component: {fileID: 194909952}
   m_Layer: 0
   m_Name: auction house
   m_TagString: Untagged
@@ -256,26 +256,25 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fcf52a7eecf2647fe978d330319f1f44, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  seed: 44
+  seed: 49
   appendTimeToLog: 1
   tickInterval: 0.001
-  maxRounds: 100
+  maxRounds: 300
   exitAfterNoTrade: 1
   numRoundsNoTrade: 100
   numAgents:
     _serializedList:
     - Key: Food
-      Value: 2
+      Value: 10
     - Key: Wood
-      Value: 2
+      Value: 10
     - Key: Ore
-      Value: 2
+      Value: 10
     - Key: Metal
-      Value: 2
+      Value: 10
     - Key: Tool
-      Value: 2
+      Value: 10
   EnableDebug: 1
-  taxRate: 0.15
 --- !u!114 &194909947
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -289,7 +288,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   historySize: 10
-  changeToHighestBidGood: 1
+  changeToHighestBidPrice: 0
+  probabilisticHottestGood: 1
   initialization:
     _serializedList:
     - Key: Food
@@ -305,32 +305,32 @@ MonoBehaviour:
       Value:
         _serializedList:
         - Key: Food
-          Value: 4
+          Value: 1
         - Key: Prod_rate
           Value: 1
     - Key: Ore
       Value:
         _serializedList:
         - Key: Food
-          Value: 1
+          Value: 0.1
         - Key: Prod_rate
-          Value: 3
+          Value: 5
     - Key: Metal
       Value:
         _serializedList:
         - Key: Food
           Value: 1
         - Key: Ore
-          Value: 3
+          Value: 5
         - Key: Prod_rate
-          Value: 2
+          Value: 3
     - Key: Tool
       Value:
         _serializedList:
         - Key: Food
           Value: 1
         - Key: Metal
-          Value: 3
+          Value: 5
         - Key: Prod_rate
           Value: 1
 --- !u!4 &194909951
@@ -393,15 +393,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   seed: 42
-  initCash: 30
-  randomInitStock: 0
-  initStock: 6
+  initCash: 50
+  randomInitStock: 1
+  initStock: 5
   maxStock: 10
+  clearInventory: 0
   starvation: 1
-  profitMarkup: 1.05
   foodConsumption: 1
+  foodConsumptionRate: 0.1
+  profitMarkup: 1.05
+  idleTaxRate: 0
   enablePriceFavorability: 0
   onlyBuyWhatsAffordable: 0
+  buyerBuysAskPrice: 1
   historySize: 10
 --- !u!4 &245786301 stripped
 Transform:

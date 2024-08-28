@@ -46,7 +46,6 @@ public class EconAgent : MonoBehaviour {
 		return msg; 
 	}
 	void Start () {
-		cash = 0;
 	}
 	void AddToInventory(string name, float num, float max, float price, float production)
 	{
