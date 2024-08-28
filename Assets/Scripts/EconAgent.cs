@@ -165,7 +165,7 @@ public class EconAgent : MonoBehaviour {
 		bool starving = false;
 		if (config.foodConsumption && inventory.ContainsKey("Food"))
 		{
-			if (inventory["Food"].Quantity >= 0.0f)
+			if (inventory["Food"].Quantity >= config.foodConsumptionRate)
 			{
 				var food = inventory["Food"].Decrease(0.5f);
 				starving = food <= 0;
@@ -203,17 +203,14 @@ public class EconAgent : MonoBehaviour {
         {
             mostDemand = bestGood;
 			outputs[0] = mostDemand;
-		} else {
-			//no good profession?? probably should assert
-			//Assert.IsTrue(bestProf != "invalid");
-			//return 0;
 		}
-		//TODO need to plan better what this should be about
 				
-		//inventory.Clear();
+		if (config.clearInventory) 
+		{
+			inventory.Clear();
+		}
 		List<string> b = new List<string>();
 		b.Add(mostDemand);
-		// todo take from irs?
 		Reinit(initCash, b);
 		return initCash;
 	}
@@ -263,51 +260,55 @@ public class EconAgent : MonoBehaviour {
 		{
 			return 0;
 		}
-		var avgPrice = com[c].avgBidPrice.LastAverage(config.historySize);
-		var lowestPrice = inventory[c].sellHistory.Min();
-		var highestPrice = inventory[c].sellHistory.Max();
-		float favorability = .5f;
-		if (true || lowestPrice != highestPrice) {
-			favorability = Mathf.InverseLerp(lowestPrice, highestPrice, avgPrice);
-			favorability = Mathf.Clamp(favorability, 0, 1);
-		}
-		//sell at least 1
-		float numAsks = Mathf.Max(1, favorability * inventory[c].Surplus());
-		//leave some to eat if food
-		if (c == "Food" && config.foodConsumption)
-		{
-			numAsks = Mathf.Min(numAsks, inventory[c].Surplus() - 1);
-		}
-		numAsks = Mathf.Floor(numAsks);
 
-		if (config.simpleTradeAmountDet) {
-			numAsks = inventory[c].Surplus();
+		float numAsks = Mathf.Floor(inventory[c].Surplus());
+		if (config.enablePriceFavorability) {
+			var avgPrice = com[c].avgBidPrice.LastAverage(config.historySize);
+			var lowestPrice = inventory[c].sellHistory.Min();
+			var highestPrice = inventory[c].sellHistory.Max();
+			float favorability = .5f;
+			if (true || lowestPrice != highestPrice)
+			{
+				favorability = Mathf.InverseLerp(lowestPrice, highestPrice, avgPrice);
+				favorability = Mathf.Clamp(favorability, 0, 1);
+			}
+			//sell at least 1
+			numAsks = Mathf.Max(1, favorability * inventory[c].Surplus());
+			//leave some to eat if food
+			if (c == "Food" && config.foodConsumption)
+			{
+				numAsks = Mathf.Min(numAsks, inventory[c].Surplus() - 1);
+			}
+			numAsks = Mathf.Floor(numAsks);
+
+			Debug.Log(AuctionStats.Instance.round + " " + name + " FindSellCount " + c + ": avgPrice: " + avgPrice.ToString("c2") + " favorability: " + favorability.ToString("n2") + " numAsks: " + numAsks.ToString("n2") + " highestPrice: " + highestPrice.ToString("c2") + ", lowestPrice: " + lowestPrice.ToString("c2"));
+			Assert.IsTrue(numAsks <= inventory[c].Quantity);
 		}
-		Debug.Log(AuctionStats.Instance.round + " " + name + " FindSellCount " + c + ": avgPrice: " + avgPrice.ToString("c2") + " favorability: " + favorability.ToString("n2") + " numAsks: " + numAsks.ToString("n2") + " highestPrice: " + highestPrice.ToString("c2") + ", lowestPrice: " + lowestPrice.ToString("c2"));
-		Assert.IsTrue(numAsks <= inventory[c].Quantity);
 		return numAsks;
 	}
 	float FindBuyCount(string c)
 	{
-		var avgPrice = com[c].avgBidPrice.LastAverage(config.historySize);
-		var lowestPrice = inventory[c].buyHistory.Min();
-		var highestPrice = inventory[c].buyHistory.Max();
-		//todo SANITY check
-		float favorability = .5f;
-		if (lowestPrice != highestPrice) {
-			favorability = Mathf.InverseLerp(lowestPrice, highestPrice, avgPrice);
-			favorability = Mathf.Clamp(favorability, 0, 1);
+		float numBids = Mathf.Floor(inventory[c].Deficit());
+		if (config.enablePriceFavorability)
+		{
+			var avgPrice = com[c].avgBidPrice.LastAverage(config.historySize);
+			var lowestPrice = inventory[c].buyHistory.Min();
+			var highestPrice = inventory[c].buyHistory.Max();
+			//todo SANITY check
+			float favorability = .5f;
+			if (lowestPrice != highestPrice)
+			{
+				favorability = Mathf.InverseLerp(lowestPrice, highestPrice, avgPrice);
+				favorability = Mathf.Clamp(favorability, 0, 1);
+			}
+			//float favorability = FindTradeFavorability(c);
+			numBids = (1 - favorability) * inventory[c].Deficit();
+			numBids = Mathf.Floor(numBids);
+			numBids = Mathf.Max(0, numBids);
+
+			Debug.Log(AuctionStats.Instance.round + " " + name + " FindBuyCount " + c + ": avgPrice: " + avgPrice.ToString("c2") + " favorability: " + (1 - favorability).ToString("n2") + " numBids: " + numBids.ToString("n2") + " highestPrice: " + highestPrice.ToString("c2") + ", lowestPrice: " + lowestPrice.ToString("c2"));
+			Assert.IsTrue(numBids <= inventory[c].Deficit());
 		}
-		//float favorability = FindTradeFavorability(c);
-		float numBids = (1 - favorability) * inventory[c].Deficit();
-		numBids = Mathf.Floor(numBids);
-		numBids = Mathf.Max(0, numBids);
-		if (config.simpleTradeAmountDet) {
-			numBids = inventory[c].Deficit();
-		}
-		
-		Debug.Log(AuctionStats.Instance.round + " " + name + " FindBuyCount " + c + ": avgPrice: " + avgPrice.ToString("c2") + " favorability: " + (1-favorability).ToString("n2") + " numBids: " + numBids.ToString("n2") + " highestPrice: " + highestPrice.ToString("c2") + ", lowestPrice: " + lowestPrice.ToString("c2"));
-		Assert.IsTrue(numBids <= inventory[c].Deficit());
 		return numBids;
 	}
 	public Offers Consume(Dictionary<string, Commodity> com) {
@@ -327,7 +328,12 @@ public class EconAgent : MonoBehaviour {
 				{
 					buyPrice = Mathf.Min(cash / numBids, buyPrice);
 				}
-				Assert.IsTrue(buyPrice > 0);
+				if (config.buyerBuysAskPrice)
+				{
+					buyPrice = 0;
+				} else {
+					Assert.IsTrue(buyPrice > 0);
+				}
 				if (buyPrice > 1000)
 				{
 					Debug.Log(stock.Key + "buyPrice: " + buyPrice.ToString("c2") + " : " + stock.Value.minPriceBelief.ToString("n2") + "<" + stock.Value.maxPriceBelief.ToString("n2"));
@@ -368,7 +374,7 @@ public class EconAgent : MonoBehaviour {
 			numProduced = Mathf.Clamp(numProduced, 0, upperBound);
 			Debug.Log(name + " upperbound: " + upperBound + " production rate: " + inventory[buildable].productionRate + " room: " + inventory[buildable].Deficit());
 			numProduced = Mathf.Floor(numProduced);
-			Debug.Log(name + " upperbound: " + upperBound + " has produce: " + numProduced);
+			Debug.Log(name + " upperbound: " + upperBound + " producing: " + numProduced);
 			Assert.IsTrue(numProduced >= 0);
 
 			//build and add to stockpile
@@ -378,11 +384,11 @@ public class EconAgent : MonoBehaviour {
 				var stock = inventory[dep.Key].Quantity;
 				var numUsed = dep.Value * numProduced;
 				numUsed = Mathf.Clamp(numUsed, 0, stock);
-				buildable_cost += numUsed * inventory[dep.Key].meanPriceThisRound;
+				buildable_cost += numUsed * inventory[dep.Key].meanCostThisRound;
                 inventory[dep.Key].Decrease(numUsed);
 			}
-			Debug.Log(name + " has " + cash.ToString("c2") + " made " + numProduced.ToString("n2") + " " + buildable + " total: " + inventory[buildable].Quantity);
 			inventory[buildable].Increase(numProduced);
+			Debug.Log(name + " has " + cash.ToString("c2") + " made " + numProduced.ToString("n2") + " " + buildable + " total: " + inventory[buildable].Quantity);
 			Assert.IsFalse(float.IsNaN(numProduced));
 			//this condition is worrisome 
 //			Assert.IsTrue(inventory[buildable].Quantity >= 0);
@@ -409,7 +415,8 @@ public class EconAgent : MonoBehaviour {
 			}
 			var sellStock = inventory[commodityName];
 			float sellQuantity = FindSellCount(commodityName);
-			float sellPrice = sellStock.GetPrice();
+			//float sellPrice = sellStock.GetPrice();
+			float sellPrice = inventory[commodityName].cost * config.profitMarkup;
 
 			if (sellQuantity > 0 && sellPrice > 0)
 			{
@@ -431,9 +438,8 @@ public class EconAgent : MonoBehaviour {
 		{
 			var depCommodity = dep.Key;
 			var numDep = dep.Value;
-			// TODO take average of stock pile history instead of last price
-			var depCost = inventory[depCommodity].buyHistory.Last();
-			cost += numDep * depCost.price;
+			var depCost = inventory[depCommodity].meanCost;
+			cost += numDep * depCost;
 		}
 		return cost;
 	}

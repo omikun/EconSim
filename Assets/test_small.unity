@@ -394,12 +394,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   seed: 42
   initCash: 30
-  randomInitStock: 1
+  randomInitStock: 0
   initStock: 6
   maxStock: 10
-  starvation: 0
-  foodConsumption: 0
-  simpleTradeAmountDet: 0
+  starvation: 1
+  profitMarkup: 1.05
+  foodConsumption: 1
+  enablePriceFavorability: 0
   onlyBuyWhatsAffordable: 0
   historySize: 10
 --- !u!4 &245786301 stripped

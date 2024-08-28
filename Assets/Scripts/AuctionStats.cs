@@ -7,12 +7,14 @@ using System;
 
 using AYellowpaper.SerializedCollections;
 using System.Security.Cryptography.X509Certificates;
+using System.Net.WebSockets;
 //using Dependency = System.Collections.Generic.Dictionary<string, float>;
 
 public class AuctionStats : MonoBehaviour
 {
 	public int historySize = 10;
-	public bool changeToHighestBidGood = false;
+	public bool changeToHighestBidPrice = false;
+	public bool probabilisticHottestGood = true;
     public static AuctionStats Instance { get; private set; }
 
 	public Dictionary<string, Commodity> book { get; private set; }
@@ -20,6 +22,13 @@ public class AuctionStats : MonoBehaviour
 
 	[SerializedDictionary("ID", "Dependency")]
 	public SerializedDictionary<string, SerializedDictionary<string, float>> initialization;
+	string log_msg = "";
+	public string GetLog()
+	{
+		var ret = log_msg;
+		log_msg = "";
+		return ret;
+	}
 	
 	public void nextRound()
 	{
@@ -65,14 +74,30 @@ public class AuctionStats : MonoBehaviour
 		//Debug.Log("avgPrice: " + averagePrice.ToString("c2") + " min: " + minPrice.ToString("c2") + " curr: " + price.ToString("c2"));
 		return relativeDemand;
 	}
+	int gotHottestGoodRound = 0;
+	string mostDemand = "invalid";
+	WeightedRandomPicker<string> picker = new WeightedRandomPicker<string>();
 	public string GetHottestGood()
 	{
-		string mostDemand = "invalid";
-		float max = 1.1f;
-		string mostRDDemand = "invalid";
-		float maxRD = max;
+		if (round != gotHottestGoodRound)
+		{
+			mostDemand = _GetHottestGood();
+		}
+		if (probabilisticHottestGood && !changeToHighestBidPrice)
+		{
+			mostDemand = picker.PickRandom();
+		}
+		var best_ratio = picker.GetWeight(mostDemand);
+		Debug.Log(round + " picked demand: " + mostDemand + ": " + best_ratio);
+		log_msg += round + ", auction, " + mostDemand + ", none, hottestGood, " + best_ratio + ", n/a\n";
+		return mostDemand;
+	}
+	string _GetHottestGood()
+	{
+		mostDemand = "invalid";
+		float best_ratio = 1.5f;
 
-		if (changeToHighestBidGood)
+		if (changeToHighestBidPrice)
 		{
 			float mostBid = 0;
 			foreach (var c in book)
@@ -86,28 +111,24 @@ public class AuctionStats : MonoBehaviour
 			}
 			return mostDemand;
 		}
+		picker.Clear();
 		foreach (var c in book)
 		{
 			var asks = c.Value.asks.LastAverage(historySize);
 			var bids = c.Value.bids.LastAverage(historySize);
             asks = Mathf.Max(.5f, asks);
 			var ratio = bids / asks;
-			var relDemand = GetRelativeDemand(c.Value, historySize);
 
-			if ( maxRD < relDemand)
+			if (best_ratio < ratio)
 			{
-				mostRDDemand = c.Key;
-				maxRD = relDemand;
-			}
-			if (max < ratio)
-			{
-				max = ratio;
+				best_ratio = ratio;
 				mostDemand = c.Key;
+				picker.AddItem(c.Key, Mathf.Sqrt(ratio));
 			}
-			//Debug.Log(c.Key + " Ratio: " + ratio.ToString("n2") + " relative demand: " + relDemand);
+			Debug.Log(round + " demand: " + c.Key + ": " + Mathf.Sqrt(best_ratio));
+			log_msg += round + ", auction, " + c.Key + ", none, demandsupplyratio, " + Mathf.Sqrt(ratio) + ", n/a\n";
 		}
-		Debug.Log("Most in demand: " + mostDemand + ": " + max);
-		//Debug.Log("Most in rel demand: " + mostRDDemand + ": " + maxRD);
+		gotHottestGoodRound = round;
 		return mostDemand;
 	}
 	bool Add(string name, float production, Dependency dep)
