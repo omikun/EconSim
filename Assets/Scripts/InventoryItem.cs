@@ -25,7 +25,8 @@ public class InventoryItem {
 	public float maxQuantity;
 	public float minPriceBelief;
 	public float maxPriceBelief;
-	public float meanPriceThisRound; //total cost spent to acquire stock
+	public float meanCostThisRound; //total cost spent to acquire stock
+    public float meanCost; 
 	//number of units produced per turn = production * productionRate
 	public float productionRate = 1; //# of assembly lines
     List<string> debug_msgs = new List<string>();
@@ -59,7 +60,7 @@ public class InventoryItem {
         }
         if (boughtThisRound || soldThisRound)
         {
-            ret += header + commodityName + ", meanPrice, " + meanPriceThisRound + ",n/a\n";
+            ret += header + commodityName + ", meanPrice, " + meanCostThisRound + ",n/a\n";
         }
         ret += header + commodityName + ", bidPrice, " + bidPrice + ",n/a\n";
         ret += header + commodityName + ", bidQuantity, " + bidQuantity + ",n/a\n";
@@ -83,7 +84,8 @@ public class InventoryItem {
         Assert.IsTrue(_meanPrice >= 0); //TODO really should never be 0???
 		minPriceBelief = _meanPrice / 2;
 		maxPriceBelief = _meanPrice * 2;
-		meanPriceThisRound = _meanPrice;
+		meanCostThisRound = _meanPrice;
+        meanCost = _meanPrice;
 		buyHistory.Add(new Transaction(1,_meanPrice));
 		sellHistory.Add(new Transaction(1,_meanPrice));
 		productionRate = _production;
@@ -116,10 +118,11 @@ public class InventoryItem {
 		//update meanCost of units in stock
         Assert.IsTrue(quant > 0);
 
+        meanCostThisRound = (quantityTradedThisRound == 0) ? 0 : costThisRound / quantityTradedThisRound;
+        meanCost = (meanCost * Quantity + quant * price) / (Quantity + quant);
 		Quantity += quant;
         quantityTradedThisRound += quant;
         costThisRound += price;
-        meanPriceThisRound = (quantityTradedThisRound == 0) ? 0 : costThisRound / quantityTradedThisRound;
         var prevMinPriceBelief = minPriceBelief;
         var prevMaxPriceBelief = maxPriceBelief;
         last_price = price;
@@ -145,7 +148,7 @@ public class InventoryItem {
 		Quantity -= quant;
         quantityTradedThisRound += quant;
         costThisRound += price;
-        meanPriceThisRound = (quantityTradedThisRound == 0) ? 0 : costThisRound / quantityTradedThisRound;
+        meanCostThisRound = (quantityTradedThisRound == 0) ? 0 : costThisRound / quantityTradedThisRound;
         last_price = price;
         if (soldThisRound)
         {

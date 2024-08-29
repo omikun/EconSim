@@ -81,3 +81,50 @@ public class ESList : List<float>
         return base.GetRange(skip, end).Sum();
     }
 }
+
+public class WeightedRandomPicker<T>
+{
+    private List<(T item, float weight)> items = new List<(T, float)>();
+    private float totalWeight = 0;
+
+    public void AddItem(T item, float weight)
+    {
+        items.Add((item, weight));
+        totalWeight += weight;
+    }
+    public void Clear()
+    {
+        items.Clear();
+        totalWeight = 0;
+    }
+    public float GetWeight(T t)
+    {
+        foreach (var (item, weight) in items)
+        {
+            if (EqualityComparer<T>.Default.Equals(item, t))
+            {
+                return weight;
+            }
+        }
+        return -1f;
+    }
+    public T PickRandom()
+    {
+        if (items.Count == 0)
+            throw new InvalidOperationException("No items to pick from.");
+
+        float randomValue = UnityEngine.Random.Range(0, totalWeight);
+        UnityEngine.Debug.Log("random value: " + randomValue + " total weight: " + totalWeight);
+        float cumulativeWeight = 0;
+
+        foreach (var (item, weight) in items)
+        {
+            cumulativeWeight += weight;
+            UnityEngine.Debug.Log("randompicker: good: " + item + " cumweight: " + cumulativeWeight);
+            if (randomValue < cumulativeWeight)
+                return item;
+        }
+
+        return items[items.Count - 1].item; // Fallback, should rarely happen
+    }
+}
