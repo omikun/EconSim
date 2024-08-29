@@ -259,7 +259,7 @@ MonoBehaviour:
   seed: 49
   appendTimeToLog: 1
   tickInterval: 0.001
-  maxRounds: 300
+  maxRounds: 800
   exitAfterNoTrade: 1
   numRoundsNoTrade: 100
   numAgents:
@@ -296,9 +296,9 @@ MonoBehaviour:
       Value:
         _serializedList:
         - Key: Wood
-          Value: 0.25
+          Value: 0.1
         - Key: Tool
-          Value: 0.25
+          Value: 0.01
         - Key: Prod_rate
           Value: 5
     - Key: Wood
@@ -312,7 +312,7 @@ MonoBehaviour:
       Value:
         _serializedList:
         - Key: Food
-          Value: 0.1
+          Value: 1
         - Key: Prod_rate
           Value: 5
     - Key: Metal

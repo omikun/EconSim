@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.Assertions;
 using UnityEngine;
@@ -65,15 +65,6 @@ public class AuctionStats : MonoBehaviour
 		return prof;
 	}
 	//get price of good
-	float GetRelativeDemand(Commodity c, int history=10)
-	{
-        var averagePrice = c.avgClearingPrice.LastAverage(history);
-        var minPrice = c.avgClearingPrice.Min();
-		var price = c.avgClearingPrice[c.avgClearingPrice.Count-1];
-		var relativeDemand = (price - minPrice) / (averagePrice - minPrice);
-		//Debug.Log("avgPrice: " + averagePrice.ToString("c2") + " min: " + minPrice.ToString("c2") + " curr: " + price.ToString("c2"));
-		return relativeDemand;
-	}
 	int gotHottestGoodRound = 0;
 	string mostDemand = "invalid";
 	WeightedRandomPicker<string> picker = new WeightedRandomPicker<string>();
@@ -123,7 +114,7 @@ public class AuctionStats : MonoBehaviour
 			{
 				best_ratio = ratio;
 				mostDemand = c.Key;
-				picker.AddItem(c.Key, Mathf.Sqrt(ratio)); 
+				picker.AddItem(c.Key, 1);//Mathf.Sqrt(ratio)); //less likely a profession dies out
 			}
 			Debug.Log(round + " demand: " + c.Key + ": " + Mathf.Sqrt(best_ratio));
 			log_msg += round + ", auction, " + c.Key + ", none, demandsupplyratio, " + Mathf.Sqrt(ratio) + ", n/a\n";
