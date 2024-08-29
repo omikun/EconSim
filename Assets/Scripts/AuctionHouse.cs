@@ -1,10 +1,11 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Assertions;
 using AYellowpaper.SerializedCollections;
+using UnityEngine.Rendering;
 
 public class AuctionHouse : MonoBehaviour {
 	protected AgentConfig config;

@@ -31,19 +31,27 @@ public class EconAgent : MonoBehaviour {
 	//from the paper (base implementation)
 	// Use this for initialization
 	Dictionary<string, Commodity> com {get; set;}
+	Dictionary<string, float> producedThisRound = new Dictionary<string, float>();
+	string log = "";
 
 	public String Stats(String header)
 	{
-		String msg = "";
 		header += uid.ToString() + ", " + outputs[0] + ", "; //profession
 		foreach (var stock in inventory)
 		{
-			msg += stock.Value.Stats(header);
+			log += stock.Value.Stats(header);
 		}
-		msg += header + "cash, stock, " + cash + ", n/a\n";
-		msg += header + "profit, stock, " + (cash - prevCash) + ", n/a\n";
-		msg += header + "taxes, idle, " + taxesPaidThisRound + ", n/a\n";
-		return msg; 
+		log += header + "cash, stock, " + cash + ", n/a\n";
+		log += header + "profit, stock, " + (cash - prevCash) + ", n/a\n";
+		log += header + "taxes, idle, " + taxesPaidThisRound + ", n/a\n";
+		foreach (var (good, quantity) in producedThisRound)
+		{
+			log += header + good + ", produced, " + quantity + ", n/a\n";
+		}
+		producedThisRound.Clear();
+		var ret = log;
+		log = "";
+		return ret; 
 	}
 	void Start () {
 	}
@@ -123,14 +131,18 @@ public class EconAgent : MonoBehaviour {
 				msg += entry.Value.Quantity + " " + entry.Key + ", ";
 			}
 			Debug.Log(AuctionStats.Instance.round + ": " + name + " reinit2: " + msg );
+			//don't give bankrupt agents more goods! just money and maybe food?
+			
+			inventory["Food"].Increase(2);
 			foreach (var dep in com[buildable].dep)
 			{
 				var commodity = dep.Key;
 				inputs.Add(commodity);
                 //Debug.Log("::" + commodity);
-				AddToInventory(commodity, initStock, maxStock, com[commodity].price, com[commodity].production);
+				AddToInventory(commodity, 0, maxStock, com[commodity].price, com[commodity].production);
 			}
 			AddToInventory(buildable, 0, maxStock, com[buildable].price, com[buildable].production);
+			
 			//Debug.Log("New " + gameObject.name + " has " + inventory[buildable].Quantity + " " + buildable);
 			Debug.Log(AuctionStats.Instance.round + ": " + name + " post reinit2: " + msg );
 		}
@@ -355,7 +367,7 @@ public class EconAgent : MonoBehaviour {
 		float producedThisRound = 0;
 		foreach (var buildable in outputs)
 		{
-			Debug.Log(name + " producing " + buildable + " currently in stock " + inventory[buildable].Quantity);
+			Debug.Log(AuctionStats.Instance.round + " " + name + " producing " + buildable + " currently in stock " + inventory[buildable].Quantity);
 			//get list of dependent commodities
 			float numProduced = float.MaxValue; //amt agent can produce for commodity buildable
 			//find max that can be made w/ available stock
@@ -365,15 +377,15 @@ public class EconAgent : MonoBehaviour {
 				var numNeeded = dep.Value;
 				var numAvail = inventory[dep.Key].Quantity;
 				numProduced = Mathf.Min(numProduced, numAvail/numNeeded);
-				Debug.Log(name + "can produce " + numProduced + " w/" + numAvail + "/" + numNeeded + dep.Key );
+				Debug.Log(AuctionStats.Instance.round + " " + name + "can produce " + numProduced + " w/" + numAvail + "/" + numNeeded + dep.Key );
 			}
 			//can only build fixed rate at a time
 			//can't produce more than what's in stock
 			var upperBound = Mathf.Min(inventory[buildable].productionRate, inventory[buildable].Deficit());
 			numProduced = Mathf.Clamp(numProduced, 0, upperBound);
-			Debug.Log(name + " upperbound: " + upperBound + " production rate: " + inventory[buildable].productionRate + " room: " + inventory[buildable].Deficit());
+			Debug.Log(AuctionStats.Instance.round + " " + name + " upperbound: " + upperBound + " production rate: " + inventory[buildable].productionRate + " room: " + inventory[buildable].Deficit());
 			numProduced = Mathf.Floor(numProduced);
-			Debug.Log(name + " upperbound: " + upperBound + " producing: " + numProduced);
+			Debug.Log(AuctionStats.Instance.round + " " + name + " upperbound: " + upperBound + " producing: " + numProduced);
 			Assert.IsTrue(numProduced >= 0);
 
 			//build and add to stockpile
@@ -387,7 +399,8 @@ public class EconAgent : MonoBehaviour {
                 inventory[dep.Key].Decrease(numUsed);
 			}
 			inventory[buildable].Increase(numProduced);
-			Debug.Log(name + " has " + cash.ToString("c2") + " made " + numProduced.ToString("n2") + " " + buildable + " total: " + inventory[buildable].Quantity);
+			Debug.Log(AuctionStats.Instance.round + " " + name + " has " + cash.ToString("c2") + " made " + numProduced.ToString("n2") + " " + buildable + " total: " + inventory[buildable].Quantity);
+			this.producedThisRound[buildable] = numProduced;
 			Assert.IsFalse(float.IsNaN(numProduced));
 			//this condition is worrisome 
 //			Assert.IsTrue(inventory[buildable].Quantity >= 0);
