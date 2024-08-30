@@ -6,11 +6,13 @@ using UnityEngine;
 using UnityEngine.Assertions;
 using AYellowpaper.SerializedCollections;
 using UnityEngine.Rendering;
+using Sirenix.OdinInspector;
 
 public class AuctionHouse : MonoBehaviour {
 	protected AgentConfig config;
 	public int seed = 42;
 	public bool appendTimeToLog = false;
+	public bool autoNextRound = false;
     public float tickInterval = .001f;
 	public int maxRounds = 10;
 	public bool exitAfterNoTrade = true;
@@ -86,6 +88,12 @@ public class AuctionHouse : MonoBehaviour {
 	{
 		//CloseWriteFile();
 	}
+	[PropertyOrder(1)]
+	[Button(ButtonSizes.Large), GUIColor(0.4f, 0.8f,1)]
+	public void NextRound()
+	{
+		auctionTracker.nextRound();
+	}
 	void InitAgent(EconAgent agent, string type)
 	{
         List<string> buildables = new List<string>();
@@ -119,7 +127,7 @@ public class AuctionHouse : MonoBehaviour {
 			return;
 		}
 		//wait before update
-		if (Time.time - lastTick > tickInterval)
+		if (autoNextRound && Time.time - lastTick > tickInterval)
 		{
 			Debug.Log("v1.4 Round: " + auctionTracker.round);
 			//sampler.BeginSample("AuctionHouseTick");
