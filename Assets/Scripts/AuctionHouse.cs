@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -7,6 +6,7 @@ using UnityEngine.Assertions;
 using AYellowpaper.SerializedCollections;
 using UnityEngine.Rendering;
 using Sirenix.OdinInspector;
+using ChartAndGraph;
 
 public class AuctionHouse : MonoBehaviour {
 	protected AgentConfig config;
@@ -38,10 +38,67 @@ public class AuctionHouse : MonoBehaviour {
 	protected Dictionary<string, Dictionary<string, float>> trackBids = new();
 	protected float lastTick;
 	public bool EnableDebug = false;
+	[Required]
+	public GameObject barChartObj;
+	BarChart barChart;
+	[Required]
+	public GraphChart Graph;
+	float lastTime;
+	float lastX;
+	void Test()
+	{
+		lastTime = Time.time;
+		barChart = barChartObj.GetComponent<BarChart>();
+		if (barChart != null)
+        {
+			barChart.DataSource.StartBatch();
+			barChart.DataSource.ClearValues();
+            barChart.DataSource.SetValue("Farmers", "Inventory", 1);
+            barChart.DataSource.SetValue("Loggers","Inventory", 2);
+            barChart.DataSource.SetValue("Miners","Inventory", 6);
+            barChart.DataSource.SetValue("Refiners", "Inventory", 9);
+            barChart.DataSource.SetValue("Farmers","Cash", 4);
+            barChart.DataSource.SetValue("Loggers","Cash", 8);
+			barChart.DataSource.EndBatch();
+        }
+
+        if (Graph == null) // the ChartGraph info is obtained via the inspector
+            return;
+        float x = 0f;
+     /////   Graph.DataSource.StartBatch(); // do not call StartBatch for realtime calls , it will only slow down performance.
+ 
+        Graph.DataSource.ClearCategory("Player 1"); // clear the "Player 1" category. this category is defined using the GraphChart inspector
+        Graph.DataSource.ClearCategory("Player 2"); // clear the "Player 2" category. this category is defined using the GraphChart inspector
+
+		int TotalPoints = 10;
+        for (int i = 0; i < TotalPoints; i++)  //add random points to the graph
+        {
+            Graph.DataSource.AddPointToCategoryRealtime("Player 1", x, Random.value * 20f + 10f); // each time we call AddPointToCategory 
+            Graph.DataSource.AddPointToCategoryRealtime("Player 2", x, Random.value * 10f); // each time we call AddPointToCategory 
+            x += Random.value * 3f;
+            lastX = x;
+
+        }
+      ////  Graph.DataSource.EndBatch(); // do not batch reatlime calls
+}
+
+    void GraphUpdate()
+    {
+        float time = Time.time;
+        if (lastTime + 2f < time)
+        {
+            lastTime = time;
+            lastX += Random.value * 3f;
+            Graph.DataSource.AddPointToCategoryRealtime("Player 1", lastX, Random.value * 20f + 10f, 1f); // each time we call AddPointToCategory 
+            Graph.DataSource.AddPointToCategoryRealtime("Player 2", lastX, Random.value * 10f, 1f); // each time we call AddPointToCategory
+        }
+
+    }
 	void Start () {
 		Debug.unityLogger.logEnabled=EnableDebug;
 		OpenFileForWrite();
 
+		Test();
 		UnityEngine.Random.InitState(seed);
 		lastTick = 0;
 		auctionTracker = AuctionStats.Instance;
@@ -114,6 +171,7 @@ public class AuctionHouse : MonoBehaviour {
 	
 	// Update is called once per frame
 	void FixedUpdate () {
+		GraphUpdate();
 		if (auctionTracker.round > maxRounds || timeToQuit)
 		{
 			CloseWriteFile();
@@ -178,10 +236,10 @@ public class AuctionHouse : MonoBehaviour {
 		QuitIf();
 	}
 
-	protected void PrintAuctionStats(String c, float buy, float sell)
+	protected void PrintAuctionStats(string c, float buy, float sell)
 	{
-		String header = auctionTracker.round + ", auction, none, " + c + ", ";
-		String msg = header + "bid, " + buy + ", n/a\n";
+		string header = auctionTracker.round + ", auction, none, " + c + ", ";
+		string msg = header + "bid, " + buy + ", n/a\n";
 		msg += header + "ask, " + sell + ", n/a\n";
 		msg += header + "avgAskPrice, " + auctionTracker.book[c].avgAskPrice[^1] + ", n/a\n";
 		msg += header + "avgBidPrice, " + auctionTracker.book[c].avgBidPrice[^1] + ", n/a\n";
@@ -321,7 +379,7 @@ public class AuctionHouse : MonoBehaviour {
 
 	// TODO decouple transfer of commodity with transfer of money
 	// TODO convert cash into another commodity
-	protected void Trade(String commodity, float clearingPrice, float quantity, EconAgent bidder, EconAgent seller) 
+	protected void Trade(string commodity, float clearingPrice, float quantity, EconAgent bidder, EconAgent seller) 
 	{
 		//transfer commodity
 		//transfer cash
@@ -332,17 +390,17 @@ public class AuctionHouse : MonoBehaviour {
 	}
 
 	protected void OpenFileForWrite() {
-		var datepostfix = DateTime.Now.ToString(@"yyyy-MM-dd-h_mm_tt");
+		var datepostfix = System.DateTime.Now.ToString(@"yyyy-MM-dd-h_mm_tt");
 		if (appendTimeToLog)
 		{
 			sw = new StreamWriter("log_" + datepostfix + ".csv");
 		} else {
 			sw = new StreamWriter("log.csv");
 		}
-		String header_row = "round, agent, produces, inventory_items, type, amount, reason\n";
+		string header_row = "round, agent, produces, inventory_items, type, amount, reason\n";
 		PrintToFile(header_row);
 	}
-	protected void PrintToFile(String msg) {
+	protected void PrintToFile(string msg) {
 		sw.Write(msg);
 	}
 
@@ -351,8 +409,8 @@ public class AuctionHouse : MonoBehaviour {
 	}
 
 	protected void AgentsStats() {
-		String header = auctionTracker.round + ", ";
-		String msg = "";
+		string header = auctionTracker.round + ", ";
+		string msg = "";
 		foreach (var agent in agents)
 		{
 			msg += agent.Stats(header);
@@ -501,7 +559,6 @@ public class AuctionHouse : MonoBehaviour {
 		}
 	}
 
-    float defaulted = 0;
 	protected void EnactBankruptcy()
 	{
         foreach (var agent in agents)

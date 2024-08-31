@@ -7,7 +7,7 @@ using UnityEngine.Assertions;
 using AYellowpaper.SerializedCollections;
 
 public class AuctionHouseTest : AuctionHouse {
-	new void Start() {
+	void Start() {
 		Debug.unityLogger.logEnabled=EnableDebug;
 		base.OpenFileForWrite();
 

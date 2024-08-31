@@ -32,6 +32,7 @@ sysinfo.txt
 # Builds
 *.apk
 *.unitypackage
+log*.csv
 log1_econsim.csv
 log2.csv
 Logs/AssetImportWorker1.log
