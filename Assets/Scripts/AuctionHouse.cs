@@ -34,77 +34,24 @@ public class AuctionHouse : MonoBehaviour {
     protected OfferTable askTable, bidTable;
 	protected StreamWriter sw;
 	protected AuctionStats auctionTracker;
-
 	protected Dictionary<string, Dictionary<string, float>> trackBids = new();
 	protected float lastTick;
 	public bool EnableDebug = false;
-	[Required]
-	public GameObject barChartObj;
-	BarChart barChart;
-	[Required]
-	public GraphChart Graph;
-	float lastTime;
-	float lastX;
-	void Test()
-	{
-		lastTime = Time.time;
-		barChart = barChartObj.GetComponent<BarChart>();
-		if (barChart != null)
-        {
-			barChart.DataSource.StartBatch();
-			barChart.DataSource.ClearValues();
-            barChart.DataSource.SetValue("Farmers", "Inventory", 1);
-            barChart.DataSource.SetValue("Loggers","Inventory", 2);
-            barChart.DataSource.SetValue("Miners","Inventory", 6);
-            barChart.DataSource.SetValue("Refiners", "Inventory", 9);
-            barChart.DataSource.SetValue("Farmers","Cash", 4);
-            barChart.DataSource.SetValue("Loggers","Cash", 8);
-			barChart.DataSource.EndBatch();
-        }
+	ESStreamingGraph meanPriceGraph;
 
-        if (Graph == null) // the ChartGraph info is obtained via the inspector
-            return;
-        float x = 0f;
-     /////   Graph.DataSource.StartBatch(); // do not call StartBatch for realtime calls , it will only slow down performance.
- 
-        Graph.DataSource.ClearCategory("Player 1"); // clear the "Player 1" category. this category is defined using the GraphChart inspector
-        Graph.DataSource.ClearCategory("Player 2"); // clear the "Player 2" category. this category is defined using the GraphChart inspector
-
-		int TotalPoints = 10;
-        for (int i = 0; i < TotalPoints; i++)  //add random points to the graph
-        {
-            Graph.DataSource.AddPointToCategoryRealtime("Player 1", x, Random.value * 20f + 10f); // each time we call AddPointToCategory 
-            Graph.DataSource.AddPointToCategoryRealtime("Player 2", x, Random.value * 10f); // each time we call AddPointToCategory 
-            x += Random.value * 3f;
-            lastX = x;
-
-        }
-      ////  Graph.DataSource.EndBatch(); // do not batch reatlime calls
-}
-
-    void GraphUpdate()
-    {
-        float time = Time.time;
-        if (lastTime + 2f < time)
-        {
-            lastTime = time;
-            lastX += Random.value * 3f;
-            Graph.DataSource.AddPointToCategoryRealtime("Player 1", lastX, Random.value * 20f + 10f, 1f); // each time we call AddPointToCategory 
-            Graph.DataSource.AddPointToCategoryRealtime("Player 2", lastX, Random.value * 10f, 1f); // each time we call AddPointToCategory
-        }
-
-    }
 	void Start () {
 		Debug.unityLogger.logEnabled=EnableDebug;
 		OpenFileForWrite();
 
-		Test();
 		UnityEngine.Random.InitState(seed);
 		lastTick = 0;
 		auctionTracker = AuctionStats.Instance;
 		var com = auctionTracker.book;
 	
 		config = GetComponent<AgentConfig>();
+		meanPriceGraph = GetComponent<ESStreamingGraph>();
+		Assert.IsFalse(meanPriceGraph == null);
+
 		irs = 0; //GetComponent<EconAgent>();
 		var prefab = Resources.Load("Agent");
 
@@ -147,9 +94,11 @@ public class AuctionHouse : MonoBehaviour {
 	}
 	[PropertyOrder(1)]
 	[Button(ButtonSizes.Large), GUIColor(0.4f, 0.8f,1)]
-	public void NextRound()
+	public void DoNextRound()
 	{
+		Tick();
 		auctionTracker.nextRound();
+		meanPriceGraph.UpdateGraph();
 	}
 	void InitAgent(EconAgent agent, string type)
 	{
@@ -171,7 +120,6 @@ public class AuctionHouse : MonoBehaviour {
 	
 	// Update is called once per frame
 	void FixedUpdate () {
-		GraphUpdate();
 		if (auctionTracker.round > maxRounds || timeToQuit)
 		{
 			CloseWriteFile();
@@ -189,10 +137,11 @@ public class AuctionHouse : MonoBehaviour {
 		{
 			Debug.Log("v1.4 Round: " + auctionTracker.round);
 			//sampler.BeginSample("AuctionHouseTick");
-            Tick();
+            //Tick();
 			//sampler.EndSample();
+			//auctionTracker.nextRound();
+			DoNextRound();
 			lastTick = Time.time;
-			auctionTracker.nextRound();
 		}
 	}
 	void Tick()
