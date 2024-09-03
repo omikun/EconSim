@@ -4,12 +4,32 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net.Http.Headers;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.WindowsRuntime;
+using DG.Tweening;
+using JetBrains.Annotations;
 using UnityEngine;
+using UnityEngine.Android;
 using UnityEngine.Assertions;
 
 
+/*
+public class OncePerRoundFloat {
+    float value;
+    int round = 0;
+    public float get()
+        { 
+        if (AuctionStats.Instance.round == round) {
+            return value;
+        } else {
+            round = AuctionStats.Instance.round;
+            value = ComputeProduction();
+            return value;
+        }
+    }
+}
+//*/
 public class InventoryItem {
-	public string commodityName { get; private set; }
+	public string name { get; private set; }
 	const float significant = 0.25f;
 	const float sig_imbalance = .33f;
 	const float lowInventory = .1f;
@@ -28,7 +48,10 @@ public class InventoryItem {
 	public float meanCostThisRound; //total cost spent to acquire stock
     public float meanCost; 
 	//number of units produced per turn = production * productionRate
-	public float productionRate = 1; //# of assembly lines
+	float productionRate = 1; //# of assembly lines
+    float realProductionRate;
+    float productionDeRate = 1; //if agent gets hurt/reduced productivity
+    float productionChance = 1; //if agent gets into an accident?
     List<string> debug_msgs = new List<string>();
     bool boughtThisRound = false;
     bool soldThisRound = false;
@@ -37,35 +60,51 @@ public class InventoryItem {
     public float askPrice = 0;
     public float askQuantity = 0;
 
+    int lastRoundComputedProductionRate = -1;
+    public float ComputeProductionRate()
+    {
+        if (AuctionStats.Instance.round == lastRoundComputedProductionRate)
+        {
+            return realProductionRate;
+        }
+        //derate
+        float rate = productionRate * productionDeRate;
+        //random chance derate
+        var chance = productionChance;
+        realProductionRate = (UnityEngine.Random.value < chance) ? rate : 0;
+
+        lastRoundComputedProductionRate = AuctionStats.Instance.round;
+        return realProductionRate;
+    }
 
 
     public String Stats(String header) 
     {
-        String ret = header + commodityName + ", stock, " + Quantity + ",n/a\n"; 
+        String ret = header + name + ", stock, " + Quantity + ",n/a\n"; 
         foreach( var msg in debug_msgs )
         {
             //ret += header + commodityName + ", " + msg + "\n";
-            ret += header + commodityName + ", minPriceBelief, " + minPriceBelief + ", " + msg + "\n";
-            ret += header + commodityName + ", maxPriceBelief, " + maxPriceBelief + ", " + msg + "\n";
+            ret += header + name + ", minPriceBelief, " + minPriceBelief + ", " + msg + "\n";
+            ret += header + name + ", maxPriceBelief, " + maxPriceBelief + ", " + msg + "\n";
         }
         debug_msgs.Clear();
         //ret += header + commodityName + ", max_stock, " + maxQuantity + ",n/a\n"; 
         if (boughtThisRound)
         {
-            ret += header + commodityName + ", buyQuant, " + buyHistory[^1].quantity + ",n/a\n";
+            ret += header + name + ", buyQuant, " + buyHistory[^1].quantity + ",n/a\n";
         }
         if (soldThisRound)
         {
-            ret += header + commodityName + ", sellQuant, " + sellHistory[^1].quantity + ",n/a\n";
+            ret += header + name + ", sellQuant, " + sellHistory[^1].quantity + ",n/a\n";
         }
         if (boughtThisRound || soldThisRound)
         {
-            ret += header + commodityName + ", meanPrice, " + meanCostThisRound + ",n/a\n";
+            ret += header + name + ", meanPrice, " + meanCostThisRound + ",n/a\n";
         }
-        ret += header + commodityName + ", bidPrice, " + bidPrice + ",n/a\n";
-        ret += header + commodityName + ", bidQuantity, " + bidQuantity + ",n/a\n";
-        ret += header + commodityName + ", askPrice, " + askPrice + ",n/a\n";
-        ret += header + commodityName + ", askQuantity, " + askQuantity + ",n/a\n";
+        ret += header + name + ", bidPrice, " + bidPrice + ",n/a\n";
+        ret += header + name + ", bidQuantity, " + bidQuantity + ",n/a\n";
+        ret += header + name + ", askPrice, " + askPrice + ",n/a\n";
+        ret += header + name + ", askQuantity, " + askQuantity + ",n/a\n";
 
         bidPrice = 0;
         bidQuantity = 0;
@@ -78,7 +117,7 @@ public class InventoryItem {
 	{
 		buyHistory = new TransactionHistory();
 		sellHistory = new TransactionHistory();
-		commodityName = _name;
+		name = _name;
 		Quantity = _quantity;
 		maxQuantity = _maxQuantity;
         Assert.IsTrue(_meanPrice >= 0); //TODO really should never be 0???

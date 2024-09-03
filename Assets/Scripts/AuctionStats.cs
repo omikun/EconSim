@@ -122,12 +122,12 @@ public class AuctionStats : MonoBehaviour
 		gotHottestGoodRound = round;
 		return mostDemand;
 	}
-	bool Add(string name, float production, Dependency dep)
+	bool Add(string name, float production, float productionChance, Dependency dep)
 	{
 		if (book.ContainsKey(name)) { return false; }
 		Assert.IsNotNull(dep);
 
-		book.Add(name, new Commodity(name, production, dep));
+		book.Add(name, new Commodity(name, production, productionChance, dep));
 		return true;
 	}
     void PrintStat()
@@ -152,6 +152,7 @@ public class AuctionStats : MonoBehaviour
 		{
 			Dependency dep = new Dependency();
 			float prod_rate = 0;
+			float prod_chance = 0;
 			foreach (var field in item.Value)
 			{
 				if (field.Key == "Prod_rate")
@@ -159,9 +160,14 @@ public class AuctionStats : MonoBehaviour
 					prod_rate = field.Value;
 					continue;
 				}
+				if (field.Key == "Prod_chance")
+				{
+					prod_chance = field.Value;
+					continue;
+				}
 				dep.Add(field.Key, field.Value);
 			}
-			if (!Add(item.Key, prod_rate, dep))
+			if (!Add(item.Key, prod_rate, prod_chance, dep))
 			{
 				Debug.Log("Failed to add commodity; duplicate?");
 			}

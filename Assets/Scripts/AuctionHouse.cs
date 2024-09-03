@@ -100,6 +100,12 @@ public class AuctionHouse : MonoBehaviour {
 		auctionTracker.nextRound();
 		meanPriceGraph.UpdateGraph();
 	}
+	[PropertyOrder(2)]
+	[Button(ButtonSizes.Large), GUIColor(0.4f, 0.8f,1)]
+	public void ForesFire()
+	{
+		auctionTracker.book["Wood"].ChangeProductionMultiplier(.1f);
+	}
 	void InitAgent(EconAgent agent, string type)
 	{
         List<string> buildables = new List<string>();

@@ -193,10 +193,11 @@ public class EconAgent : MonoBehaviour {
 			Debug.Log(name + " producing " + outputs[0] + " is bankrupt: " + cash.ToString("c2") + " or starving where food=" + inventory["Food"].Quantity);
 			taxConsumed = -cash + ChangeProfession(); //existing debt + 
 		}
-		foreach (var buildable in outputs)
-		{
-			inventory[buildable].cost = GetCostOf(buildable);
-		}
+		// cost updated on EconAgent::Produce()
+		// foreach (var buildable in outputs)
+		// {
+		// 	inventory[buildable].cost = GetCostOf(buildable);
+		// }
 		return taxConsumed;
 	}
 
@@ -352,7 +353,7 @@ public class EconAgent : MonoBehaviour {
 				}
 				Debug.Log(AuctionStats.Instance.round + ": " + this.name + " wants to buy " + numBids.ToString("n2") + stock.Key + " for " + buyPrice.ToString("c2") + " each" + " min/maxPriceBeliefs " + stock.Value.minPriceBelief.ToString("c2") + "/" + stock.Value.maxPriceBelief.ToString("c2"));
 				Assert.IsFalse(numBids < 0);
-				bids.Add(stock.Key, new Offer(stock.Value.commodityName, buyPrice, numBids, this));
+				bids.Add(stock.Key, new Offer(stock.Value.name, buyPrice, numBids, this));
 				stock.Value.bidPrice = buyPrice;
 				stock.Value.bidQuantity += numBids;
 
@@ -362,12 +363,12 @@ public class EconAgent : MonoBehaviour {
 	}
 	public float Produce(Dictionary<string, Commodity> com) {
 		//TODO sort buildables by profit
+		//TODO don't build things that won't earn a profit
 
-		//build as many as one can TODO don't build things that won't earn a profit
+		//build as many as one can 
 		float producedThisRound = 0;
 		foreach (var buildable in outputs)
 		{
-			Debug.Log(AuctionStats.Instance.round + " " + name + " producing " + buildable + " currently in stock " + inventory[buildable].Quantity);
 			//get list of dependent commodities
 			float numProduced = float.MaxValue; //amt agent can produce for commodity buildable
 			//find max that can be made w/ available stock
@@ -381,24 +382,26 @@ public class EconAgent : MonoBehaviour {
 			}
 			//can only build fixed rate at a time
 			//can't produce more than what's in stock
-			var upperBound = Mathf.Min(inventory[buildable].productionRate, inventory[buildable].Deficit());
+			var upperBound = Mathf.Min(inventory[buildable].ComputeProductionRate(), inventory[buildable].Deficit());
 			numProduced = Mathf.Clamp(numProduced, 0, upperBound);
-			Debug.Log(AuctionStats.Instance.round + " " + name + " upperbound: " + upperBound + " production rate: " + inventory[buildable].productionRate + " room: " + inventory[buildable].Deficit());
+			Debug.Log(AuctionStats.Instance.round + " " + name + " producing " + buildable + " currently in stock " + inventory[buildable].Quantity+ " upperbound: " + upperBound + " production rate: " + inventory[buildable].ComputeProductionRate() + " room: " + inventory[buildable].Deficit());
 			numProduced = Mathf.Floor(numProduced);
-			Debug.Log(AuctionStats.Instance.round + " " + name + " upperbound: " + upperBound + " producing: " + numProduced);
 			Assert.IsTrue(numProduced >= 0);
 
 			//build and add to stockpile
-			var buildable_cost = 0f;
+			var cost = 0f;
 			foreach (var dep in com[buildable].dep)
 			{
 				var stock = inventory[dep.Key].Quantity;
-				var numUsed = dep.Value * numProduced;
+				var numUsed = dep.Value;
 				numUsed = Mathf.Clamp(numUsed, 0, stock);
-				buildable_cost += numUsed * inventory[dep.Key].meanCostThisRound;
+				cost += numUsed * inventory[dep.Key].meanCostThisRound;
                 inventory[dep.Key].Decrease(numUsed);
 			}
-			inventory[buildable].Increase(numProduced);
+			//auction wide multiplier (richer ore vien or fores fire)
+			var multiplier = com[buildable].productionMultiplier;
+			inventory[buildable].cost = cost / multiplier;
+			inventory[buildable].Increase(numProduced * multiplier);
 			Debug.Log(AuctionStats.Instance.round + " " + name + " has " + cash.ToString("c2") + " made " + numProduced.ToString("n2") + " " + buildable + " total: " + inventory[buildable].Quantity);
 			this.producedThisRound[buildable] = numProduced;
 			Assert.IsFalse(float.IsNaN(numProduced));
@@ -444,7 +447,6 @@ public class EconAgent : MonoBehaviour {
     //get the cost of a commodity
     float GetCostOf(string commodity)
 	{
-		var com = AuctionStats.Instance.book;
 		float cost = 0;
 		foreach (var dep in com[commodity].dep)
 		{

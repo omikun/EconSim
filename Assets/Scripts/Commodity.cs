@@ -18,10 +18,11 @@ public class Commodity
         avgPrice = avgClearingPrice.Skip(skip).Average();
         return avgPrice;
 	}
-	public Commodity(string n, float p, Dependency d)
+	public Commodity(string n, float p, float pc, Dependency d)
 	{
 		name = n;
 		production = p;
+		productionMultiplier = pc;
 		price = defaultPrice;
 		dep = d;
 		demand = 1;
@@ -50,9 +51,15 @@ public class Commodity
 		price = p;
 		demand = dem;
 	}
+	public void ChangeProductionMultiplier(float pm)
+	{
+		productionMultiplier = pm;
+	}
 	public string name { get; private set; }
 	public float price { get; private set; } //market price
 	public float demand { get; private set; }
 	public float production { get; private set; }
+	public float productionMultiplier { get; private set; } //forest fire or rich mineral vein
+	public float resourceAmount { get; private set; } // for fish or finite ore
 	public Dependency dep { get; private set; }
 }
