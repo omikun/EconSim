@@ -165,7 +165,7 @@ MonoBehaviour:
       LineThickness: 2.5799999237060547
       StetchFill: 0
       DotPrefab: {fileID: 0}
-      PointMaterial: {fileID: 2100000, guid: fa0b3a0e33fedd249b4527b6027ba69e, type: 2}
+      PointMaterial: {fileID: 2100000, guid: ebb54d1636b926a4ba4403bba1cc1dc6, type: 2}
       PointSize: 6
       ViewOrder: 1
       AllowNonFunctionsBeta: 0
@@ -183,11 +183,11 @@ MonoBehaviour:
         EnableTiling: 0
         TileFactor: 45.5
       FillPrefab: {fileID: 0}
-      InnerFill: {fileID: 2100000, guid: 249108b1a0be0c8488d35a2e5266f04d, type: 2}
+      InnerFill: {fileID: 2100000, guid: b8ab27c4271a3e64d8491c967d324fd0, type: 2}
       LineThickness: 2.5799999237060547
       StetchFill: 0
       DotPrefab: {fileID: 0}
-      PointMaterial: {fileID: 2100000, guid: fa0b3a0e33fedd249b4527b6027ba69e, type: 2}
+      PointMaterial: {fileID: 2100000, guid: 9843dc986d4eb53498e98084e7fee1ed, type: 2}
       PointSize: 6
       ViewOrder: 2
       AllowNonFunctionsBeta: 0
@@ -209,7 +209,7 @@ MonoBehaviour:
       LineThickness: 2.5799999237060547
       StetchFill: 0
       DotPrefab: {fileID: 0}
-      PointMaterial: {fileID: 2100000, guid: fa0b3a0e33fedd249b4527b6027ba69e, type: 2}
+      PointMaterial: {fileID: 2100000, guid: 09866d623c8e90140a9c5ac934ccb3bc, type: 2}
       PointSize: 6
       ViewOrder: 3
       AllowNonFunctionsBeta: 0
@@ -227,11 +227,11 @@ MonoBehaviour:
         EnableTiling: 0
         TileFactor: 45.5
       FillPrefab: {fileID: 0}
-      InnerFill: {fileID: 2100000, guid: 249108b1a0be0c8488d35a2e5266f04d, type: 2}
+      InnerFill: {fileID: 2100000, guid: 084574ea59b3e084ebd7ab1a38b8a5de, type: 2}
       LineThickness: 2.5799999237060547
       StetchFill: 0
       DotPrefab: {fileID: 0}
-      PointMaterial: {fileID: 2100000, guid: fa0b3a0e33fedd249b4527b6027ba69e, type: 2}
+      PointMaterial: {fileID: 2100000, guid: 06a326b15fab46b499e3406b7ad4cd2d, type: 2}
       PointSize: 6
       ViewOrder: 4
       AllowNonFunctionsBeta: 0

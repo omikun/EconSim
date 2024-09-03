@@ -56,26 +56,24 @@ public class ESStreamingGraph : MonoBehaviour
             Assert.IsFalse(graph == null);
             return;
         }
-        float x = 1f * TotalPoints;
         graph.DataSource.StartBatch(); 
-        graph.DataSource.ClearCategory("Food");
-        graph.DataSource.ClearCategory("Wood");
-        graph.DataSource.ClearCategory("Ore");
-        graph.DataSource.ClearCategory("Metal");
-        graph.DataSource.ClearCategory("Tool");
 
+        int index = 0;
+        foreach (var good in auctionTracker.book.Keys)
+        {
+            graph.DataSource.ClearCategory(good);
+            graph.DataSource.SetCategoryLine(good, template.lineMaterials[index], template.lineThickness, template.lineTiling);
+            graph.DataSource.SetCategoryFill(good, null, false);
+            index++;
+        }
         for (int i = 0; i < TotalPoints; i++)  //add random points to the graph
         {
-            break;
             //TODO with AddPointToCategoryWithLabel in the future?
-            graph.DataSource.AddPointToCategory("Food",x,UnityEngine.Random.value);
-            graph.DataSource.AddPointToCategory("Wood",x,UnityEngine.Random.value);
-            //Graph.DataSource.AddPointToCategory("Food", System.DateTime.Now - System.TimeSpan.FromSeconds(x), Random.value * 20f + 10f); // each time we call AddPointToCategory 
-            x -= 1;
-            lastX = x;
+            //graph.DataSource.AddPointToCategory("Food",x,UnityEngine.Random.value);
         }
-
         graph.DataSource.EndBatch(); // finally we call EndBatch , this will cause the GraphChart to redraw itself
+
+        lastX = 0;
     }
     void Start()
     {
@@ -88,26 +86,19 @@ public class ESStreamingGraph : MonoBehaviour
         lastTime = Time.time;
     }
 
-    public float SlideTime = -1f;//.5f;
+    public float SlideTime = -1f;//.5f; //-1 will update y axis?
     public void UpdateGraph()
     {
         updateGraph(meanPriceGraph);
         updateGraph(InventoryGraph);
+        lastX += 1;
     }
     void updateGraph(GraphChart graph)
     {
-        //            System.DateTime t = ChartDateUtility.ValueToDate(lastX);
-        // Graph.DataSource.AddPointToCategoryRealtime("Player 1", System.DateTime.Now, Random.value * 20f + 10f, deltaTime); // each time we call AddPointToCategory 
-        // Graph.DataSource.AddPointToCategoryRealtime("Player 2", System.DateTime.Now, Random.value * 10f, deltaTime); // each time we call AddPointToCategory
-        List<string> goods = new List<string> { "Food", "Wood", "Ore", "Metal", "Tool" };
         foreach (var good in auctionTracker.book.Keys)
-        //foreach (var good in goods)
         {
             var price = auctionTracker.book[good].bids[^1];
             graph.DataSource.AddPointToCategoryRealtime(good, lastX, price, SlideTime);
         }
-        lastX += 1;
-            //Graph.DataSource.AddPointToCategoryRealtime("Wood",lastX,Random.value * 10f, deltaTime);
-
     }
 }
