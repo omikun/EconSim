@@ -64,6 +64,7 @@ public class ESStreamingGraph : MonoBehaviour
             graph.DataSource.ClearCategory(good);
             graph.DataSource.SetCategoryLine(good, template.lineMaterials[index], template.lineThickness, template.lineTiling);
             graph.DataSource.SetCategoryFill(good, null, false);
+            Debug.Log("init line material for " + good);
             index++;
         }
         for (int i = 0; i < TotalPoints; i++)  //add random points to the graph
@@ -89,16 +90,13 @@ public class ESStreamingGraph : MonoBehaviour
     public float SlideTime = -1f;//.5f; //-1 will update y axis?
     public void UpdateGraph()
     {
-        updateGraph(meanPriceGraph);
-        updateGraph(InventoryGraph);
-        lastX += 1;
-    }
-    void updateGraph(GraphChart graph)
-    {
         foreach (var good in auctionTracker.book.Keys)
         {
-            var price = auctionTracker.book[good].bids[^1];
-            graph.DataSource.AddPointToCategoryRealtime(good, lastX, price, SlideTime);
+            var value = auctionTracker.book[good].bids[^1];
+            InventoryGraph.DataSource.AddPointToCategoryRealtime(good, lastX, value, SlideTime);
+            value = auctionTracker.book[good].avgClearingPrice[^1];
+            meanPriceGraph.DataSource.AddPointToCategoryRealtime(good, lastX, value, SlideTime);
         }
+        lastX += 1;
     }
 }

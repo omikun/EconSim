@@ -276,7 +276,7 @@ MonoBehaviour:
   seed: 49
   appendTimeToLog: 1
   autoNextRound: 1
-  tickInterval: 0.2
+  tickInterval: 0.01
   maxRounds: 800
   exitAfterNoTrade: 1
   numRoundsNoTrade: 100
@@ -315,6 +315,8 @@ MonoBehaviour:
         _serializedList:
         - Key: Wood
           Value: 0.1
+        - Key: Prod_multiplier
+          Value: 1
         - Key: Tool
           Value: 0.01
         - Key: Prod_rate
@@ -324,6 +326,8 @@ MonoBehaviour:
         _serializedList:
         - Key: Food
           Value: 1
+        - Key: Prod_multiplier
+          Value: 1
         - Key: Prod_rate
           Value: 1
     - Key: Ore
@@ -331,12 +335,16 @@ MonoBehaviour:
         _serializedList:
         - Key: Food
           Value: 1
+        - Key: Prod_multiplier
+          Value: 1
         - Key: Prod_rate
           Value: 5
     - Key: Metal
       Value:
         _serializedList:
         - Key: Food
+          Value: 1
+        - Key: Prod_multiplier
           Value: 1
         - Key: Ore
           Value: 5
@@ -346,6 +354,8 @@ MonoBehaviour:
       Value:
         _serializedList:
         - Key: Food
+          Value: 1
+        - Key: Prod_multiplier
           Value: 1
         - Key: Metal
           Value: 5
@@ -901,6 +911,30 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1700845192}
     m_Modifications:
+    - target: {fileID: 5348577970415672023, guid: 7bdec001232dd409eb1e237114ffd09d, type: 3}
+      propertyPath: subDivisions.total
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 5348577970415672023, guid: 7bdec001232dd409eb1e237114ffd09d, type: 3}
+      propertyPath: mainDivisions.total
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5348577970415672023, guid: 7bdec001232dd409eb1e237114ffd09d, type: 3}
+      propertyPath: subDivisions.messure
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5348577970415672023, guid: 7bdec001232dd409eb1e237114ffd09d, type: 3}
+      propertyPath: mainDivisions.messure
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5348577970415672023, guid: 7bdec001232dd409eb1e237114ffd09d, type: 3}
+      propertyPath: subDivisions.unitsPerDivision
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5348577970415672023, guid: 7bdec001232dd409eb1e237114ffd09d, type: 3}
+      propertyPath: mainDivisions.unitsPerDivision
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6162160840505938893, guid: 7bdec001232dd409eb1e237114ffd09d, type: 3}
       propertyPath: format
       value: 0
@@ -938,6 +972,18 @@ PrefabInstance:
       value: -200
       objectReference: {fileID: 0}
     - target: {fileID: 7626426437575211171, guid: 7bdec001232dd409eb1e237114ffd09d, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.75255
+      objectReference: {fileID: 0}
+    - target: {fileID: 7626426437575211171, guid: 7bdec001232dd409eb1e237114ffd09d, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.75255
+      objectReference: {fileID: 0}
+    - target: {fileID: 7626426437575211171, guid: 7bdec001232dd409eb1e237114ffd09d, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.75255
+      objectReference: {fileID: 0}
+    - target: {fileID: 7626426437575211171, guid: 7bdec001232dd409eb1e237114ffd09d, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
       objectReference: {fileID: 0}
@@ -967,11 +1013,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7626426437575211171, guid: 7bdec001232dd409eb1e237114ffd09d, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 17
+      value: 40
       objectReference: {fileID: 0}
     - target: {fileID: 7626426437575211171, guid: 7bdec001232dd409eb1e237114ffd09d, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0
+      value: 224
       objectReference: {fileID: 0}
     - target: {fileID: 7626426437575211171, guid: 7bdec001232dd409eb1e237114ffd09d, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -990,8 +1036,16 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8596192673270936261, guid: 7bdec001232dd409eb1e237114ffd09d, type: 3}
+      propertyPath: Data.verticalViewSize
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8596192673270936261, guid: 7bdec001232dd409eb1e237114ffd09d, type: 3}
       propertyPath: autoScrollHorizontally
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8596192673270936261, guid: 7bdec001232dd409eb1e237114ffd09d, type: 3}
+      propertyPath: Data.automaticVerticallView
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 9211726940875377140, guid: 7bdec001232dd409eb1e237114ffd09d, type: 3}
       propertyPath: m_Name
@@ -2266,6 +2320,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1700845192}
     m_Modifications:
+    - target: {fileID: 5348577970415672023, guid: 7bdec001232dd409eb1e237114ffd09d, type: 3}
+      propertyPath: subDivisions.fractionDigits
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5348577970415672023, guid: 7bdec001232dd409eb1e237114ffd09d, type: 3}
+      propertyPath: mainDivisions.fractionDigits
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6162160840505938893, guid: 7bdec001232dd409eb1e237114ffd09d, type: 3}
       propertyPath: format
       value: 0
@@ -2311,6 +2373,18 @@ PrefabInstance:
       value: -200
       objectReference: {fileID: 0}
     - target: {fileID: 7626426437575211171, guid: 7bdec001232dd409eb1e237114ffd09d, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.73483
+      objectReference: {fileID: 0}
+    - target: {fileID: 7626426437575211171, guid: 7bdec001232dd409eb1e237114ffd09d, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.73483
+      objectReference: {fileID: 0}
+    - target: {fileID: 7626426437575211171, guid: 7bdec001232dd409eb1e237114ffd09d, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.73483
+      objectReference: {fileID: 0}
+    - target: {fileID: 7626426437575211171, guid: 7bdec001232dd409eb1e237114ffd09d, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
       objectReference: {fileID: 0}
@@ -2340,11 +2414,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7626426437575211171, guid: 7bdec001232dd409eb1e237114ffd09d, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 17
+      value: 36
       objectReference: {fileID: 0}
     - target: {fileID: 7626426437575211171, guid: 7bdec001232dd409eb1e237114ffd09d, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0
+      value: -223
       objectReference: {fileID: 0}
     - target: {fileID: 7626426437575211171, guid: 7bdec001232dd409eb1e237114ffd09d, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -2372,7 +2446,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 9211726940875377140, guid: 7bdec001232dd409eb1e237114ffd09d, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

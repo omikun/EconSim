@@ -18,11 +18,11 @@ public class Commodity
         avgPrice = avgClearingPrice.Skip(skip).Average();
         return avgPrice;
 	}
-	public Commodity(string n, float p, float pc, Dependency d)
+	public Commodity(string n, float p, float pm, Dependency d)
 	{
 		name = n;
 		production = p;
-		productionMultiplier = pc;
+		productionMultiplier = pm;
 		price = defaultPrice;
 		dep = d;
 		demand = 1;
