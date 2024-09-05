@@ -5,7 +5,7 @@ using UnityEngine;
 using System.Linq;
 using System;
 
-public class Dependency : Dictionary<string, float> {}
+public class Recipe : Dictionary<string, float> {}
 public class Commodity
 {
 	const float defaultPrice = 1;
@@ -18,13 +18,13 @@ public class Commodity
         avgPrice = avgClearingPrice.Skip(skip).Average();
         return avgPrice;
 	}
-	public Commodity(string n, float p, float pm, Dependency d)
+	public Commodity(string n, float p, float pm, Recipe r)
 	{
 		name = n;
 		production = p;
 		productionMultiplier = pm;
 		price = defaultPrice;
-		dep = d;
+		recipe = r;
 		demand = 1;
 
 		buyers   = new ESList();
@@ -61,5 +61,5 @@ public class Commodity
 	public float production { get; private set; }
 	public float productionMultiplier { get; private set; } //forest fire or rich mineral vein
 	public float resourceAmount { get; private set; } // for fish or finite ore
-	public Dependency dep { get; private set; }
+	public Recipe recipe { get; private set; }
 }

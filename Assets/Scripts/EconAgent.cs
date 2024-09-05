@@ -30,7 +30,7 @@ public class EconAgent : MonoBehaviour {
 
 	//from the paper (base implementation)
 	// Use this for initialization
-	Dictionary<string, Commodity> com {get; set;}
+	Dictionary<string, Commodity> book {get; set;}
 	Dictionary<string, float> producedThisRound = new Dictionary<string, float>();
 	string log = "";
 
@@ -62,7 +62,7 @@ public class EconAgent : MonoBehaviour {
 
         inventory.Add(name, new InventoryItem(name, num, max, price, production));
 
-		perItemCost[name] = com[name].price * num;
+		perItemCost[name] = book[name].price * num;
 	}
 	public float PayTax(float taxRate)
 	{
@@ -78,8 +78,8 @@ public class EconAgent : MonoBehaviour {
 		initCash = _initCash;
 		maxStock = maxstock;
 
-        if (com == null)
-			com = AuctionStats.Instance.book;
+        if (book == null)
+			book = AuctionStats.Instance.book;
 		//list of commodities self can produce
 		//get initial stockpiles
 		outputs = b;
@@ -89,27 +89,27 @@ public class EconAgent : MonoBehaviour {
 		foreach (var buildable in outputs)
 		{
 
-			if (!com.ContainsKey(buildable))
+			if (!book.ContainsKey(buildable))
 				Debug.Log("commodity not recognized: " + buildable);
 
-            if (com[buildable].dep == null)
+            if (book[buildable].recipe == null)
 				Debug.Log(buildable + ": null dep!");
 
-			foreach (var dep in com[buildable].dep)
+			foreach (var dep in book[buildable].recipe)
 			{
 				var commodity = dep.Key;
 				inputs.Add(commodity);
                 //Debug.Log("::" + commodity);
-				AddToInventory(commodity, initStock, maxStock, com[commodity].price, com[commodity].production);
+				AddToInventory(commodity, initStock, maxStock, book[commodity].price, book[commodity].production);
 			}
-			AddToInventory(buildable, 0, maxStock, com[buildable].price, com[buildable].production);
+			AddToInventory(buildable, 0, maxStock, book[buildable].price, book[buildable].production);
 			Debug.Log("New " + gameObject.name + " has " + inventory[buildable].Quantity + " " + buildable);
 		}
     }
 	public void Reinit(float initCash, List<string> b)
 	{
-        if (com == null)
-			com = AuctionStats.Instance.book;
+        if (book == null)
+			book = AuctionStats.Instance.book;
 		//list of commodities self can produce
 		//get initial stockpiles
 		outputs = b;
@@ -119,10 +119,10 @@ public class EconAgent : MonoBehaviour {
 		foreach (var buildable in outputs)
 		{
 
-			if (!com.ContainsKey(buildable))
+			if (!book.ContainsKey(buildable))
 				Debug.Log("commodity not recognized: " + buildable);
 
-            if (com[buildable].dep == null)
+            if (book[buildable].recipe == null)
 				Debug.Log(buildable + ": null dep!");
 
 			string msg = "";
@@ -134,14 +134,14 @@ public class EconAgent : MonoBehaviour {
 			//don't give bankrupt agents more goods! just money and maybe food?
 			
 			inventory["Food"].Increase(2);
-			foreach (var dep in com[buildable].dep)
+			foreach (var dep in book[buildable].recipe)
 			{
 				var commodity = dep.Key;
 				inputs.Add(commodity);
                 //Debug.Log("::" + commodity);
-				AddToInventory(commodity, 0, maxStock, com[commodity].price, com[commodity].production);
+				AddToInventory(commodity, 0, maxStock, book[commodity].price, book[commodity].production);
 			}
-			AddToInventory(buildable, 0, maxStock, com[buildable].price, com[buildable].production);
+			AddToInventory(buildable, 0, maxStock, book[buildable].price, book[buildable].production);
 			
 			//Debug.Log("New " + gameObject.name + " has " + inventory[buildable].Quantity + " " + buildable);
 			Debug.Log(AuctionStats.Instance.round + ": " + name + " post reinit2: " + msg );
@@ -275,7 +275,7 @@ public class EconAgent : MonoBehaviour {
 
 		float numAsks = Mathf.Floor(inventory[c].Surplus());
 		if (config.enablePriceFavorability) {
-			var avgPrice = com[c].avgBidPrice.LastAverage(config.historySize);
+			var avgPrice = book[c].avgBidPrice.LastAverage(config.historySize);
 			var lowestPrice = inventory[c].sellHistory.Min();
 			var highestPrice = inventory[c].sellHistory.Max();
 			float favorability = .5f;
@@ -303,7 +303,7 @@ public class EconAgent : MonoBehaviour {
 		float numBids = Mathf.Floor(inventory[c].Deficit());
 		if (config.enablePriceFavorability)
 		{
-			var avgPrice = com[c].avgBidPrice.LastAverage(config.historySize);
+			var avgPrice = book[c].avgBidPrice.LastAverage(config.historySize);
 			var lowestPrice = inventory[c].buyHistory.Min();
 			var highestPrice = inventory[c].buyHistory.Max();
 			//todo SANITY check
@@ -361,7 +361,7 @@ public class EconAgent : MonoBehaviour {
         }
         return bids;
 	}
-	public float Produce(Dictionary<string, Commodity> com) {
+	public float Produce(Dictionary<string, Commodity> book) {
 		//TODO sort buildables by profit
 		//TODO don't build things that won't earn a profit
 
@@ -372,8 +372,8 @@ public class EconAgent : MonoBehaviour {
 			//get list of dependent commodities
 			float numProduced = float.MaxValue; //amt agent can produce for commodity buildable
 			//find max that can be made w/ available stock
-			Assert.IsTrue(com.ContainsKey(buildable));
-			foreach (var dep in com[buildable].dep)
+			Assert.IsTrue(book.ContainsKey(buildable));
+			foreach (var dep in book[buildable].recipe)
 			{
 				var numNeeded = dep.Value;
 				var numAvail = inventory[dep.Key].Quantity;
@@ -390,7 +390,7 @@ public class EconAgent : MonoBehaviour {
 
 			//build and add to stockpile
 			var cost = 0f;
-			foreach (var dep in com[buildable].dep)
+			foreach (var dep in book[buildable].recipe)
 			{
 				var stock = inventory[dep.Key].Quantity;
 				var numUsed = dep.Value;
@@ -399,7 +399,7 @@ public class EconAgent : MonoBehaviour {
                 inventory[dep.Key].Decrease(numUsed);
 			}
 			//auction wide multiplier (richer ore vien or fores fire)
-			var multiplier = com[buildable].productionMultiplier;
+			var multiplier = book[buildable].productionMultiplier;
 			inventory[buildable].cost = cost / multiplier;
 			inventory[buildable].Increase(numProduced * multiplier);
 			Debug.Log(AuctionStats.Instance.round + " " + name + " has " + cash.ToString("c2") + " made " + numProduced.ToString("n2") + " " + buildable + " total: " + inventory[buildable].Quantity);
@@ -448,7 +448,7 @@ public class EconAgent : MonoBehaviour {
     float GetCostOf(string commodity)
 	{
 		float cost = 0;
-		foreach (var dep in com[commodity].dep)
+		foreach (var dep in book[commodity].recipe)
 		{
 			var depCommodity = dep.Key;
 			var numDep = dep.Value;

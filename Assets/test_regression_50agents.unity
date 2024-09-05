@@ -276,22 +276,22 @@ MonoBehaviour:
   seed: 49
   appendTimeToLog: 1
   autoNextRound: 1
-  tickInterval: 0.5
+  tickInterval: 0.01
   maxRounds: 800
   exitAfterNoTrade: 1
   numRoundsNoTrade: 100
   numAgents:
     _serializedList:
     - Key: Food
-      Value: 10
+      Value: 20
     - Key: Wood
       Value: 10
     - Key: Ore
       Value: 10
     - Key: Metal
-      Value: 10
+      Value: 5
     - Key: Tool
-      Value: 10
+      Value: 5
   EnableDebug: 1
 --- !u!114 &194909947
 MonoBehaviour:
@@ -314,22 +314,22 @@ MonoBehaviour:
       Value:
         _serializedList:
         - Key: Wood
-          Value: 0.1
+          Value: 0.2
         - Key: Prod_multiplier
           Value: 1
         - Key: Tool
-          Value: 0.01
+          Value: 0.1
         - Key: Prod_rate
-          Value: 5
+          Value: 10
     - Key: Wood
       Value:
         _serializedList:
         - Key: Food
-          Value: 1
+          Value: 0.25
         - Key: Prod_multiplier
           Value: 1
         - Key: Prod_rate
-          Value: 1
+          Value: 4
     - Key: Ore
       Value:
         _serializedList:
@@ -338,7 +338,7 @@ MonoBehaviour:
         - Key: Prod_multiplier
           Value: 1
         - Key: Prod_rate
-          Value: 5
+          Value: 8
     - Key: Metal
       Value:
         _serializedList:
@@ -347,9 +347,9 @@ MonoBehaviour:
         - Key: Prod_multiplier
           Value: 1
         - Key: Ore
-          Value: 5
+          Value: 2
         - Key: Prod_rate
-          Value: 3
+          Value: 8
     - Key: Tool
       Value:
         _serializedList:
@@ -358,9 +358,9 @@ MonoBehaviour:
         - Key: Prod_multiplier
           Value: 1
         - Key: Metal
-          Value: 5
+          Value: 2
         - Key: Prod_rate
-          Value: 1
+          Value: 4
 --- !u!4 &194909951
 Transform:
   m_ObjectHideFlags: 0
@@ -423,12 +423,12 @@ MonoBehaviour:
   seed: 42
   initCash: 50
   randomInitStock: 1
-  initStock: 5
-  maxStock: 10
+  initStock: 10
+  maxStock: 100
   clearInventory: 0
   starvation: 1
   foodConsumption: 1
-  foodConsumptionRate: 0.1
+  foodConsumptionRate: 1
   profitMarkup: 1.05
   idleTaxRate: 0
   enablePriceFavorability: 0

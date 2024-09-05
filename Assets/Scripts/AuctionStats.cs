@@ -8,7 +8,6 @@ using System;
 using AYellowpaper.SerializedCollections;
 using System.Security.Cryptography.X509Certificates;
 using System.Net.WebSockets;
-//using Dependency = System.Collections.Generic.Dictionary<string, float>;
 
 public class AuctionStats : MonoBehaviour
 {
@@ -20,7 +19,7 @@ public class AuctionStats : MonoBehaviour
 	public Dictionary<string, Commodity> book { get; private set; }
 	public int round { get; private set; }
 
-	[SerializedDictionary("ID", "Dependency")]
+	[SerializedDictionary("ID", "Recipe")]
 	public SerializedDictionary<string, SerializedDictionary<string, float>> initialization;
 	string log_msg = "";
 	public string GetLog()
@@ -76,6 +75,7 @@ public class AuctionStats : MonoBehaviour
 		}
 		if (probabilisticHottestGood && !changeToHighestBidPrice)
 		{
+			mostDemand = _GetHottestGood();
 			mostDemand = picker.PickRandom();
 		}
 		var best_ratio = picker.GetWeight(mostDemand);
@@ -122,7 +122,7 @@ public class AuctionStats : MonoBehaviour
 		gotHottestGoodRound = round;
 		return mostDemand;
 	}
-	bool Add(string name, float production, float productionMultiplier, Dependency dep)
+	bool Add(string name, float production, float productionMultiplier, Recipe dep)
 	{
 		if (book.ContainsKey(name)) { return false; }
 		Assert.IsNotNull(dep);
@@ -135,10 +135,10 @@ public class AuctionStats : MonoBehaviour
 		foreach (var item in book)
 		{
 			Debug.Log(item.Key + ": " + item.Value.price);
-			if (item.Value.dep != null)
+			if (item.Value.recipe != null)
 			{
 				Debug.Log("Dependencies: " );
-				foreach (var depItem in item.Value.dep)
+				foreach (var depItem in item.Value.recipe)
 				{
                     Debug.Log(" -> " + depItem.Key + ": " + depItem.Value);
 				}
@@ -150,7 +150,7 @@ public class AuctionStats : MonoBehaviour
 		Debug.Log("Initializing commodities");
 		foreach( var item in initialization)
 		{
-			Dependency dep = new Dependency();
+			Recipe dep = new Recipe();
 			float prod_rate = 0;
 			float prod_multiplier = 0;
 			foreach (var field in item.Value)
