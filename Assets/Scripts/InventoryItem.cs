@@ -52,7 +52,7 @@ public class InventoryItem {
     float realProductionRate;
     float productionDeRate = 1; //if agent gets hurt/reduced productivity
     float productionChance = 1; //if agent gets into an accident?
-    List<string> debug_msgs = new List<string>();
+    List<string> debug_msgs = new();
     bool boughtThisRound = false;
     bool soldThisRound = false;
     public float bidPrice = 0;
@@ -61,7 +61,7 @@ public class InventoryItem {
     public float askQuantity = 0;
 
     int lastRoundComputedProductionRate = -1;
-    public float ComputeProductionRate()
+    public float GetProductionRate()
     {
         if (AuctionStats.Instance.round == lastRoundComputedProductionRate)
         {
@@ -143,6 +143,12 @@ public class InventoryItem {
         Quantity -= quant;
         //Assert.IsTrue(Quantity >= 0);
         return Quantity;
+    }
+    public void Produced(float quant, float costVol)
+    {
+        var prevCostVol = cost * Quantity;
+        Increase(quant);
+        cost = (costVol + prevCostVol) / Quantity;
     }
     public void ClearRoundStats() 
     {
