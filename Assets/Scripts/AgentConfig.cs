@@ -21,7 +21,6 @@ public class AgentConfig : MonoBehaviour{
     public float idleTaxRate = 0f;
 	public bool enablePriceFavorability = false;
 	public bool onlyBuyWhatsAffordable = false;
-	public bool buyerBuysAskPrice = true;
 	[Tooltip("Use highest bid good vs most demand to supply good")]
 	public int historySize = 10;
 	public void start ()

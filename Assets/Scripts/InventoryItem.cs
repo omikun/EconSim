@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Net.Http.Headers;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.WindowsRuntime;
@@ -37,7 +36,6 @@ public class InventoryItem {
 	public TransactionHistory buyHistory;
 	public TransactionHistory sellHistory;
 	public float cost = 1;
-    public float last_price = 1;
 	public float wobble = .02f;
 	public float Quantity { get; private set; }
     public float quantityTradedThisRound = 0;
@@ -45,7 +43,7 @@ public class InventoryItem {
 	public float maxQuantity;
 	public float minPriceBelief;
 	public float maxPriceBelief;
-	public float meanCostThisRound; //total cost spent to acquire stock
+	public float meanPriceThisRound; //total cost spent to acquire stock
     public float meanCost; 
 	//number of units produced per turn = production * productionRate
 	float productionRate = 1; //# of assembly lines
@@ -99,7 +97,7 @@ public class InventoryItem {
         }
         if (boughtThisRound || soldThisRound)
         {
-            ret += header + name + ", meanPrice, " + meanCostThisRound + ",n/a\n";
+            ret += header + name + ", meanPrice, " + meanPriceThisRound + ",n/a\n";
         }
         ret += header + name + ", bidPrice, " + bidPrice + ",n/a\n";
         ret += header + name + ", bidQuantity, " + bidQuantity + ",n/a\n";
@@ -123,7 +121,7 @@ public class InventoryItem {
         Assert.IsTrue(_meanPrice >= 0); //TODO really should never be 0???
 		minPriceBelief = _meanPrice / 2;
 		maxPriceBelief = _meanPrice * 2;
-		meanCostThisRound = _meanPrice;
+		meanPriceThisRound = _meanPrice;
         meanCost = _meanPrice;
 		buyHistory.Add(new Transaction(1,_meanPrice));
 		sellHistory.Add(new Transaction(1,_meanPrice));
@@ -159,18 +157,16 @@ public class InventoryItem {
     }
 	public float Buy(float quant, float price)
 	{
-        // UnityEngine.Debug.Log("buying " + commodityName + " " + quant.ToString("n2") + " for " + price.ToString("c2") + " currently have " + Quantity.ToString("n2"));
-		//update meanCost of units in stock
         Assert.IsTrue(quant > 0);
 
-        meanCostThisRound = (quantityTradedThisRound == 0) ? 0 : costThisRound / quantityTradedThisRound;
         meanCost = (meanCost * Quantity + quant * price) / (Quantity + quant);
 		Quantity += quant;
+
         quantityTradedThisRound += quant;
         costThisRound += price;
-        var prevMinPriceBelief = minPriceBelief;
-        var prevMaxPriceBelief = maxPriceBelief;
-        last_price = price;
+        meanPriceThisRound = (quantityTradedThisRound == 0) ? 0 : costThisRound / quantityTradedThisRound;
+
+        //may buy multiple times per round
         if (boughtThisRound)
         {
             buyHistory.UpdateLast(new Transaction(price, quant));
@@ -178,23 +174,21 @@ public class InventoryItem {
             buyHistory.Add(new Transaction(price, quant));
         }
         boughtThisRound = true;
+        Assert.IsFalse(soldThisRound);
 		//return adjusted quant;
 		return quant;
 	}
 	public void Sell(float quant, float price)
 	{
-		//update meanCost of units in stock
-        Assert.IsTrue(Quantity >= 0);
-        if (quant == 0 || Surplus() == 0)
+        Assert.IsTrue(quant <= Quantity);
+        if (quant <= 0)
             return;
-        // UnityEngine.Debug.Log("sell quant is " + quant + " and surplus is " + Surplus());
-        quant = Mathf.Min(quant, Surplus());
-        Assert.IsTrue(quant > 0);
+
 		Quantity -= quant;
         quantityTradedThisRound += quant;
         costThisRound += price;
-        meanCostThisRound = (quantityTradedThisRound == 0) ? 0 : costThisRound / quantityTradedThisRound;
-        last_price = price;
+        meanPriceThisRound = (quantityTradedThisRound == 0) ? 0 : costThisRound / quantityTradedThisRound;
+        
         if (soldThisRound)
         {
             sellHistory.UpdateLast(new Transaction(price, quant));
@@ -202,7 +196,60 @@ public class InventoryItem {
             sellHistory.Add(new Transaction(price, quant));
         }
         soldThisRound = true;
+        Assert.IsFalse(boughtThisRound);
 	}
+    public float FindSellCount(Commodity com, int historySize, bool enablePriceFavorability)
+	{
+		if (Surplus() < 1)
+			return 0;
+
+		float numAsks = Mathf.Floor(Surplus());
+
+		if (enablePriceFavorability) {
+			var avgPrice = com.avgBidPrice.LastAverage(historySize);
+			var lowestPrice = sellHistory.Min();
+			var highestPrice = sellHistory.Max();
+			float favorability = .5f;
+			if (true || lowestPrice != highestPrice)
+			{
+				favorability = Mathf.InverseLerp(lowestPrice, highestPrice, avgPrice);
+			}
+			//sell at least 1
+			numAsks = Mathf.Max(1, favorability * Surplus());
+			numAsks = Mathf.Floor(numAsks);
+
+			Assert.IsTrue(numAsks <= Quantity);
+
+            //Debug.Log(AuctionStats.Instance.round + " " + agent.name + " FindSellCount " + c + ": avgPrice: " + avgPrice.ToString("c2") + " favorability: " + favorability.ToString("n2") + " numAsks: " + numAsks.ToString("n2") + " highestPrice: " + highestPrice.ToString("c2") + ", lowestPrice: " + lowestPrice.ToString("c2"));
+        }
+		return numAsks;
+	}
+    
+    public float FindBuyCount(Commodity com, int historySize, bool enablePriceFavorability)
+	{
+		float numBids = Mathf.Floor(Deficit());
+		if (enablePriceFavorability)
+		{
+			var avgPrice = com.avgBidPrice.LastAverage(historySize);
+			var lowestPrice = buyHistory.Min();
+			var highestPrice = buyHistory.Max();
+			//todo SANITY check
+			float favorability = .5f;
+			if (lowestPrice != highestPrice)
+			{
+				favorability = Mathf.InverseLerp(lowestPrice, highestPrice, avgPrice);
+				favorability = Mathf.Clamp(favorability, 0, 1);
+			}
+			//float favorability = FindTradeFavorability(c);
+			numBids = (1 - favorability) * Deficit();
+			numBids = Mathf.Floor(numBids);
+			numBids = Mathf.Max(0, numBids);
+
+			//Debug.Log(AuctionStats.Instance.round + " " + agent.name + " FindBuyCount " + name + ": avgPrice: " + avgPrice.ToString("c2") + " favorability: " + (1 - favorability).ToString("n2") + " numBids: " + numBids.ToString("n2") + " highestPrice: " + highestPrice.ToString("c2") + ", lowestPrice: " + lowestPrice.ToString("c2"));
+			Assert.IsTrue(numBids <= Deficit());
+		}
+		return numBids;
+    }
 	public float GetPrice()
 	{
 		SanePriceBeliefs();
