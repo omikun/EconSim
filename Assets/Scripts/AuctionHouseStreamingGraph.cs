@@ -4,6 +4,7 @@ using System.Collections;
 using ChartAndGraph;
 using UnityEngine.Assertions;
 using Sirenix.OdinInspector;
+using System.Linq;
 using System.Collections.Generic;
 using System;
 
@@ -13,7 +14,7 @@ public class ESStreamingGraph : MonoBehaviour
     public GraphChart meanPriceGraph;
     [Required]
     public GraphChart InventoryGraph;
-    public int TotalPoints = 500;
+    public int TotalPoints = 20;
     float lastTime = 0f;
     float lastX = 0f;
     AuctionStats auctionTracker;
@@ -90,13 +91,21 @@ public class ESStreamingGraph : MonoBehaviour
     public float SlideTime = -1f;//.5f; //-1 will update y axis?
     public void UpdateGraph()
     {
-        foreach (var good in auctionTracker.book.Keys)
+        double newMaxY = 0;
+        double newMaxY2 = 0;
+        foreach (var rsc in auctionTracker.book.Values)
         {
-            var value = auctionTracker.book[good].bids[^1];
-            InventoryGraph.DataSource.AddPointToCategoryRealtime(good, lastX, value, SlideTime);
-            value = auctionTracker.book[good].avgClearingPrice[^1];
-            meanPriceGraph.DataSource.AddPointToCategoryRealtime(good, lastX, value, SlideTime);
+            var value = rsc.trades[^1];
+            InventoryGraph.DataSource.AddPointToCategoryRealtime(rsc.name, lastX, value, SlideTime);
+            value = rsc.avgClearingPrice[^1];
+            meanPriceGraph.DataSource.AddPointToCategoryRealtime(rsc.name, lastX, value, SlideTime);
+
+            newMaxY = Math.Max(newMaxY, rsc.avgClearingPrice.TakeLast(TotalPoints+2).Max());
+            newMaxY2 = Math.Max(newMaxY2, rsc.trades.TakeLast(TotalPoints+2).Max());
         }
+        meanPriceGraph.DataSource.VerticalViewSize = newMaxY;
+        InventoryGraph.DataSource.VerticalViewSize = newMaxY2;
+        Debug.Log("new maxY " + newMaxY);
         lastX += 1;
     }
 }
