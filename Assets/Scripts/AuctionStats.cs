@@ -9,6 +9,7 @@ using AYellowpaper.SerializedCollections;
 using System.Security.Cryptography.X509Certificates;
 using System.Net.WebSockets;
 
+public class AuctionBook : Dictionary<string, ResourceController>{}
 public class AuctionStats : MonoBehaviour
 {
 	public int historySize = 10;
@@ -16,7 +17,7 @@ public class AuctionStats : MonoBehaviour
 	public bool probabilisticHottestGood = true;
     public static AuctionStats Instance { get; private set; }
 
-	public Dictionary<string, Commodity> book { get; private set; }
+	public AuctionBook book { get; private set; }
 	public int round { get; private set; }
 
 	[SerializedDictionary("ID", "Recipe")]
@@ -36,7 +37,7 @@ public class AuctionStats : MonoBehaviour
     private void Awake()
     {
         Instance = this;
-		book = new Dictionary<string, Commodity>(); //names, market price
+		book = new AuctionBook();
 		round = 0;
 		Init();
     }
@@ -127,7 +128,7 @@ public class AuctionStats : MonoBehaviour
 		if (book.ContainsKey(name)) { return false; }
 		Assert.IsNotNull(dep);
 
-		book.Add(name, new Commodity(name, production, productionMultiplier, dep));
+		book.Add(name, new ResourceController(name, production, productionMultiplier, dep));
 		return true;
 	}
     void PrintStat()

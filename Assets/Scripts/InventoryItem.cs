@@ -46,8 +46,8 @@ public class InventoryItem {
 	public float meanPriceThisRound; //total cost spent to acquire stock
     public float meanCost; 
 	//number of units produced per turn = production * productionRate
-	float productionRate = 1; //# of assembly lines
-    float realProductionRate;
+	float productionRate = 1; //nominal
+    float realProductionRate; //actual after modifiers
     float productionDeRate = 1; //if agent gets hurt/reduced productivity
     float productionChance = 1; //if agent gets into an accident?
     List<string> debug_msgs = new();
@@ -198,7 +198,7 @@ public class InventoryItem {
         soldThisRound = true;
         Assert.IsFalse(boughtThisRound);
 	}
-    public float FindSellCount(Commodity com, int historySize, bool enablePriceFavorability)
+    public float FindSellCount(ResourceController rsc, int historySize, bool enablePriceFavorability)
 	{
 		if (Surplus() < 1)
 			return 0;
@@ -206,7 +206,7 @@ public class InventoryItem {
 		float numAsks = Mathf.Floor(Surplus());
 
 		if (enablePriceFavorability) {
-			var avgPrice = com.avgBidPrice.LastAverage(historySize);
+			var avgPrice = rsc.avgBidPrice.LastAverage(historySize);
 			var lowestPrice = sellHistory.Min();
 			var highestPrice = sellHistory.Max();
 			float favorability = .5f;
@@ -225,22 +225,22 @@ public class InventoryItem {
 		return numAsks;
 	}
     
-    public float FindBuyCount(Commodity com, int historySize, bool enablePriceFavorability)
+    public float FindBuyCount(ResourceController rsc, int historySize, bool enablePriceFavorability)
 	{
 		float numBids = Mathf.Floor(Deficit());
 		if (enablePriceFavorability)
 		{
-			var avgPrice = com.avgBidPrice.LastAverage(historySize);
+			var avgPrice = rsc.avgBidPrice.LastAverage(historySize);
 			var lowestPrice = buyHistory.Min();
 			var highestPrice = buyHistory.Max();
-			//todo SANITY check
+			
 			float favorability = .5f;
 			if (lowestPrice != highestPrice)
 			{
 				favorability = Mathf.InverseLerp(lowestPrice, highestPrice, avgPrice);
 				favorability = Mathf.Clamp(favorability, 0, 1);
 			}
-			//float favorability = FindTradeFavorability(c);
+			
 			numBids = (1 - favorability) * Deficit();
 			numBids = Mathf.Floor(numBids);
 			numBids = Mathf.Max(0, numBids);
@@ -265,16 +265,20 @@ public class InventoryItem {
         Assert.IsTrue(minPriceBelief < maxPriceBelief);
 	}
 	
-    public void UpdateBuyerPriceBelief(String agentName, in Offer trade, in Commodity commodity)
+    public void UpdateBuyerPriceBelief(String agentName, in Offer trade, in ResourceController rsc)
     {
         var prevMinPriceBelief = minPriceBelief;
         var prevMaxPriceBelief = maxPriceBelief;
+
+        // supply/demand axis
+        // low/high inventory axis
+        // overbid/underbid axis
 
         // implementation following paper
 		var meanBeliefPrice = (minPriceBelief + maxPriceBelief) / 2;
 		var deltaMean = Mathf.Abs(meanBeliefPrice - trade.clearingPrice); //TODO or use auction house mean price?
         var quantityBought = trade.offerQuantity - trade.remainingQuantity;
-        var historicalMeanPrice = commodity.avgClearingPrice.LastAverage(10);
+        var historicalMeanPrice = rsc.avgClearingPrice.LastAverage(10);
         var displacement = deltaMean / historicalMeanPrice;
         Assert.IsTrue(historicalMeanPrice >= 0);
         string reason_msg = "none";
@@ -293,14 +297,14 @@ public class InventoryItem {
             maxPriceBelief *= 1.1f;
             reason_msg = "buy<=.5";
         }
-        if ( trade.offerQuantity < commodity.asks[^1] && Quantity < maxQuantity/4 ) //bid more than total asks and inventory < 1/4 max
+        if ( trade.offerQuantity < rsc.asks[^1] && Quantity < maxQuantity/4 ) //bid more than total asks and inventory < 1/4 max
         {
             maxPriceBelief *= displacement;
             minPriceBelief *= displacement;
             reason_msg += "_supply<demand_and_low_inv";
         }
         else if ( trade.offerPrice > trade.clearingPrice 
-            || (commodity.asks[^1] > commodity.bids[^1] && trade.offerPrice > historicalMeanPrice))   //bid price > trade price
+            || (rsc.asks[^1] > rsc.bids[^1] && trade.offerPrice > historicalMeanPrice))   //bid price > trade price
                             // or (supply > demand and offer > historical mean)
         {
             var overbid = Mathf.Abs(trade.offerPrice - trade.clearingPrice); //bid price - trade price
@@ -308,7 +312,7 @@ public class InventoryItem {
             minPriceBelief -= overbid * 1.1f;
             reason_msg += "_supply>demand_and_overbid";
         }
-        else if (commodity.bids[^1] > commodity.asks[^1])     //demand > supply
+        else if (rsc.bids[^1] > rsc.asks[^1])     //demand > supply
         {
             //translate belief range up 1/5th of historical mean price
             maxPriceBelief += historicalMeanPrice/5;
@@ -327,7 +331,7 @@ public class InventoryItem {
         Assert.IsTrue(minPriceBelief < maxPriceBelief);
         debug_msgs.Add(reason_msg);
     }
-public void UpdateSellerPriceBelief(String agentName, in Offer trade, in Commodity commodity)
+public void UpdateSellerPriceBelief(String agentName, in Offer trade, in ResourceController rsc)
     {
         var prevMinPriceBelief = minPriceBelief;
         var prevMaxPriceBelief = maxPriceBelief;
@@ -336,8 +340,8 @@ public void UpdateSellerPriceBelief(String agentName, in Offer trade, in Commodi
 		var meanBeliefPrice = (minPriceBelief + maxPriceBelief) / 2;
 		var deltaMean = meanBeliefPrice - trade.clearingPrice; //TODO or use auction house mean price?
         var quantitySold = trade.offerQuantity - trade.remainingQuantity;
-        var historicalMeanPrice = commodity.avgClearingPrice.LastAverage(10);
-        var market_share = quantitySold / commodity.trades[^1];
+        var historicalMeanPrice = rsc.avgClearingPrice.LastAverage(10);
+        var market_share = quantitySold / rsc.trades[^1];
         var offer_price = trade.offerPrice;
         var weight = quantitySold / trade.offerQuantity; //quantitySold / quantityAsked
         var displacement = (1 - weight) * meanBeliefPrice;
@@ -362,7 +366,7 @@ public void UpdateSellerPriceBelief(String agentName, in Offer trade, in Commodi
             minPriceBelief += underbid * 1.2f;
             reason_msg = "seller_under_bid";
         }
-        else if (commodity.bids[^1] > commodity.asks[^1])     //demand > supply
+        else if (rsc.bids[^1] > rsc.asks[^1])     //demand > supply
         {
             //translate belief range up 1/5th of historical mean price
             maxPriceBelief += historicalMeanPrice/5;

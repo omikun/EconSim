@@ -7,6 +7,7 @@ using AYellowpaper.SerializedCollections;
 using UnityEngine.Rendering;
 using Sirenix.OdinInspector;
 using ChartAndGraph;
+using Sirenix.Serialization;
 
 public class AuctionHouse : MonoBehaviour {
 	public bool EnableDebug = false;
@@ -26,12 +27,16 @@ public class AuctionHouse : MonoBehaviour {
 		{ "Metal", 4 },
 		{ "Tool", 4 }
 	};
-	private static float TickIntervalDrawer(float value, GUIContent label)
-	{
-		return UnityEditor.EditorGUILayout.Slider(label, value, 0.01f, .5f);
-	}
+
+	[ShowInInspector]
+	public ProgressivePolicy progressivePolicy;
+	public FlatTaxPolicy FlatTaxPolicy;
+	// [ValueDropdown("FiscalPolicies")]
+	// public FiscalPolicy fiscalPolicy;
+
 	public bool autoNextRound = false;
-	[CustomValueDrawer("TickIntervalDrawer")]
+	//[CustomValueDrawer("TickIntervalDrawer")]
+	[Range(.001f, 0.5f)]
     public float tickInterval = .001f;
 
 	protected List<EconAgent> agents = new();
@@ -157,8 +162,9 @@ public class AuctionHouse : MonoBehaviour {
 		var book = auctionTracker.book;
 		foreach (var agent in agents)
 		{
-			var numProduced = agent.Produce(book);
-			PayIdleTax(agent, numProduced);
+			agent.Produce(book);
+			//var numProduced = agent.Produce(book);
+			//PayIdleTax(agent, numProduced);
 
 			askTable.Add(agent.CreateAsks());
 			bidTable.Add(agent.Consume(book));
@@ -172,11 +178,12 @@ public class AuctionHouse : MonoBehaviour {
 				+ " at price: " + entry.Value.avgClearingPrice[^1]);
 		}
 		
+		//progressivePolicy.Tax(book, agents);
+
 		AgentsStats();
 		CountProfits();
 		CountProfessions();
 		CountStockPileAndCash();
-		//auctionTracker.GetHottestGood();
 
 		foreach (var agent in agents)
 		{
@@ -190,16 +197,16 @@ public class AuctionHouse : MonoBehaviour {
 	//TODO replace with a generic tax policy to be executed end of round
 	void PayIdleTax(EconAgent agent, float numProduced)
 	{
-			float idleTax = 0;
-			if (numProduced == 0)
-			{
-				idleTax = agent.PayTax(config.idleTaxRate);
-				irs += idleTax;
-				//Utilities.TransferQuantity(idleTax, agent, irs);
-			}
-			Debug.Log(AuctionStats.Instance.round + " " + agent.name + " has " 
-				+ agent.cash.ToString("c2") + " produced " + numProduced 
-				+ " goods and idle taxed " + idleTax.ToString("c2"));
+		float idleTax = 0;
+		if (numProduced == 0)
+		{
+			idleTax = agent.PayTax(config.idleTaxRate);
+			irs += idleTax;
+			//Utilities.TransferQuantity(idleTax, agent, irs);
+		}
+		Debug.Log(AuctionStats.Instance.round + " " + agent.name + " has "
+			+ agent.cash.ToString("c2") + " produced " + numProduced
+			+ " goods and idle taxed " + idleTax.ToString("c2"));
 	}
 
 	protected void PrintAuctionStats(string c, float buy, float sell)
@@ -215,10 +222,10 @@ public class AuctionHouse : MonoBehaviour {
 
 		PrintToFile(msg);
 	}
-	protected void ResolveOffers(Commodity commodity)
+	protected void ResolveOffers(ResourceController rsc)
 	{
-		var asks = askTable[commodity.name];
-		var bids = bidTable[commodity.name];
+		var asks = askTable[rsc.name];
+		var bids = bidTable[rsc.name];
 
 		asks.Shuffle();
 		bids.Shuffle();
@@ -243,7 +250,7 @@ public class AuctionHouse : MonoBehaviour {
 			Assert.IsTrue(clearingPrice > 0);
 
 			// =========== trade ============== 
-			var boughtQuantity = Trade(commodity, clearingPrice, tradeQuantity, bid, ask);
+			var boughtQuantity = Trade(rsc, clearingPrice, tradeQuantity, bid, ask);
 
 			moneyExchangedThisRound += clearingPrice * boughtQuantity;
 			goodsExchangedThisRound += boughtQuantity;
@@ -264,44 +271,44 @@ public class AuctionHouse : MonoBehaviour {
 		var quantityToBuy = bids.Sum(item => item.offerQuantity);
 		var quantityToSell = asks.Sum(item => item.offerQuantity);
 
-		commodity.bids.Add(quantityToBuy);
-		commodity.asks.Add(quantityToSell);
-		commodity.buyers.Add(bids.Count);
-		commodity.sellers.Add(asks.Count);
+		rsc.bids.Add(quantityToBuy);
+		rsc.asks.Add(quantityToSell);
+		rsc.buyers.Add(bids.Count);
+		rsc.sellers.Add(asks.Count);
 
 		var avgAskPrice = (quantityToSell == 0) ? 0 : asks.Sum((x) => x.offerPrice * x.offerQuantity) / quantityToSell;
-		commodity.avgAskPrice.Add(avgAskPrice);
+		rsc.avgAskPrice.Add(avgAskPrice);
 
 		var avgBidPrice = (quantityToBuy == 0) ? 0 : bids.Sum((x) => x.offerPrice * x.offerQuantity) / quantityToBuy;
-		commodity.avgBidPrice.Add(avgBidPrice);
+		rsc.avgBidPrice.Add(avgBidPrice);
 
 		var averagePrice = (goodsExchangedThisRound == 0) ? 0 : moneyExchangedThisRound / goodsExchangedThisRound;
 
-		commodity.avgClearingPrice.Add(averagePrice);
-		commodity.trades.Add(goodsExchangedThisRound);
-		commodity.Update(averagePrice, agentDemandRatio);
+		rsc.avgClearingPrice.Add(averagePrice);
+		rsc.trades.Add(goodsExchangedThisRound);
+		rsc.Update(averagePrice, agentDemandRatio);
 
 		//update price beliefs if still a thing
 		asks.Clear();
 		bids.Clear();
 
-		PrintAuctionStats(commodity.name, quantityToBuy, quantityToSell);
-		Debug.Log(auctionTracker.round + ": " + commodity.name + ": " + goodsExchangedThisRound + " traded at average price of " + averagePrice);
+		PrintAuctionStats(rsc.name, quantityToBuy, quantityToSell);
+		Debug.Log(auctionTracker.round + ": " + rsc.name + ": " + goodsExchangedThisRound + " traded at average price of " + averagePrice);
 	}
 
 	// TODO decouple transfer of commodity with transfer of money
 	// TODO convert cash into another commodity
-	protected float Trade(Commodity commodity, float clearingPrice, float tradeQuantity, Offer bid, Offer ask)
+	protected float Trade(ResourceController rsc, float clearingPrice, float tradeQuantity, Offer bid, Offer ask)
 	{
-		var boughtQuantity = bid.agent.Buy(commodity.name, tradeQuantity, clearingPrice);
+		var boughtQuantity = bid.agent.Buy(rsc.name, tradeQuantity, clearingPrice);
 		Assert.IsTrue(boughtQuantity == tradeQuantity);
-		ask.agent.Sell(commodity.name, boughtQuantity, clearingPrice);
+		ask.agent.Sell(rsc.name, boughtQuantity, clearingPrice);
 
 		Debug.Log(auctionTracker.round + ": " + ask.agent.name 
 			+ " ask " + ask.remainingQuantity.ToString("n2") + "x" + ask.offerPrice.ToString("c2")
 			+ " | " + bid.agent.name 
 			+ " bid: " + bid.remainingQuantity.ToString("n2") + "x" + bid.offerPrice.ToString("c2")
-			+ " -- " + commodity.name + " offer quantity: " + tradeQuantity.ToString("n2") 
+			+ " -- " + rsc.name + " offer quantity: " + tradeQuantity.ToString("n2") 
 			+ " bought quantity: " + boughtQuantity.ToString("n2"));
 		return boughtQuantity;
 	}

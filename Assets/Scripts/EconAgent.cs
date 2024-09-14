@@ -5,15 +5,16 @@ using UnityEngine.Assertions;
 using System.Linq;
 using UnityEngine.XR;
 using System;
+using Sirenix.Reflection.Editor;
 
 public class EconAgent : MonoBehaviour {
 	AgentConfig config;
 	static int uid_idx = 0;
 	int uid;
 	public float cash { get; private set; }
+	float prevCash;
 	float initCash = 100f;
 	float initStock = 1;
-	float prevCash = 0;
 	float maxStock = 1;
 	ESList profits = new ESList();
 	public Dictionary<string, InventoryItem> inventory = new();
@@ -30,9 +31,15 @@ public class EconAgent : MonoBehaviour {
 
 	//from the paper (base implementation)
 	// Use this for initialization
-	Dictionary<string, Commodity> book {get; set;}
+	AuctionBook book {get; set;}
 	Dictionary<string, float> producedThisRound = new();
+	public float numProducedThisRound = 0;
 	string log = "";
+
+	public float Income() 
+	{
+		return cash - prevCash;
+	}
 
 	public String Stats(String header)
 	{
@@ -264,13 +271,13 @@ public class EconAgent : MonoBehaviour {
 		// 	+ " for " + price.ToString("c2"));
 		 cash += price * quantity;
 	}
-	public void UpdateSellerPriceBelief(in Offer trade, in Commodity commodity) 
+	public void UpdateSellerPriceBelief(in Offer trade, in ResourceController rsc) 
 	{
-		inventory[commodity.name].UpdateSellerPriceBelief(name, in trade, in commodity);
+		inventory[rsc.name].UpdateSellerPriceBelief(name, in trade, in rsc);
 	}
-	public void UpdateBuyerPriceBelief(in Offer trade, in Commodity commodity) 
+	public void UpdateBuyerPriceBelief(in Offer trade, in ResourceController rsc) 
 	{
-		inventory[commodity.name].UpdateBuyerPriceBelief(name, in trade, in commodity);
+		inventory[rsc.name].UpdateBuyerPriceBelief(name, in trade, in rsc);
 	}
 
     /*********** Produce and consume; enter asks and bids to auction house *****/
@@ -286,53 +293,52 @@ public class EconAgent : MonoBehaviour {
 
 		return numAsks;
 	}
-	public Offers Consume(Dictionary<string, Commodity> book) {
+	public Offers Consume(AuctionBook book) {
         var bids = new Offers();
 		if (cash <= 0)
 			return bids;
 
         //replenish depended commodities
-        foreach (var item in inventory)
+        foreach (var entry in inventory)
 		{
-			var stock = item.Value;
-			if (!inputs.Contains(stock.name) || outputNames.Contains(stock.name)) 
+			var item = entry.Value;
+			if (!inputs.Contains(item.name) || outputNames.Contains(item.name)) 
 				continue;
 
-			var numBids = stock.FindBuyCount(book[stock.name], 
+			var numBids = item.FindBuyCount(book[item.name], 
 												config.historySize, 
 												config.enablePriceFavorability);
 			if (numBids <= 0)
 				continue;
 
 			//maybe buy less if expensive?
-			float buyPrice = stock.GetPrice();
+			float buyPrice = item.GetPrice();
 			if (config.onlyBuyWhatsAffordable)
 				buyPrice = Mathf.Min(cash / numBids, buyPrice);
 			Assert.IsTrue(buyPrice > 0);
 
-			bids.Add(stock.name, new Offer(stock.name, buyPrice, numBids, this));
-			stock.bidPrice = buyPrice;
-			stock.bidQuantity += numBids;
+			bids.Add(item.name, new Offer(item.name, buyPrice, numBids, this));
+			item.bidPrice = buyPrice;
+			item.bidQuantity += numBids;
 
 			//debug and sanity check
 			if (buyPrice > 1000)
 			{
-				Debug.Log(stock.name + "buyPrice: " + buyPrice.ToString("c2") 
-					+ " : " + stock.minPriceBelief.ToString("n2") 
-					+ "<" + stock.maxPriceBelief.ToString("n2"));
+				Debug.Log(item.name + "buyPrice: " + buyPrice.ToString("c2") 
+					+ " : " + item.minPriceBelief.ToString("n2") 
+					+ "<" + item.maxPriceBelief.ToString("n2"));
 				Assert.IsFalse(buyPrice > 1000);
 			}
 			Debug.Log(AuctionStats.Instance.round + ": " + this.name 
-				+ " wants to buy " + numBids.ToString("n2") + stock.name 
+				+ " wants to buy " + numBids.ToString("n2") + item.name 
 				+ " for " + buyPrice.ToString("c2") 
-				+ " each min/maxPriceBeliefs " + stock.minPriceBelief.ToString("c2") 
-				+ "/" + stock.maxPriceBelief.ToString("c2"));
+				+ " each min/maxPriceBeliefs " + item.minPriceBelief.ToString("c2") 
+				+ "/" + item.maxPriceBelief.ToString("c2"));
 			Assert.IsFalse(numBids < 0);
 		}
         return bids;
 	}
-	public float Produce(Dictionary<string, Commodity> book) {
-		float producedThisRound = 0;
+	public float Produce(AuctionBook book) {
 		foreach (var outputName in outputNames)
 		{
 			Assert.IsTrue(book.ContainsKey(outputName));
@@ -359,29 +365,17 @@ public class EconAgent : MonoBehaviour {
 			Assert.IsFalse(float.IsNaN(numProduced));
 
 			this.producedThisRound[outputName] = numProduced;
-			producedThisRound += numProduced;
 		}
-		return producedThisRound;
+		numProducedThisRound = this.producedThisRound.Sum(x => x.Value);
+		return numProducedThisRound;
 	}
-
-	void ConsumeInput(Commodity com, float numProduced, ref string msg)
-	{
-		foreach (var dep in com.recipe)
-		{
-			var stock = inventory[dep.Key].Quantity;
-			var numUsed = dep.Value * numProduced;
-			Assert.IsTrue(stock >= numUsed);
-			inventory[dep.Key].Decrease(numUsed);
-			msg += dep.Key + ": " + inventory[dep.Key].meanCost.ToString("c2");
-		}
-	}
-
 	//build as many as one can 
-	float CalculateNumProduced(Commodity com, InventoryItem inven)
+	//TODO what if don't want to produce as much as one can? what if costs are high rn?
+	float CalculateNumProduced(ResourceController rsc, InventoryItem item)
 	{
-		float numProduced = inven.Deficit(); //can't produce more than max stock
+		float numProduced = item.Deficit(); //can't produce more than max stock
 		//find max that can be made w/ available stock
-		foreach (var dep in com.recipe)
+		foreach (var dep in rsc.recipe)
 		{
 			var numNeeded = dep.Value;
 			var numAvail = inventory[dep.Key].Quantity;
@@ -391,22 +385,33 @@ public class EconAgent : MonoBehaviour {
 				+ " w/" + numAvail + "/" + numNeeded + " " + dep.Key);
 		}
 		//can only build fixed rate at a time
-		numProduced = Mathf.Clamp(numProduced, 0, inven.GetProductionRate());
+		numProduced = Mathf.Clamp(numProduced, 0, item.GetProductionRate());
 		numProduced = Mathf.Floor(numProduced);
 
 		Debug.Log(AuctionStats.Instance.round + " " + name 
-			+ " producing " + com.name 
-			+ " currently in stock " + inven.Quantity 
-			+ " production rate: " + inven.GetProductionRate() 
-			+ " room: " + inven.Deficit());
+			+ " producing " + rsc.name 
+			+ " currently in stock " + item.Quantity 
+			+ " production rate: " + item.GetProductionRate() 
+			+ " room: " + item.Deficit());
 		Assert.IsTrue(numProduced >= 0);
 		return numProduced;
 	}
+	void ConsumeInput(ResourceController rsc, float numProduced, ref string msg)
+	{
+		foreach (var dep in rsc.recipe)
+		{
+			var stock = inventory[dep.Key].Quantity;
+			var numUsed = dep.Value * numProduced;
+			Assert.IsTrue(stock >= numUsed);
+			inventory[dep.Key].Decrease(numUsed);
+			msg += dep.Key + ": " + inventory[dep.Key].meanCost.ToString("c2");
+		}
+	}
 	
-    float GetCostOf(Commodity com)
+    float GetCostOf(ResourceController rsc)
 	{
 		float cost = 0;
-		foreach (var dep in com.recipe)
+		foreach (var dep in rsc.recipe)
 		{
 			var depCommodity = dep.Key;
 			var numDep = dep.Value;

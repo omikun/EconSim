@@ -6,10 +6,11 @@ using System.Linq;
 using System;
 
 public class Recipe : Dictionary<string, float> {}
-public class Commodity
+public class ResourceController
 {
 	const float defaultPrice = 1;
 	public ESList buyers, sellers, bids, asks, avgBidPrice, avgAskPrice, avgClearingPrice, trades, profits;
+	float quantity = 10; //total quantity of resource agents can extract
 	
 	float avgPrice = 1;
 	public float GetAvgPrice(int history) //average of last history size
@@ -18,7 +19,7 @@ public class Commodity
         avgPrice = avgClearingPrice.Skip(skip).Average();
         return avgPrice;
 	}
-	public Commodity(string n, float p, float pm, Recipe r)
+	public ResourceController(string n, float p, float pm, Recipe r)
 	{
 		name = n;
 		production = p;
