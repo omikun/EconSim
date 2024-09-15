@@ -319,7 +319,7 @@ MonoBehaviour:
           max: 100
         Value: 0.4
   autoNextRound: 1
-  tickInterval: 0.086
+  tickInterval: 0.281
 --- !u!114 &194909947
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -568,11 +568,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5860133720375575324, guid: e3ff1f2d5633747db87f6ddc5f91c4ab, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 509
+      value: 714
       objectReference: {fileID: 0}
     - target: {fileID: 5860133720375575324, guid: e3ff1f2d5633747db87f6ddc5f91c4ab, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 263
+      value: 404
       objectReference: {fileID: 0}
     - target: {fileID: 6043175568915295904, guid: e3ff1f2d5633747db87f6ddc5f91c4ab, type: 3}
       propertyPath: chart
@@ -1751,12 +1751,20 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5348577970415672023, guid: 7bdec001232dd409eb1e237114ffd09d, type: 3}
-      propertyPath: subDivisions.fractionDigits
+      propertyPath: subDivisions.total
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5348577970415672023, guid: 7bdec001232dd409eb1e237114ffd09d, type: 3}
+      propertyPath: mainDivisions.total
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 5348577970415672023, guid: 7bdec001232dd409eb1e237114ffd09d, type: 3}
+      propertyPath: subDivisions.fractionDigits
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5348577970415672023, guid: 7bdec001232dd409eb1e237114ffd09d, type: 3}
       propertyPath: mainDivisions.fractionDigits
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6162160840505938893, guid: 7bdec001232dd409eb1e237114ffd09d, type: 3}
       propertyPath: format
@@ -1848,7 +1856,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7626426437575211171, guid: 7bdec001232dd409eb1e237114ffd09d, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 142
+      value: 168
       objectReference: {fileID: 0}
     - target: {fileID: 7626426437575211171, guid: 7bdec001232dd409eb1e237114ffd09d, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -2461,6 +2469,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1700845192}
     m_Modifications:
+    - target: {fileID: 5348577970415672023, guid: 7bdec001232dd409eb1e237114ffd09d, type: 3}
+      propertyPath: subDivisions.total
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5348577970415672023, guid: 7bdec001232dd409eb1e237114ffd09d, type: 3}
+      propertyPath: mainDivisions.total
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 5348577970415672023, guid: 7bdec001232dd409eb1e237114ffd09d, type: 3}
       propertyPath: subDivisions.fractionDigits
       value: 0

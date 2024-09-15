@@ -18,6 +18,8 @@ public class ESStreamingGraph : MonoBehaviour
     float lastTime = 0f;
     float lastX = 0f;
     AuctionStats auctionTracker;
+    VerticalAxis vaxisPriceGraph;
+    VerticalAxis vaxisTradeGraph;
     [Serializable]
     public struct ChartCategoryData
     {
@@ -52,11 +54,8 @@ public class ESStreamingGraph : MonoBehaviour
     }
     void InitGraph(GraphChart graph)
     {
-        if (graph == null) // the ChartGraph info is obtained via the inspector
-        {
-            Assert.IsFalse(graph == null);
-            return;
-        }
+        Assert.IsFalse(graph == null);
+
         graph.DataSource.StartBatch(); 
 
         int index = 0;
@@ -80,6 +79,9 @@ public class ESStreamingGraph : MonoBehaviour
     void Start()
     {
 		auctionTracker = AuctionStats.Instance;
+        vaxisPriceGraph = meanPriceGraph.transform.GetComponent<VerticalAxis>();
+        vaxisTradeGraph = InventoryGraph.transform.GetComponent<VerticalAxis>();
+        Assert.IsFalse(vaxisPriceGraph == null);
 
         InitGraph(meanPriceGraph);
         InitGraph(InventoryGraph);
@@ -103,9 +105,52 @@ public class ESStreamingGraph : MonoBehaviour
             newMaxY = Math.Max(newMaxY, rsc.avgClearingPrice.TakeLast(TotalPoints+2).Max());
             newMaxY2 = Math.Max(newMaxY2, rsc.trades.TakeLast(TotalPoints+2).Max());
         }
-        meanPriceGraph.DataSource.VerticalViewSize = newMaxY;
-        InventoryGraph.DataSource.VerticalViewSize = newMaxY2;
-        Debug.Log("new maxY " + newMaxY);
+        meanPriceGraph.DataSource.VerticalViewSize = nearestBracket(vaxisPriceGraph, newMaxY);
+        InventoryGraph.DataSource.VerticalViewSize = nearestBracket(vaxisTradeGraph, newMaxY2);
         lastX += 1;
+    }
+
+    double nearestBracket(VerticalAxis vaxis, double value)
+    {
+        if (value < 0)
+            return value;
+        else if (value < 1)
+        {
+            vaxis.MainDivisions.FractionDigits = 2;
+            vaxis.MainDivisions.Total = 4;
+            return 1;
+        }
+        else if (value < 2)
+        {
+            vaxis.MainDivisions.FractionDigits = 2;
+            vaxis.MainDivisions.Total = 4;
+            return 2;
+        }
+        else if (value < 5)
+        {
+            vaxis.MainDivisions.FractionDigits = 1;
+            vaxis.MainDivisions.Total = 5;
+            return 5;
+        }
+        else if (value < 10)
+        {
+            vaxis.MainDivisions.FractionDigits = 0;
+            vaxis.MainDivisions.Total = 5;
+            return 10;
+        }
+        else if (value < 100)
+        {
+            vaxis.MainDivisions.FractionDigits = 0;
+            var roundedValue = Math.Ceiling(value/10) * 10;
+            var divisor = (value < 50) ? 5 : 10;
+            vaxis.MainDivisions.Total = (int)(roundedValue / divisor);
+            return roundedValue;
+        }
+        else 
+        {
+            vaxis.MainDivisions.FractionDigits = 0;
+            vaxis.MainDivisions.Total = (int)(value / 5);
+            return value;
+        }
     }
 }
