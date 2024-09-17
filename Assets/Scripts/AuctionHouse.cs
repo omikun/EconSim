@@ -8,6 +8,7 @@ using UnityEngine.Rendering;
 using Sirenix.OdinInspector;
 using ChartAndGraph;
 using Sirenix.Serialization;
+using Sirenix.OdinInspector.Editor.ValueResolvers;
 
 public class AuctionHouse : MonoBehaviour {
 	public bool EnableDebug = false;
@@ -110,28 +111,34 @@ public class AuctionHouse : MonoBehaviour {
 		auctionTracker.nextRound();
 		meanPriceGraph.UpdateGraph();
 	}
-	string forestFireButtonName = "Start Forest Fire";
-	int numRoundsRemaining = 0;
 	[PropertyOrder(2)]
-	[Button("$forestFireButtonName",ButtonSizes.Large), GUIColor(0.4f, 0.8f,1)]
+	[HideIf("forestFire")]
+	[Button(ButtonSizes.Large), GUIColor(0.4f, 0.8f,1)]
 	public void ForestFire()
 	{
 		//TODO rapid decline (*.6 every round) for 2-5 rounds, then regrow at 1.1 until reaches back to 1 multiplier
 		//do this in a new class
 		var wood = auctionTracker.book["Wood"];
 		var weight = wood.productionMultiplier;
-		if (forestFire)
-			weight = 1f;
-		else
-			weight = .2f;
+		weight = .2f;
 
 		wood.ChangeProductionMultiplier(weight);
 
-		forestFire = !forestFire;
+		forestFire = true;
 	}
-	[ReadOnly]
 	[PropertyOrder(3)]
-	public bool forestFire = false;
+	[ShowIf("forestFire")]
+	[Button(ButtonSizes.Large), GUIColor(1, 0.4f, 0.4f)]
+	public void StopForestFire()
+	{
+		var wood = auctionTracker.book["Wood"];
+		var weight = wood.productionMultiplier;
+		weight = 1f;
+		wood.ChangeProductionMultiplier(weight);
+
+		forestFire = false;
+	}
+	bool forestFire = false;
 	void InitAgent(EconAgent agent, string type)
 	{
         List<string> buildables = new List<string>();
@@ -167,8 +174,10 @@ public class AuctionHouse : MonoBehaviour {
 		if (autoNextRound && Time.time - lastTick > tickInterval)
 		{
 			Debug.Log("v1.4 Round: " + auctionTracker.round);
-			if (auctionTracker.round == 100 || auctionTracker.round == 200)
+			if (auctionTracker.round == 100)
 				ForestFire();
+			if (auctionTracker.round == 200)
+				StopForestFire();
 			DoNextRound();
 			lastTick = Time.time;
 		}
