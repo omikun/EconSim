@@ -110,9 +110,10 @@ public class ESStreamingGraph : MonoBehaviour
         lastX += 1;
     }
 
+    public bool EnableDynamicFit = true;
     double nearestBracket(VerticalAxis vaxis, double value)
     {
-        if (value < 0)
+        if (value < 0 || EnableDynamicFit)
             return value;
         else if (value < 1)
         {

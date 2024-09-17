@@ -281,7 +281,7 @@ MonoBehaviour:
   EnableDebug: 1
   seed: 49
   appendTimeToLog: 1
-  maxRounds: 800
+  maxRounds: 300
   exitAfterNoTrade: 1
   numRoundsNoTrade: 100
   numAgents:
@@ -319,7 +319,8 @@ MonoBehaviour:
           max: 100
         Value: 0.4
   autoNextRound: 1
-  tickInterval: 0.281
+  tickInterval: 0.001
+  forestFire: 0
 --- !u!114 &194909947
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -345,7 +346,7 @@ MonoBehaviour:
         - Key: Prod_multiplier
           Value: 1
         - Key: Tool
-          Value: 0.01
+          Value: 0.1
         - Key: Prod_rate
           Value: 5
     - Key: Wood
@@ -374,7 +375,7 @@ MonoBehaviour:
         - Key: Prod_multiplier
           Value: 1
         - Key: Ore
-          Value: 5
+          Value: 2
         - Key: Prod_rate
           Value: 3
     - Key: Tool
@@ -385,7 +386,7 @@ MonoBehaviour:
         - Key: Prod_multiplier
           Value: 1
         - Key: Metal
-          Value: 5
+          Value: 2
         - Key: Prod_rate
           Value: 1
 --- !u!4 &194909951
@@ -501,7 +502,8 @@ MonoBehaviour:
     maskPoints: 0
     lineHover: {fileID: 11494010, guid: 87cd6d8b7ca9527449e32ecefc4015c5, type: 3}
     pointHover: {fileID: 11475216, guid: 57ee497f5c86d764fa20628075109b20, type: 3}
-  SlideTime: 0.5
+  SlideTime: 0.3
+  EnableDynamicFit: 1
 --- !u!1001 &237334964
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1459,6 +1461,7 @@ MonoBehaviour:
     lineHover: {fileID: 0}
     pointHover: {fileID: 0}
   SlideTime: 0.5
+  EnableDynamicFit: 1
 --- !u!1001 &1066957085
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2594,8 +2597,16 @@ PrefabInstance:
       value: -10
       objectReference: {fileID: 0}
     - target: {fileID: 8596192673270936261, guid: 7bdec001232dd409eb1e237114ffd09d, type: 3}
+      propertyPath: autoScrollVertically
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8596192673270936261, guid: 7bdec001232dd409eb1e237114ffd09d, type: 3}
       propertyPath: Data.horizontalViewSize
       value: 20
+      objectReference: {fileID: 0}
+    - target: {fileID: 8596192673270936261, guid: 7bdec001232dd409eb1e237114ffd09d, type: 3}
+      propertyPath: Data.automaticVerticallView
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 9211726940875377140, guid: 7bdec001232dd409eb1e237114ffd09d, type: 3}
       propertyPath: m_Name

@@ -110,12 +110,28 @@ public class AuctionHouse : MonoBehaviour {
 		auctionTracker.nextRound();
 		meanPriceGraph.UpdateGraph();
 	}
+	string forestFireButtonName = "Start Forest Fire";
+	int numRoundsRemaining = 0;
 	[PropertyOrder(2)]
-	[Button(ButtonSizes.Large), GUIColor(0.4f, 0.8f,1)]
-	public void ForesFire()
+	[Button("$forestFireButtonName",ButtonSizes.Large), GUIColor(0.4f, 0.8f,1)]
+	public void ForestFire()
 	{
-		auctionTracker.book["Wood"].ChangeProductionMultiplier(.1f);
+		//TODO rapid decline (*.6 every round) for 2-5 rounds, then regrow at 1.1 until reaches back to 1 multiplier
+		//do this in a new class
+		var wood = auctionTracker.book["Wood"];
+		var weight = wood.productionMultiplier;
+		if (forestFire)
+			weight = 1f;
+		else
+			weight = .2f;
+
+		wood.ChangeProductionMultiplier(weight);
+
+		forestFire = !forestFire;
 	}
+	[ReadOnly]
+	[PropertyOrder(3)]
+	public bool forestFire = false;
 	void InitAgent(EconAgent agent, string type)
 	{
         List<string> buildables = new List<string>();
@@ -134,7 +150,7 @@ public class AuctionHouse : MonoBehaviour {
         agent.Init(config, initCash, buildables, initStock, maxStock);
 	}
 	
-	void FixedUpdate () {
+	void Update () {
 		if (auctionTracker.round > maxRounds || timeToQuit)
 		{
 			CloseWriteFile();
@@ -151,6 +167,8 @@ public class AuctionHouse : MonoBehaviour {
 		if (autoNextRound && Time.time - lastTick > tickInterval)
 		{
 			Debug.Log("v1.4 Round: " + auctionTracker.round);
+			if (auctionTracker.round == 100 || auctionTracker.round == 200)
+				ForestFire();
 			DoNextRound();
 			lastTick = Time.time;
 		}
@@ -178,7 +196,6 @@ public class AuctionHouse : MonoBehaviour {
 				+ " at price: " + entry.Value.avgClearingPrice[^1]);
 		}
 		
-		//progressivePolicy.Tax(book, agents);
 
 		AgentsStats();
 		CountProfits();
@@ -189,8 +206,8 @@ public class AuctionHouse : MonoBehaviour {
 		{
 			agent.ClearRoundStats();
 		}
-		//TODO EnactTaxPolicy();
-		EnactBankruptcy();
+		//progressivePolicy.Tax(book, agents);
+		TickAgent();
 		QuitIf();
 	}
 
@@ -483,7 +500,7 @@ public class AuctionHouse : MonoBehaviour {
 		}
 	}
 
-	protected void EnactBankruptcy()
+	protected void TickAgent()
 	{
         foreach (var agent in agents)
         {
