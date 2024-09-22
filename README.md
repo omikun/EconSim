@@ -13,6 +13,10 @@ An agent-based economy simulator in Unity3D based on "[Emergent Economies for Ro
  - Taxes - A government collects taxes on profits, uses money to fund respawns or stimulate economy.
  
 **Roadmap:**
+ - User interactions
+    - Submit bid/asks on the auction
+    - Tax wealth/revenue/profit
+    - Welfare cash
  - Banks - can make loans based on leverage ratio, create credit bubbles.
  - Agent development - agents invest surplus cash to develop new production abilities to become bigger, may develop scaling overheads.
  - Mergers - agents can buy competitions out.

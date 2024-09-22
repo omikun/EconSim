@@ -174,10 +174,10 @@ public class AuctionHouse : MonoBehaviour {
 		if (autoNextRound && Time.time - lastTick > tickInterval)
 		{
 			Debug.Log("v1.4 Round: " + auctionTracker.round);
-			if (auctionTracker.round == 100)
-				ForestFire();
-			if (auctionTracker.round == 200)
-				StopForestFire();
+			// if (auctionTracker.round == 100)
+			// 	ForestFire();
+			// if (auctionTracker.round == 200)
+			// 	StopForestFire();
 			DoNextRound();
 			lastTick = Time.time;
 		}

@@ -6,6 +6,7 @@ using System.Linq;
 using UnityEngine.XR;
 using System;
 using Sirenix.Reflection.Editor;
+using DG.Tweening;
 
 public class EconAgent : MonoBehaviour {
 	AgentConfig config;
@@ -13,6 +14,7 @@ public class EconAgent : MonoBehaviour {
 	int uid;
 	public float cash { get; private set; }
 	float prevCash;
+	float foodExpense = 0;
 	float initCash = 100f;
 	float initStock = 1;
 	float maxStock = 1;
@@ -122,6 +124,7 @@ public class EconAgent : MonoBehaviour {
 		outputNames = buildables;
 		cash = initCash;
 		prevCash = cash;
+		foodExpense = 0;
 		inputs.Clear();
 		foreach (var outputName in outputNames)
 		{
@@ -186,10 +189,14 @@ public class EconAgent : MonoBehaviour {
 		bool starving = false;
 		if (config.foodConsumption && inventory.ContainsKey("Food"))
 		{
-			if (inventory["Food"].Quantity >= config.foodConsumptionRate)
+			var food = inventory["Food"];
+			foodExpense += food.cost * config.foodConsumptionRate;
+
+			if (food.Quantity >= config.foodConsumptionRate)
 			{
-				var food = inventory["Food"].Decrease(0.5f);
-				starving = food <= 0;
+				var foodAmount = food.Decrease(config.foodConsumptionRate);
+				Debug.Log(AuctionStats.Instance.round + ": " + name + " food expense " + foodExpense);
+				starving = foodAmount <= 0;
 			}
 		}
 		
@@ -198,9 +205,11 @@ public class EconAgent : MonoBehaviour {
 			entry.Value.Tick();
         }
 
+		//profits.Add(cash - prevCash);
+
         if (IsBankrupt() || (config.starvation && starving))
 		{
-			Debug.Log(name + " producing " + outputNames[0] + " is bankrupt: " + cash.ToString("c2") 
+			Debug.Log(AuctionStats.Instance.round + " " + name + " producing " + outputNames[0] + " is bankrupt: " + cash.ToString("c2") 
 				+ " or starving where food=" + inventory["Food"].Quantity);
 			taxConsumed = -cash + ChangeProfession(); //existing debt + 
 		}
@@ -210,6 +219,22 @@ public class EconAgent : MonoBehaviour {
 		// 	inventory[buildable].cost = GetCostOf(buildable);
 		// }
 		return taxConsumed;
+	}
+	public AnimationCurve foodToHappy;
+	public AnimationCurve cashToHappy;
+	void evaluateHappiness()
+	{
+		//if hungry, less happy
+		var happy = 1f;
+		happy *= foodToHappy.Evaluate(inventory["Food"].Availability());
+		var profitRate = profits.TakeLast(config.historySize).Average();
+		happy *= cashToHappy.Evaluate(profitRate/config.historySize);
+		//if close to bankruptcy, maybe not happy
+		//if both, really angry
+		//if hungry for n days, have chance of dying
+		//if really happy, more likely to reproduce
+		// do this at the beginning? DOTween.Init(true, true, LogBehaviour.Verbose).SetCapacity()
+
 	}
 
 	float ChangeProfession()
@@ -269,6 +294,8 @@ public class EconAgent : MonoBehaviour {
 		// Debug.Log(name + " has " + cash.ToString("c2") 
 		// 	+ " selling " + quantity.ToString("n2") +" " +  commodity 
 		// 	+ " for " + price.ToString("c2"));
+		//reset food consumption count?
+		foodExpense = Mathf.Max(0, foodExpense - Mathf.Max(0,Income()));
 		 cash += price * quantity;
 	}
 	public void UpdateSellerPriceBelief(in Offer trade, in ResourceController rsc) 
@@ -436,7 +463,9 @@ public class EconAgent : MonoBehaviour {
 			var stock = inventory[commodityName];
 			float sellQuantity = FindSellCount(commodityName);
 			//float sellPrice = sellStock.GetPrice();
-			float sellPrice = inventory[commodityName].cost * config.profitMarkup;
+			// + cost of food since last sell
+			var expense = Mathf.Max(0, foodExpense);
+			float sellPrice = inventory[commodityName].cost * config.profitMarkup + expense;
 
 			if (sellQuantity > 0 && sellPrice > 0)
 			{

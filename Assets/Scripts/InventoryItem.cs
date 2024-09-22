@@ -35,7 +35,7 @@ public class InventoryItem {
 	const float highInventory = 2f;
 	public TransactionHistory buyHistory;
 	public TransactionHistory sellHistory;
-	public float cost = 1;
+	public float cost = 1; //cost per unit
 	public float wobble = .02f;
 	public float Quantity { get; private set; }
     public float quantityTradedThisRound = 0;
@@ -58,6 +58,10 @@ public class InventoryItem {
     public float askPrice = 0;
     public float askQuantity = 0;
 
+    public float Availability()
+    {
+        return Quantity/maxQuantity;
+    }
     int lastRoundComputedProductionRate = -1;
     public float GetProductionRate()
     {
