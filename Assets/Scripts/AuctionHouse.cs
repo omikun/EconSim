@@ -138,6 +138,15 @@ public class AuctionHouse : MonoBehaviour {
 
 		forestFire = false;
 	}
+	public float GetHappiness()
+	{
+		float happiness = 0;
+		foreach (var agent in agents)
+		{
+			happiness += agent.EvaluateHappiness();
+		}
+		return happiness / agents.Count;
+	}
 	bool forestFire = false;
 	void InitAgent(EconAgent agent, string type)
 	{
@@ -204,7 +213,6 @@ public class AuctionHouse : MonoBehaviour {
 			Debug.Log(entry.Key + ": have " + entry.Value.trades[^1] 
 				+ " at price: " + entry.Value.avgClearingPrice[^1]);
 		}
-		
 
 		AgentsStats();
 		CountProfits();

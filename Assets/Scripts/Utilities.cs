@@ -6,6 +6,7 @@ using System.Linq;
 using UnityEngine.XR;
 using System;
 using System.Net.WebSockets;
+using System.Security.Cryptography.X509Certificates;
 
 public class Utilities : MonoBehaviour
 {
@@ -126,5 +127,28 @@ public class WeightedRandomPicker<T>
         }
 
         return items[items.Count - 1].item; // Fallback, should rarely happen
+    }
+}
+
+public class WaitNumRoundsNotTriggered {
+    int numRounds = 0;
+    bool triggered = false;
+    public int Count()
+    {
+        return numRounds;
+    }
+    public void Reset()
+    {
+        numRounds = 0;
+    }
+    public void Tick()
+    {
+        if (triggered)
+        {
+            numRounds = 0;
+            triggered = false;
+        } else {
+            numRounds++;
+        }
     }
 }

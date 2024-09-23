@@ -22,6 +22,10 @@ public class EconAgent : MonoBehaviour {
 	public Dictionary<string, InventoryItem> inventory = new();
 	Dictionary<string, float> perItemCost = new();
 	float taxesPaidThisRound = 0;
+	bool boughtThisRound = false;
+	bool soldThisRound = false;
+	WaitNumRoundsNotTriggered noSaleIn = new();
+	WaitNumRoundsNotTriggered noPurchaseIn = new();
 
 	public List<string> outputNames { get; private set; } //can produce commodities
 	HashSet<string> inputs = new();
@@ -205,14 +209,23 @@ public class EconAgent : MonoBehaviour {
 			entry.Value.Tick();
         }
 
-		//profits.Add(cash - prevCash);
+		profits.Add(cash - prevCash);
 
-        if (IsBankrupt() || (config.starvation && starving))
+		//ClearRoundStats();
+
+		bool changeProfession =  (config.earlyProfessionChange 
+			&& (noSaleIn.Count() >= config.changeProfessionAfterNDays));
+		changeProfession |= IsBankrupt() || (config.starvation && starving);
+        if (changeProfession)
 		{
 			Debug.Log(AuctionStats.Instance.round + " " + name + " producing " + outputNames[0] + " is bankrupt: " + cash.ToString("c2") 
-				+ " or starving where food=" + inventory["Food"].Quantity);
+				+ " or starving where food=" + inventory["Food"].Quantity
+				+ " or " + config.changeProfessionAfterNDays + " days no sell");
 			taxConsumed = -cash + ChangeProfession(); //existing debt + 
+			noSaleIn.Reset();
+			noPurchaseIn.Reset();
 		}
+
 		// cost updated on EconAgent::Produce()
 		// foreach (var buildable in outputs)
 		// {
@@ -222,13 +235,14 @@ public class EconAgent : MonoBehaviour {
 	}
 	public AnimationCurve foodToHappy;
 	public AnimationCurve cashToHappy;
-	void evaluateHappiness()
+	public float EvaluateHappiness()
 	{
 		//if hungry, less happy
 		var happy = 1f;
 		happy *= foodToHappy.Evaluate(inventory["Food"].Availability());
-		var profitRate = profits.TakeLast(config.historySize).Average();
-		happy *= cashToHappy.Evaluate(profitRate/config.historySize);
+		//var profitRate = profits.TakeLast(config.historySize).Average();
+		//happy *= cashToHappy.Evaluate(profitRate/config.historySize);
+		return happy;
 		//if close to bankruptcy, maybe not happy
 		//if both, really angry
 		//if hungry for n days, have chance of dying
@@ -270,6 +284,9 @@ public class EconAgent : MonoBehaviour {
 	}
 	public void ClearRoundStats()
 	{
+		noSaleIn.Tick();
+		noPurchaseIn.Tick();
+
 		foreach( var item in inventory)
 		{
 			item.Value.ClearRoundStats();
@@ -284,6 +301,7 @@ public class EconAgent : MonoBehaviour {
 			+ " want to buy " + quantity.ToString("n2") + " " + commodity 
 			+ " for " + price.ToString("c2") + " bought " + boughtQuantity.ToString("n2"));
 		cash -= price * boughtQuantity;
+		boughtThisRound = true;
 		return boughtQuantity;
 	}
 	public void Sell(string commodity, float quantity, float price)
@@ -295,6 +313,7 @@ public class EconAgent : MonoBehaviour {
 		// 	+ " selling " + quantity.ToString("n2") +" " +  commodity 
 		// 	+ " for " + price.ToString("c2"));
 		//reset food consumption count?
+		soldThisRound = true;
 		foodExpense = Mathf.Max(0, foodExpense - Mathf.Max(0,Income()));
 		 cash += price * quantity;
 	}
