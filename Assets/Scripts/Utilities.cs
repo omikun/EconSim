@@ -152,3 +152,15 @@ public class WaitNumRoundsNotTriggered {
         }
     }
 }
+
+public static class ListUtil {
+    public static string ListToString(List<float> list, string format)
+    {
+        string msg = "";
+        foreach(var elem in list)
+        {
+            msg += elem.ToString(format) + ", ";
+        }
+        return msg;
+    }
+}

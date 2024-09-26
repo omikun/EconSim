@@ -55,7 +55,7 @@ public class EconAgent : MonoBehaviour {
 			log += stock.Value.Stats(header);
 		}
 		log += header + "cash, stock, " + cash + ", n/a\n";
-		log += header + "profit, stock, " + (cash - prevCash) + ", n/a\n";
+		log += header + "profit, stock, " + GetProfit() + ", n/a\n";
 		log += header + "taxes, idle, " + taxesPaidThisRound + ", n/a\n";
 		foreach (var (good, quantity) in producedThisRound)
 		{
@@ -174,10 +174,14 @@ public class EconAgent : MonoBehaviour {
 		cash -= taxAmt;
 		return profit - taxAmt;
 	}
+	float profit = 0;
 	public float GetProfit()
 	{
-		var profit = cash - prevCash;
-		prevCash = cash;
+		return profit;
+	}
+	public float CalculateProfit()
+	{
+		profit = cash - prevCash;
 		return profit;
 	}
 	const float bankruptcyThreshold = 0;
@@ -209,7 +213,9 @@ public class EconAgent : MonoBehaviour {
 			entry.Value.Tick();
         }
 
-		profits.Add(cash - prevCash);
+		CalculateProfit();
+		profits.Add(GetProfit());
+		prevCash = cash;
 
 		//ClearRoundStats();
 
@@ -384,7 +390,21 @@ public class EconAgent : MonoBehaviour {
 		}
         return bids;
 	}
-	public float Produce(AuctionBook book) {
+	public float CalcMinProduction()
+	{
+		float minTotalProduced = float.MaxValue; 
+		foreach (var outputName in outputNames)
+		{
+			Assert.IsTrue(book.ContainsKey(outputName));
+			var com = book[outputName];
+			var stock = inventory[outputName];
+			var numProduced = CalculateNumProduced(com, stock);
+			minTotalProduced = Mathf.Min(minTotalProduced, numProduced);
+
+		}
+		return minTotalProduced;
+	}
+	public float Produce() {
 		foreach (var outputName in outputNames)
 		{
 			Assert.IsTrue(book.ContainsKey(outputName));

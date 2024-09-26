@@ -147,6 +147,34 @@ public class AuctionHouse : MonoBehaviour {
 		}
 		return happiness / agents.Count;
 	}
+	public float GetLowStock()
+	{
+		float minProduction = 0;
+		foreach(var agent in agents)
+		{
+			if (agent.CalcMinProduction() < 1)
+			{
+				minProduction++;
+			}
+		}
+		return minProduction;
+	}
+	public float GetNegativeProfit()
+	{
+		float val = 0;
+		foreach(var agent in agents)
+		{
+			if (agent.GetProfit() < 0)
+			{
+				val++;
+			}
+		}
+		return val;
+	}
+	public List<float> GetWealthOfAgents()
+	{
+		return agents.Select(x => x.cash).ToList();
+	}
 	bool forestFire = false;
 	void InitAgent(EconAgent agent, string type)
 	{
@@ -198,7 +226,7 @@ public class AuctionHouse : MonoBehaviour {
 		var book = auctionTracker.book;
 		foreach (var agent in agents)
 		{
-			agent.Produce(book);
+			agent.Produce();
 			//var numProduced = agent.Produce(book);
 			//PayIdleTax(agent, numProduced);
 
