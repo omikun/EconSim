@@ -16,7 +16,7 @@ using Sirenix.Serialization;
 public class FiscalPolicy 
 {
     protected AgentConfig config;
-    protected float debt = 0;
+    public float taxed = 0;
     public FiscalPolicy(AgentConfig cfg)
     {
         config = cfg;
@@ -106,7 +106,7 @@ Reduction of social welfare spending: Cutting back on social programs, which all
     {
         foreach (var agent in agents)
         {
-            if (!EnableIdleTax) applyIdleTax(book, agent);
+            if (EnableIdleTax) applyIdleTax(book, agent);
             if (EnableIncomeTax) applyIncomeTax(book, agent);
         }
     }
@@ -121,7 +121,7 @@ Reduction of social welfare spending: Cutting back on social programs, which all
         if (numProduced > 0) return;
 
         float idleTax = agent.PayTax(IdleTaxRate);
-        debt -= idleTax;
+        taxed += idleTax;
         //Utilities.TransferQuantity(idleTax, agent, irs);
         Debug.Log(AuctionStats.Instance.round + " " + agent.name + " has "
             + agent.cash.ToString("c2") + " produced " + numProduced
@@ -137,22 +137,23 @@ Reduction of social welfare spending: Cutting back on social programs, which all
         {
             if (income < bracket.min)
                 break;
-            if (income <= bracket.max)
+            if (income < bracket.max)
             {
-                tax += (bracket.max - bracket.min) * (taxRate - prevTaxRate);
+                tax += (income - bracket.min) * (taxRate - prevTaxRate);
                 break;
             } else {
-                tax += (income - bracket.min) * (taxRate - prevTaxRate);
+                tax += (bracket.max - bracket.min) * (taxRate - prevTaxRate);
                 prevTaxRate = taxRate;
             }
         }
 
         var finalTaxRate = tax / income;
-        tax += agent.PayTax(finalTaxRate);
-        debt -= tax;
+        //what is this?? tax += agent.PayTax(finalTaxRate);
+        agent.Pay(tax);
+        taxed += tax;
         Debug.Log(AuctionStats.Instance.round + " " + agent.name + " has "
             + agent.cash.ToString("c2") + " income " + income.ToString("c2")
-            + " taxed " + tax.ToString("c2") + " at rate of " + finalTaxRate.ToString("n2"));
+            + " taxed " + tax.ToString("c2") + " at rate of " + finalTaxRate.ToString("P2"));
     }
 
 }

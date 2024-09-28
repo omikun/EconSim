@@ -73,11 +73,15 @@ public class AuctionStats : MonoBehaviour
 		if (round != gotHottestGoodRound)
 		{
 			mostDemand = _GetHottestGood();
+			return mostDemand;
 		}
 		if (probabilisticHottestGood && !changeToHighestBidPrice)
 		{
 			mostDemand = _GetHottestGood();
-			mostDemand = picker.PickRandom();
+			if (picker.IsEmpty() == false)
+			{
+				mostDemand = picker.PickRandom();
+			}
 		}
 		var best_ratio = picker.GetWeight(mostDemand);
 		Debug.Log(round + " picked demand: " + mostDemand + ": " + best_ratio);

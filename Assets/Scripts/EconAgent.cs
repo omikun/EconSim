@@ -44,7 +44,7 @@ public class EconAgent : MonoBehaviour {
 
 	public float Income() 
 	{
-		return cash - prevCash;
+		return GetProfit();
 	}
 
 	public String Stats(String header)
@@ -83,6 +83,10 @@ public class EconAgent : MonoBehaviour {
 		cash -= idleTax;
 		taxesPaidThisRound = idleTax;
 		return idleTax;
+	}
+	public void Pay(float amount)
+	{
+		cash -= amount;
 	}
 	public void Init(AgentConfig cfg, float _initCash, List<string> b, float _initStock, float maxstock) {
 		config = cfg;
@@ -126,7 +130,10 @@ public class EconAgent : MonoBehaviour {
 		//list of commodities self can produce
 		//get initial stockpiles
 		outputNames = buildables;
-		cash = initCash;
+		if (initCash != -1f)
+		{
+			cash = initCash;
+		}
 		prevCash = cash;
 		foodExpense = 0;
 		inputs.Clear();
@@ -198,12 +205,13 @@ public class EconAgent : MonoBehaviour {
 		if (config.foodConsumption && inventory.ContainsKey("Food"))
 		{
 			var food = inventory["Food"];
-			foodExpense += food.cost * config.foodConsumptionRate;
 
-			if (food.Quantity >= config.foodConsumptionRate)
+			var foodConsumed = config.foodConsumptionCurve.Evaluate(food.Quantity/food.maxQuantity);
+			if (food.Quantity >= foodConsumed)
 			{
-				var foodAmount = food.Decrease(config.foodConsumptionRate);
-				Debug.Log(AuctionStats.Instance.round + ": " + name + " food expense " + foodExpense);
+				var foodAmount = food.Decrease(foodConsumed);
+				foodExpense += food.cost * foodConsumed;
+				Debug.Log(AuctionStats.Instance.round + ": " + name + "consumed " + foodConsumed.ToString("n2") + " food expense " + foodExpense);
 				starving = foodAmount <= 0;
 			}
 		}
@@ -219,15 +227,16 @@ public class EconAgent : MonoBehaviour {
 
 		//ClearRoundStats();
 
-		bool changeProfession =  (config.earlyProfessionChange 
+		bool changeProfessionAfterNRounds =  (config.earlyProfessionChange 
 			&& (noSaleIn.Count() >= config.changeProfessionAfterNDays));
-		changeProfession |= IsBankrupt() || (config.starvation && starving);
-        if (changeProfession)
+		bool changeProfession = (config.declareBankruptcy && IsBankrupt()) || (config.starvation && starving);
+        if (config.changeProfession && (changeProfession || changeProfessionAfterNRounds))
 		{
 			Debug.Log(AuctionStats.Instance.round + " " + name + " producing " + outputNames[0] + " is bankrupt: " + cash.ToString("c2") 
 				+ " or starving where food=" + inventory["Food"].Quantity
 				+ " or " + config.changeProfessionAfterNDays + " days no sell");
-			taxConsumed = -cash + ChangeProfession(); //existing debt + 
+			bool resetCash = changeProfession;
+			taxConsumed = -cash + ChangeProfession(resetCash); //existing debt + 
 			noSaleIn.Reset();
 			noPurchaseIn.Reset();
 		}
@@ -257,7 +266,7 @@ public class EconAgent : MonoBehaviour {
 
 	}
 
-	float ChangeProfession()
+	float ChangeProfession(bool resetCash = true)
 	{
 		string bestGood = AuctionStats.Instance.GetHottestGood();
 		string bestProf = AuctionStats.Instance.GetMostProfitableProfession(outputNames[0]);

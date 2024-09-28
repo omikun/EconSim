@@ -12,6 +12,8 @@ using Sirenix.OdinInspector.Editor.ValueResolvers;
 
 public class AuctionHouse : MonoBehaviour {
 	public bool EnableDebug = false;
+	[Required]
+	public InfoDisplay info;
 	protected AgentConfig config;
 	public int seed = 42;
 	public bool appendTimeToLog = false;
@@ -42,6 +44,7 @@ public class AuctionHouse : MonoBehaviour {
 
 	protected List<EconAgent> agents = new();
 	protected float irs;
+	protected float taxed;
 	protected bool timeToQuit = false;
     protected OfferTable askTable, bidTable;
 	protected StreamWriter sw;
@@ -64,6 +67,7 @@ public class AuctionHouse : MonoBehaviour {
 		Assert.IsFalse(meanPriceGraph == null);
 
 		irs = 0; //GetComponent<EconAgent>();
+		taxed = 0;
 		var prefab = Resources.Load("Agent");
 
 		for (int i = transform.childCount; i < numAgents.Values.Sum(); i++)
@@ -175,6 +179,16 @@ public class AuctionHouse : MonoBehaviour {
 	{
 		return agents.Select(x => x.cash).ToList();
 	}
+	public float GetGDP()
+	{
+		float gdp = 0f;
+		var book = auctionTracker.book;
+		foreach(var rsc in book.Values)
+		{
+			gdp += rsc.trades[^1] * rsc.avgClearingPrice[^1];
+		}
+		return gdp;
+	}
 	bool forestFire = false;
 	void InitAgent(EconAgent agent, string type)
 	{
@@ -242,6 +256,7 @@ public class AuctionHouse : MonoBehaviour {
 				+ " at price: " + entry.Value.avgClearingPrice[^1]);
 		}
 
+		PrintAuctionStats();
 		AgentsStats();
 		CountProfits();
 		CountProfessions();
@@ -251,9 +266,23 @@ public class AuctionHouse : MonoBehaviour {
 		{
 			agent.ClearRoundStats();
 		}
-		//progressivePolicy.Tax(book, agents);
 		TickAgent();
+		progressivePolicy.Tax(book, agents);
+		var oldTaxed = taxed;
+		taxed = progressivePolicy.taxed;
+		float taxCollected = taxed - oldTaxed;
+		irs += taxCollected;
 		QuitIf();
+	}
+	void PrintAuctionStats()
+	{
+		var header = auctionTracker.round + ", auction, none, none, ";
+		var msg = header + "irs, " + irs + ", n/a\n";
+		msg += header + "taxed, " + taxed + ", n/a\n";
+		msg += auctionTracker.GetLog();
+		msg += info.GetLog(header);
+
+		PrintToFile(msg);
 	}
 
 	//TODO replace with a generic tax policy to be executed end of round
@@ -264,9 +293,10 @@ public class AuctionHouse : MonoBehaviour {
 		{
 			idleTax = agent.PayTax(config.idleTaxRate);
 			irs += idleTax;
+			taxed += idleTax;
 			//Utilities.TransferQuantity(idleTax, agent, irs);
 		}
-		Debug.Log(AuctionStats.Instance.round + " " + agent.name + " has "
+		Debug.Log(auctionTracker.round + " " + agent.name + " has "
 			+ agent.cash.ToString("c2") + " produced " + numProduced
 			+ " goods and idle taxed " + idleTax.ToString("c2"));
 	}
@@ -278,9 +308,6 @@ public class AuctionHouse : MonoBehaviour {
 		msg += header + "ask, " + sell + ", n/a\n";
 		msg += header + "avgAskPrice, " + auctionTracker.book[c].avgAskPrice[^1] + ", n/a\n";
 		msg += header + "avgBidPrice, " + auctionTracker.book[c].avgBidPrice[^1] + ", n/a\n";
-		header = auctionTracker.round + ", auction, none, none, ";
-		msg += header + "irs, " + irs + ", n/a\n";
-		msg += auctionTracker.GetLog();
 
 		PrintToFile(msg);
 	}
@@ -550,7 +577,8 @@ public class AuctionHouse : MonoBehaviour {
         foreach (var agent in agents)
         {
 			//agent.Tick();
-            irs -= agent.Tick();
+			var amount = agent.Tick();
+            irs -= amount;
         }
 	}
 	protected void CountProfessions()

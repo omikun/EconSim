@@ -5,6 +5,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.Assertions;
 using AYellowpaper.SerializedCollections;
+using Sirenix.OdinInspector;
 
 public class AgentConfig : MonoBehaviour{
 	public int seed;
@@ -17,12 +18,16 @@ public class AgentConfig : MonoBehaviour{
 	public bool starvation = false;
 	public bool foodConsumption = false;
 	public float foodConsumptionRate = 0.1f;
+	[Required]
+	public AnimationCurve foodConsumptionCurve;
     public float profitMarkup = 1.05f;
     public float idleTaxRate = 0f;
 	public bool enablePriceFavorability = false;
 	public bool onlyBuyWhatsAffordable = false;
+	public bool changeProfession = true;
 	public int changeProfessionAfterNDays = 10;
 	public bool earlyProfessionChange = false;
+	public bool declareBankruptcy = true;
 	[Tooltip("Use highest bid good vs most demand to supply good")]
 	public int historySize = 10;
 	public void start ()

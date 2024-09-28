@@ -93,6 +93,10 @@ public class WeightedRandomPicker<T>
         items.Add((item, weight));
         totalWeight += weight;
     }
+    public bool IsEmpty()
+    {
+        return items.Count == 0;
+    }
     public void Clear()
     {
         items.Clear();
