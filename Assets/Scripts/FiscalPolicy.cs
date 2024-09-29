@@ -29,6 +29,8 @@ public class FiscalPolicy
         //exception?
         foreach (var agent in agents)
         {
+			if (agent is Government)
+				continue;
             ApplyTax(book, agent);
         }
     }
@@ -106,6 +108,8 @@ Reduction of social welfare spending: Cutting back on social programs, which all
     {
         foreach (var agent in agents)
         {
+			if (agent is Government)
+				continue;
             if (EnableIdleTax) applyIdleTax(book, agent);
             if (EnableIncomeTax) applyIncomeTax(book, agent);
         }

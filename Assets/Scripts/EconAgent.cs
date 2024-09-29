@@ -9,26 +9,26 @@ using Sirenix.Reflection.Editor;
 using DG.Tweening;
 
 public class EconAgent : MonoBehaviour {
-	AgentConfig config;
-	static int uid_idx = 0;
-	int uid;
-	public float cash { get; private set; }
-	float prevCash;
-	float foodExpense = 0;
-	float initCash = 100f;
-	float initStock = 1;
-	float maxStock = 1;
-	ESList profits = new ESList();
+	protected AgentConfig config;
+	public static int uid_idx = 0;
+	protected int uid;
+	public float cash { get; protected set; }
+	protected float prevCash;
+	protected float foodExpense = 0;
+	protected float initCash = 100f;
+	protected float initStock = 1;
+	protected float maxStock = 1;
+	protected ESList profits = new ESList();
 	public Dictionary<string, InventoryItem> inventory = new();
-	Dictionary<string, float> perItemCost = new();
+	protected Dictionary<string, float> perItemCost = new();
 	float taxesPaidThisRound = 0;
 	bool boughtThisRound = false;
 	bool soldThisRound = false;
 	WaitNumRoundsNotTriggered noSaleIn = new();
 	WaitNumRoundsNotTriggered noPurchaseIn = new();
 
-	public List<string> outputNames { get; private set; } //can produce commodities
-	HashSet<string> inputs = new();
+	public List<string> outputNames { get; protected set; } //can produce commodities
+	protected HashSet<string> inputs = new();
 	//production has dependencies on commodities->populates stock
 	//production rate is limited by assembly lines (queues/event lists)
 	
@@ -37,17 +37,17 @@ public class EconAgent : MonoBehaviour {
 
 	//from the paper (base implementation)
 	// Use this for initialization
-	AuctionBook book {get; set;}
-	Dictionary<string, float> producedThisRound = new();
+	protected AuctionBook book {get; set;}
+	protected Dictionary<string, float> producedThisRound = new();
 	public float numProducedThisRound = 0;
-	string log = "";
+	protected string log = "";
 
 	public float Income() 
 	{
 		return GetProfit();
 	}
 
-	public String Stats(String header)
+	public virtual String Stats(String header)
 	{
 		header += uid.ToString() + ", " + outputNames[0] + ", "; //profession
 		foreach (var stock in inventory)
@@ -68,7 +68,7 @@ public class EconAgent : MonoBehaviour {
 	}
 	void Start () {
 	}
-	void AddToInventory(string name, float num, float max, float price, float production)
+	protected void AddToInventory(string name, float num, float max, float price, float production)
 	{
 		if (inventory.ContainsKey(name))
 			return;
@@ -88,7 +88,7 @@ public class EconAgent : MonoBehaviour {
 	{
 		cash -= amount;
 	}
-	public void Init(AgentConfig cfg, float _initCash, List<string> b, float _initStock, float maxstock) {
+	public virtual void Init(AgentConfig cfg, float _initCash, List<string> b, float _initStock, float maxstock) {
 		config = cfg;
 		uid = uid_idx++;
 		initStock = _initStock;
@@ -196,7 +196,7 @@ public class EconAgent : MonoBehaviour {
 	{
 		return cash < bankruptcyThreshold;
 	}
-    public float Tick()
+    public virtual float Tick()
 	{
 		Debug.Log("agents ticking!");
 		float taxConsumed = 0;
@@ -250,7 +250,7 @@ public class EconAgent : MonoBehaviour {
 	}
 	public AnimationCurve foodToHappy;
 	public AnimationCurve cashToHappy;
-	public float EvaluateHappiness()
+	public virtual float EvaluateHappiness()
 	{
 		//if hungry, less happy
 		var happy = 1f;
@@ -342,7 +342,7 @@ public class EconAgent : MonoBehaviour {
 	}
 
     /*********** Produce and consume; enter asks and bids to auction house *****/
-    float FindSellCount(string c)
+    protected virtual float FindSellCount(string c)
 	{
 		var numAsks = inventory[c].FindSellCount(book[c], config.historySize, config.enablePriceFavorability);
 
@@ -354,7 +354,7 @@ public class EconAgent : MonoBehaviour {
 
 		return numAsks;
 	}
-	public Offers Consume(AuctionBook book) {
+	public virtual Offers Consume(AuctionBook book) {
         var bids = new Offers();
 		if (cash <= 0)
 			return bids;
@@ -413,7 +413,7 @@ public class EconAgent : MonoBehaviour {
 		}
 		return minTotalProduced;
 	}
-	public float Produce() {
+	public virtual float Produce() {
 		foreach (var outputName in outputNames)
 		{
 			Assert.IsTrue(book.ContainsKey(outputName));
@@ -446,7 +446,7 @@ public class EconAgent : MonoBehaviour {
 	}
 	//build as many as one can 
 	//TODO what if don't want to produce as much as one can? what if costs are high rn?
-	float CalculateNumProduced(ResourceController rsc, InventoryItem item)
+	protected float CalculateNumProduced(ResourceController rsc, InventoryItem item)
 	{
 		float numProduced = item.Deficit(); //can't produce more than max stock
 		//find max that can be made w/ available stock
@@ -483,7 +483,7 @@ public class EconAgent : MonoBehaviour {
 		}
 	}
 	
-    float GetCostOf(ResourceController rsc)
+    protected float GetCostOf(ResourceController rsc)
 	{
 		float cost = 0;
 		foreach (var dep in rsc.recipe)

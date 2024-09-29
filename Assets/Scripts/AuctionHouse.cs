@@ -52,6 +52,7 @@ public class AuctionHouse : MonoBehaviour {
 	protected Dictionary<string, Dictionary<string, float>> trackBids = new();
 	protected float lastTick;
 	ESStreamingGraph meanPriceGraph;
+	EconAgent gov = new();
 
 	void Start () {
 		Debug.unityLogger.logEnabled=EnableDebug;
@@ -75,6 +76,16 @@ public class AuctionHouse : MonoBehaviour {
 		    GameObject go = Instantiate(prefab) as GameObject;
 			go.transform.parent = transform;
 			go.name = "agent" + i.ToString();
+		}
+
+		//instiantiate gov
+		{
+			GameObject go = new GameObject();
+			go.transform.parent = transform;
+			go.name = "gov";
+			gov = go.AddComponent<Government>();
+			InitGovernment(gov);
+			agents.Add(gov);
 		}
 		
 		int agentIndex = 0;
@@ -107,7 +118,8 @@ public class AuctionHouse : MonoBehaviour {
 	{
 		//CloseWriteFile();
 	}
-	[PropertyOrder(1)]
+
+	[Title("Player Actions")]
 	[Button(ButtonSizes.Large), GUIColor(0.4f, 0.8f,1)]
 	public void DoNextRound()
 	{
@@ -115,7 +127,6 @@ public class AuctionHouse : MonoBehaviour {
 		auctionTracker.nextRound();
 		meanPriceGraph.UpdateGraph();
 	}
-	[PropertyOrder(2)]
 	[HideIf("forestFire")]
 	[Button(ButtonSizes.Large), GUIColor(0.4f, 0.8f,1)]
 	public void ForestFire()
@@ -130,7 +141,6 @@ public class AuctionHouse : MonoBehaviour {
 
 		forestFire = true;
 	}
-	[PropertyOrder(3)]
 	[ShowIf("forestFire")]
 	[Button(ButtonSizes.Large), GUIColor(1, 0.4f, 0.4f)]
 	public void StopForestFire()
@@ -142,11 +152,29 @@ public class AuctionHouse : MonoBehaviour {
 
 		forestFire = false;
 	}
+	private static string[] comOptions = new string[] { "Food","Wood","Ore","Metal","Tool" };
+	[PropertyOrder(4)]
+	[HorizontalGroup("InsertBid")]
+	[ValueDropdown("comOptions")]
+	public string bidCom = "Food";
+
+	[PropertyOrder(4)]
+	[HorizontalGroup("InsertBid")]
+	public float bidQuant = 0;
+	[PropertyOrder(4)]
+	[HorizontalGroup("InsertBid")]
+	[Button]
+	public void InsertBid() 
+	{
+		((Government)gov).InsertBid(bidCom, bidQuant, 0f);
+	}
 	public float GetHappiness()
 	{
 		float happiness = 0;
 		foreach (var agent in agents)
 		{
+			if (agent is Government)
+				continue;
 			happiness += agent.EvaluateHappiness();
 		}
 		return happiness / agents.Count;
@@ -156,6 +184,8 @@ public class AuctionHouse : MonoBehaviour {
 		float minProduction = 0;
 		foreach(var agent in agents)
 		{
+			if (agent is Government)
+				continue;
 			if (agent.CalcMinProduction() < 1)
 			{
 				minProduction++;
@@ -168,6 +198,8 @@ public class AuctionHouse : MonoBehaviour {
 		float val = 0;
 		foreach(var agent in agents)
 		{
+			if (agent is Government)
+				continue;
 			if (agent.GetProfit() < 0)
 			{
 				val++;
@@ -190,6 +222,17 @@ public class AuctionHouse : MonoBehaviour {
 		return gdp;
 	}
 	bool forestFire = false;
+	void InitGovernment(EconAgent agent)
+	{
+        List<string> buildables = new List<string>();
+		float initStock = 10f;
+		float initCash = 1000f;
+
+		// TODO: This may cause uneven maxStock between agents
+		var maxStock = Mathf.Max(initStock, 50);
+
+        agent.Init(config, initCash, buildables, initStock, maxStock);
+	}
 	void InitAgent(EconAgent agent, string type)
 	{
         List<string> buildables = new List<string>();
@@ -264,6 +307,8 @@ public class AuctionHouse : MonoBehaviour {
 
 		foreach (var agent in agents)
 		{
+			if (agent is Government)
+				continue;
 			agent.ClearRoundStats();
 		}
 		TickAgent();
@@ -456,6 +501,8 @@ public class AuctionHouse : MonoBehaviour {
 				}
 				stockList[c.Key].Add(surplus);
 			}
+			if (agent is Government)
+				continue;
             cashList[agent.outputNames[0]].Add(agent.cash);
 			totalCash += agent.cash;
 		}
@@ -521,6 +568,8 @@ public class AuctionHouse : MonoBehaviour {
 		//accumulate
         foreach (var agent in agents)
         {
+			if (agent is Government)
+				continue;
             var commodity = agent.outputNames[0];
             //totalProfits[commodity] += agent.TaxProfit(taxRate);
             totalProfits[commodity] += agent.GetProfit();
@@ -595,6 +644,8 @@ public class AuctionHouse : MonoBehaviour {
 		//bin professions
         foreach (var agent in agents)
         {
+			if (agent is Government)
+				continue;
 			professions[agent.outputNames[0]] += 1;
         }
 

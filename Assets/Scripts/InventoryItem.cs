@@ -109,9 +109,7 @@ public class InventoryItem {
         ret += header + name + ", askQuantity, " + askQuantity + ",n/a\n";
 
         bidPrice = 0;
-        bidQuantity = 0;
         askPrice = 0;
-        askQuantity = 0;
         return ret;
     }
 	public InventoryItem (string _name, float _quantity=1, float _maxQuantity=10, 
@@ -165,6 +163,7 @@ public class InventoryItem {
 
         meanCost = (meanCost * Quantity + quant * price) / (Quantity + quant);
 		Quantity += quant;
+        bidQuantity -= quant;
 
         quantityTradedThisRound += quant;
         costThisRound += price;
@@ -189,6 +188,7 @@ public class InventoryItem {
             return;
 
 		Quantity -= quant;
+        askQuantity -= quant;
         quantityTradedThisRound += quant;
         costThisRound += price;
         meanPriceThisRound = (quantityTradedThisRound == 0) ? 0 : costThisRound / quantityTradedThisRound;
