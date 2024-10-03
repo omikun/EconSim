@@ -74,7 +74,7 @@ public class Government : EconAgent {
         return bids;
 	}
 
-    public override float Tick()
+    public override float Tick(ref bool changedProfession, ref bool bankrupted, ref bool starving)
     {
         return 0f;
     }

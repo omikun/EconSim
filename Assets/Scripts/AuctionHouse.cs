@@ -52,7 +52,7 @@ public class AuctionHouse : MonoBehaviour {
 	protected Dictionary<string, Dictionary<string, float>> trackBids = new();
 	protected float lastTick;
 	ESStreamingGraph meanPriceGraph;
-	EconAgent gov = new();
+	EconAgent gov;
 
 	void Start () {
 		Debug.unityLogger.logEnabled=EnableDebug;
@@ -168,59 +168,6 @@ public class AuctionHouse : MonoBehaviour {
 	{
 		((Government)gov).InsertBid(bidCom, bidQuant, 0f);
 	}
-	public float GetHappiness()
-	{
-		float happiness = 0;
-		foreach (var agent in agents)
-		{
-			if (agent is Government)
-				continue;
-			happiness += agent.EvaluateHappiness();
-		}
-		return happiness / agents.Count;
-	}
-	public float GetLowStock()
-	{
-		float minProduction = 0;
-		foreach(var agent in agents)
-		{
-			if (agent is Government)
-				continue;
-			if (agent.CalcMinProduction() < 1)
-			{
-				minProduction++;
-			}
-		}
-		return minProduction;
-	}
-	public float GetNegativeProfit()
-	{
-		float val = 0;
-		foreach(var agent in agents)
-		{
-			if (agent is Government)
-				continue;
-			if (agent.GetProfit() < 0)
-			{
-				val++;
-			}
-		}
-		return val;
-	}
-	public List<float> GetWealthOfAgents()
-	{
-		return agents.Select(x => x.cash).ToList();
-	}
-	public float GetGDP()
-	{
-		float gdp = 0f;
-		var book = auctionTracker.book;
-		foreach(var rsc in book.Values)
-		{
-			gdp += rsc.trades[^1] * rsc.avgClearingPrice[^1];
-		}
-		return gdp;
-	}
 	bool forestFire = false;
 	void InitGovernment(EconAgent agent)
 	{
@@ -302,7 +249,6 @@ public class AuctionHouse : MonoBehaviour {
 		PrintAuctionStats();
 		AgentsStats();
 		CountProfits();
-		CountProfessions();
 		CountStockPileAndCash();
 
 		foreach (var agent in agents)
@@ -623,36 +569,89 @@ public class AuctionHouse : MonoBehaviour {
 
 	protected void TickAgent()
 	{
-        foreach (var agent in agents)
-        {
-			//agent.Tick();
-			var amount = agent.Tick();
-            irs -= amount;
-        }
-	}
-	protected void CountProfessions()
-	{
-		var com = auctionTracker.book;
-		//count number of agents per professions
-		Dictionary<string, float> professions = new Dictionary<string, float>();
-		//initialize professions
-		foreach (var item in com)
-		{
-			var commodity = item.Key;
-			professions.Add(commodity, 0);
-		}
-		//bin professions
+		auctionTracker.ClearStats();
+		var book = auctionTracker.book;
+		
         foreach (var agent in agents)
         {
 			if (agent is Government)
 				continue;
-			professions[agent.outputNames[0]] += 1;
+			bool changedProfession = false;
+			bool bankrupted = false;
+			bool starving = false;
+			string profession = agent.Profession;
+
+			book[agent.Profession].numAgents++;
+
+			var h = agent.EvaluateHappiness();
+			auctionTracker.approval += h;
+			auctionTracker.happiness += h;
+			book[profession].happiness += h;
+
+			if (agent.cash < 0.0f)
+				book[profession].numBankrupted++;
+
+			if (agent.inventory["Food"].Quantity < 0.1f)
+				book[profession].numStarving++;
+
+			if (agent.CalcMinProduction() < 1)
+				book[profession].numNoInput++;
+			
+			if (agent.GetProfit() < 0)
+				book[profession].numNegProfit++;
+
+			var amount = agent.Tick(ref changedProfession, ref bankrupted, ref starving);
+
+			if (starving)
+				book[profession].starving[^1]++;
+			if (bankrupted)
+				book[profession].bankrupted[^1]++;
+			if (changedProfession)
+				book[profession].changedProfession[^1]++;
+			irs -= amount;
+		}
+		foreach (var rsc in book.Values)
+		{
+			rsc.happiness /= rsc.numAgents;
+			rsc.gdp = rsc.trades[^1] * rsc.avgClearingPrice[^1];
+			auctionTracker.gdp += rsc.gdp;
+
+			auctionTracker.numBankrupted += rsc.numBankrupted;
+			auctionTracker.numStarving += rsc.numStarving;
+			auctionTracker.numNoInput += rsc.numNoInput;
+			auctionTracker.numNegProfit += rsc.numNegProfit;
+			rsc.numChangedProfession = (int)rsc.changedProfession[^1];
+			auctionTracker.numChangedProfession += rsc.numChangedProfession;
+		}
+		auctionTracker.happiness /= agents.Count;
+		auctionTracker.approval /= agents.Count;
+		auctionTracker.gini = GetGini(GetWealthOfAgents());
+	}
+	public List<float> GetWealthOfAgents()
+	{
+		return agents.Select(x => x.cash).ToList();
+	}
+    float GetGini(List<float> values)
+    {
+        values.Sort();
+        // string msg = ListUtil.ListToString(cashList, "c2");
+        // Debug.Log("cash: " + msg);
+        int n = values.Count;
+        if (n == 0) return auctionTracker.gini;
+
+        float totalWealth = values.Sum();
+        Assert.IsTrue(totalWealth != 0);
+        float cumulativeWealth = 0;
+        float weightedSum = 0;
+        for (int i = 0; i < n; i++)
+        {
+            cumulativeWealth += values[i];
+            weightedSum += (i + 1) * values[i];
         }
 
-		foreach (var entry in professions)
-		{
-			//Debug.Log("Profession: " + entry.Key + ": " + entry.Value);
-			//SetGraph(gProfessions, entry.Key, entry.Value);
-		}
-	}
+        // Gini coefficient formula
+        float gini = (2.0f * weightedSum) / (n * totalWealth) - (n + 1.0f) / n;
+        Assert.IsFalse(float.IsNaN(gini));
+        return gini;
+    }
 }

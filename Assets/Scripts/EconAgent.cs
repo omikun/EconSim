@@ -27,6 +27,9 @@ public class EconAgent : MonoBehaviour {
 	WaitNumRoundsNotTriggered noSaleIn = new();
 	WaitNumRoundsNotTriggered noPurchaseIn = new();
 
+	public string Profession {
+		get { return outputNames[0]; }
+	}
 	public List<string> outputNames { get; protected set; } //can produce commodities
 	protected HashSet<string> inputs = new();
 	//production has dependencies on commodities->populates stock
@@ -196,12 +199,11 @@ public class EconAgent : MonoBehaviour {
 	{
 		return cash < bankruptcyThreshold;
 	}
-    public virtual float Tick()
+    public virtual float Tick(ref bool changedProfession, ref bool bankrupted, ref bool starving)
 	{
 		Debug.Log("agents ticking!");
 		float taxConsumed = 0;
 
-		bool starving = false;
 		if (config.foodConsumption && inventory.ContainsKey("Food"))
 		{
 			var food = inventory["Food"];
@@ -212,8 +214,8 @@ public class EconAgent : MonoBehaviour {
 				var foodAmount = food.Decrease(foodConsumed);
 				foodExpense += food.cost * foodConsumed;
 				Debug.Log(AuctionStats.Instance.round + ": " + name + "consumed " + foodConsumed.ToString("n2") + " food expense " + foodExpense);
-				starving = foodAmount <= 0;
 			}
+			starving = food.Quantity <= 0.1f;
 		}
 		
 		foreach (var entry in inventory)
@@ -229,13 +231,14 @@ public class EconAgent : MonoBehaviour {
 
 		bool changeProfessionAfterNRounds =  (config.earlyProfessionChange 
 			&& (noSaleIn.Count() >= config.changeProfessionAfterNDays));
-		bool changeProfession = (config.declareBankruptcy && IsBankrupt()) || (config.starvation && starving);
-        if (config.changeProfession && (changeProfession || changeProfessionAfterNRounds))
+		changedProfession = (config.declareBankruptcy && IsBankrupt()) || (config.starvation && starving);
+		bankrupted = IsBankrupt();
+        if (config.changeProfession && (changedProfession || changeProfessionAfterNRounds))
 		{
 			Debug.Log(AuctionStats.Instance.round + " " + name + " producing " + outputNames[0] + " is bankrupt: " + cash.ToString("c2") 
 				+ " or starving where food=" + inventory["Food"].Quantity
 				+ " or " + config.changeProfessionAfterNDays + " days no sell");
-			bool resetCash = changeProfession;
+			bool resetCash = changedProfession;
 			taxConsumed = -cash + ChangeProfession(resetCash); //existing debt + 
 			noSaleIn.Reset();
 			noPurchaseIn.Reset();
@@ -250,6 +253,10 @@ public class EconAgent : MonoBehaviour {
 	}
 	public AnimationCurve foodToHappy;
 	public AnimationCurve cashToHappy;
+	public float Food()
+	{
+		return inventory["Food"].Quantity;
+	}
 	public virtual float EvaluateHappiness()
 	{
 		//if hungry, less happy

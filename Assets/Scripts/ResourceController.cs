@@ -9,7 +9,18 @@ public class Recipe : Dictionary<string, float> {}
 public class ResourceController
 {
 	const float defaultPrice = 1;
-	public ESList buyers, sellers, bids, asks, avgBidPrice, avgAskPrice, avgClearingPrice, trades, profits;
+	public ESList buyers, sellers, bids, asks, avgBidPrice, avgAskPrice, avgClearingPrice, trades, profits, changedProfession, bankrupted, starving;
+
+	public int numAgents; //num agents in this profession for current round before profession changes
+	public float happiness;
+	public float approval;
+	public int numBankrupted;
+	public int numStarving;
+	public int numChangedProfession;
+	public int numNegProfit;
+	public int numNoInput;
+	public float gdp;
+	public float gini;
 	float quantity = 10; //total quantity of resource agents can extract
 	
 	float avgPrice = 1;
@@ -46,6 +57,12 @@ public class ResourceController
 		avgClearingPrice.Add(1);
 		profits = new ESList();
 		profits.Add(1);
+		bankrupted = new();
+		starving = new();
+		changedProfession = new();
+		bankrupted.Add(1);
+		starving.Add(1);
+		changedProfession.Add(1);
 	}
 	public void Update(float p, float dem)
 	{

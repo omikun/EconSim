@@ -11,9 +11,13 @@ using System;
 public class ESStreamingGraph : MonoBehaviour
 {
     [Required]
+    public AuctionHouse district;
+    [Required]
     public GraphChart meanPriceGraph;
     [Required]
     public GraphChart InventoryGraph;
+    [Required]
+    public PieChart jobChart;
     public int TotalPoints = 20;
     float lastTime = 0f;
     float lastX = 0f;
@@ -52,6 +56,32 @@ public class ESStreamingGraph : MonoBehaviour
             s.maskPoints);
         graph.DataSource.Set2DCategoryPrefabs(name, s.lineHover, s.pointHover);
     }
+    void InitPieChart(PieChart chart)
+    {
+       // /*
+        Assert.IsFalse(chart == null);
+
+        chart.DataSource.StartBatch(); 
+
+        int index = 0;
+        chart.DataSource.Clear();
+        foreach (var good in auctionTracker.book.Keys)
+        {
+            //chart.DataSource.SetCategoryLine(good, template.lineMaterials[index], template.lineThickness, template.lineTiling);
+            //chart.DataSource.SetCategoryFill(good, null, false);
+            Debug.Log("init line material for " + good);
+            index++;
+        }
+        for (int i = 0; i < TotalPoints; i++)  //add random points to the graph
+        {
+            //TODO with AddPointToCategoryWithLabel in the future?
+            //graph.DataSource.AddPointToCategory("Food",x,UnityEngine.Random.value);
+        }
+        chart.DataSource.EndBatch(); // finally we call EndBatch , this will cause the GraphChart to redraw itself
+
+        lastX = 0;
+        //*/
+    }
     void InitGraph(GraphChart graph)
     {
         Assert.IsFalse(graph == null);
@@ -85,25 +115,31 @@ public class ESStreamingGraph : MonoBehaviour
 
         InitGraph(meanPriceGraph);
         InitGraph(InventoryGraph);
+        //InitPieChart(jobChart);
 
         lastX = 0;//TotalPoints;
         lastTime = Time.time;
     }
 
     public float SlideTime = -1f;//.5f; //-1 will update y axis?
+    List<float> starvValues = new();
     public void UpdateGraph()
     {
         double newMaxY = 0;
         double newMaxY2 = 0;
+
         foreach (var rsc in auctionTracker.book.Values)
         {
-            var value = rsc.trades[^1];
-            InventoryGraph.DataSource.AddPointToCategoryRealtime(rsc.name, lastX, value, SlideTime);
-            value = rsc.avgClearingPrice[^1];
-            meanPriceGraph.DataSource.AddPointToCategoryRealtime(rsc.name, lastX, value, SlideTime);
+            var values = rsc.starving;
+            var values2 = rsc.trades;
+            values = rsc.avgClearingPrice;
+            jobChart.DataSource.SetValue(rsc.name, values[^1]);
+            meanPriceGraph.DataSource.AddPointToCategoryRealtime(rsc.name, lastX, values[^1], SlideTime);
+            InventoryGraph.DataSource.AddPointToCategoryRealtime(rsc.name, lastX,values2[^1], SlideTime);
 
-            newMaxY = Math.Max(newMaxY, rsc.avgClearingPrice.TakeLast(TotalPoints+2).Max());
-            newMaxY2 = Math.Max(newMaxY2, rsc.trades.TakeLast(TotalPoints+2).Max());
+            //newMaxY = Math.Max(newMaxY, rsc.avgClearingPrice.TakeLast(TotalPoints+2).Max());
+            newMaxY  = Math.Max(newMaxY,  values.TakeLast(TotalPoints+2).Max());
+            newMaxY2 = Math.Max(newMaxY2, values2.TakeLast(TotalPoints+2).Max());
         }
         meanPriceGraph.DataSource.VerticalViewSize = nearestBracket(vaxisPriceGraph, newMaxY);
         InventoryGraph.DataSource.VerticalViewSize = nearestBracket(vaxisTradeGraph, newMaxY2);

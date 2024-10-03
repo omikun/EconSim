@@ -19,7 +19,45 @@ public class AuctionStats : MonoBehaviour
 
 	public AuctionBook book { get; private set; }
 	public int round { get; private set; }
+	public float happiness;
+	public float approval;
+	public int numBankrupted;
+	public int numStarving;
+	public int numChangedProfession;
+	public int numNegProfit;
+	public int numNoInput;
+	public float gdp;// { get { return book.Values.Sum(x => x.gdp);}}
+	public float gini;
 
+	public void ClearStats()
+	{
+		happiness = 0;
+		approval = 0;
+		numBankrupted = 0;
+		numStarving = 0;
+		numChangedProfession = 0;
+		numNegProfit = 0;
+		numNoInput = 0;
+		gdp = 0;
+		gini = 0;
+
+		foreach (var entry in book.Values)
+		{
+			entry.starving.Add(0);
+			entry.bankrupted.Add(0);
+			entry.changedProfession.Add(0);
+
+			entry.happiness = 0;
+			entry.approval = 0;
+			entry.numBankrupted = 0;
+			entry.numStarving = 0;
+			entry.numChangedProfession = 0;
+			entry.numNegProfit = 0;
+			entry.numNoInput = 0;
+			entry.gdp = 0;
+			entry.gini = 0;
+		}
+	}
 	[SerializedDictionary("ID", "Recipe")]
 	public SerializedDictionary<string, SerializedDictionary<string, float>> initialization;
 	string log_msg = "";
