@@ -295,8 +295,9 @@ public class EconAgent : MonoBehaviour {
 		}
 		List<string> b = new List<string>();
 		b.Add(mostDemand);
-		Reinit(initCash, b);
-		return initCash;
+		var rc = (resetCash) ? initCash : 0;
+		Reinit(rc, b);
+		return rc;
 	}
 
 	/*********** Trading ************/

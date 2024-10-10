@@ -47,6 +47,7 @@ public class AuctionStats : MonoBehaviour
 			entry.bankrupted.Add(0);
 			entry.changedProfession.Add(0);
 
+			entry.numAgents = 0;
 			entry.happiness = 0;
 			entry.approval = 0;
 			entry.numBankrupted = 0;

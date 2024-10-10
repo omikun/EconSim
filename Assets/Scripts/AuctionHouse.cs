@@ -12,6 +12,7 @@ using Sirenix.OdinInspector.Editor.ValueResolvers;
 
 public class AuctionHouse : MonoBehaviour {
 	public bool EnableDebug = false;
+	public bool EnableLog = false;
 	[Required]
 	public InfoDisplay info;
 	protected AgentConfig config;
@@ -225,6 +226,9 @@ public class AuctionHouse : MonoBehaviour {
 	}
 	void Tick()
 	{
+		//check total cash held by agents and government
+		var totalCash = agents.Sum(x => x.cash);
+		Debug.Log("Total cash: " + totalCash);
 		Debug.Log("auction house ticking");
 
 		var book = auctionTracker.book;
@@ -248,8 +252,6 @@ public class AuctionHouse : MonoBehaviour {
 
 		PrintAuctionStats();
 		AgentsStats();
-		CountProfits();
-		CountStockPileAndCash();
 
 		foreach (var agent in agents)
 		{
@@ -267,6 +269,8 @@ public class AuctionHouse : MonoBehaviour {
 	}
 	void PrintAuctionStats()
 	{
+		if (!EnableLog)
+			return;
 		var header = auctionTracker.round + ", auction, none, none, ";
 		var msg = header + "irs, " + irs + ", n/a\n";
 		msg += header + "taxed, " + taxed + ", n/a\n";
@@ -294,6 +298,8 @@ public class AuctionHouse : MonoBehaviour {
 
 	protected void PrintAuctionStats(string c, float buy, float sell)
 	{
+		if (!EnableLog)
+			return;
 		string header = auctionTracker.round + ", auction, none, " + c + ", ";
 		string msg = header + "bid, " + buy + ", n/a\n";
 		msg += header + "ask, " + sell + ", n/a\n";
@@ -394,6 +400,8 @@ public class AuctionHouse : MonoBehaviour {
 	}
 
 	protected void OpenFileForWrite() {
+		if (!EnableLog)
+			return;
 		var datepostfix = System.DateTime.Now.ToString(@"yyyy-MM-dd-h_mm_tt");
 		if (appendTimeToLog)
 		{
@@ -405,14 +413,20 @@ public class AuctionHouse : MonoBehaviour {
 		PrintToFile(header_row);
 	}
 	protected void PrintToFile(string msg) {
+		if (!EnableLog)
+			return;
 		sw.Write(msg);
 	}
 
 	protected void CloseWriteFile() {
+		if (!EnableLog)
+			return;
 		sw.Close();
 	}
 
 	protected void AgentsStats() {
+		if (!EnableLog)
+			return;
 		string header = auctionTracker.round + ", ";
 		string msg = "";
 		foreach (var agent in agents)
@@ -420,131 +434,6 @@ public class AuctionHouse : MonoBehaviour {
 			msg += agent.Stats(header);
 		}
 		PrintToFile(msg);
-	}
-	protected void CountStockPileAndCash() 
-	{
-		Dictionary<string, float> stockPile = new Dictionary<string, float>();
-		Dictionary<string, List<float>> stockList = new Dictionary<string, List<float>>();
-		Dictionary<string, List<float>> cashList = new Dictionary<string, List<float>>();
-		var com = auctionTracker.book;
-		float totalCash = 0;
-		foreach(var entry in com)
-		{
-			stockPile.Add(entry.Key, 100);
-			stockList.Add(entry.Key, new List<float>());
-			cashList.Add(entry.Key, new List<float>());
-		}
-		foreach(var agent in agents)
-		{
-			//count stocks in all stocks of agent
-			foreach(var c in agent.inventory)
-			{
-				stockPile[c.Key] += c.Value.Surplus();
-				var surplus = c.Value.Surplus();
-				if (surplus > 20)
-				{
-					//Debug.Log(agent.name + " has " + surplus + " " + c.Key);
-				}
-				stockList[c.Key].Add(surplus);
-			}
-			if (agent is Government)
-				continue;
-            cashList[agent.outputNames[0]].Add(agent.cash);
-			totalCash += agent.cash;
-		}
-		foreach(var stock in stockPile)
-        {
-			int bucket = 1, index = 0;
-			var avg = GetQuantile(stockList[stock.Key], bucket, index);
-            //SetGraph(gStocks, stock.Key, avg);
-
-            if (avg > 20)
-            {
-                //Debug.Log(stock.Key + " HIGHSTOCK: " + avg.ToString("n2") + " max: " + stockList[stock.Key].Max().ToString("n2") + " num: " + stockList[stock.Key].Count);
-            }
-
-            //avg = GetQuantile(cashList[stock.Key], bucket, index);
-            //SetGraph(gCapital, stock.Key, cashList[stock.Key].Sum());
-        }
-        //SetGraph(gCapital, "Total", totalCash);
-		//SetGraph(gCapital, "IRS", irs+totalCash);
-		
-	}
-	protected float GetQuantile(List<float> list, int buckets=4, int index=0) //default lowest quartile
-	{
-		float avg = 0;
-		if (buckets == 1)
-		{
-			if (list.Count > 0)
-                return list.Average();
-            else
-				return 0;
-		}
-		Assert.IsTrue(index < buckets);
-		Assert.IsTrue(index >= 0);
-		var numPerQuantile = list.Count / buckets;
-		var numQuantiles = buckets;
-		var begin = Mathf.Max(0, index * numPerQuantile);
-		var end = Mathf.Min(list.Count-1, begin + numPerQuantile);
-		if (list.Count != 0 && end > 0)
-		{
-            //Debug.Log("list.count: " + list.Count + " begin: " + begin + " end: " + end);
-            //var skip = Mathf.Max(0, list.Count * (buckets - index -1) / buckets);
-            list.Sort();
-            var newList = list.GetRange(begin, end);
-            avg = newList.Average();
-        }
-		return avg;
-    }
-	protected void CountProfits()
-	{
-		var com = auctionTracker.book;
-		//count profit per profession/commodity
-		//first get total profit earned this round
-        Dictionary<string, float> totalProfits = new Dictionary<string, float>();
-		//and number of agents per commodity
-        Dictionary<string, int> numAgents = new Dictionary<string, int>();
-		//initialize
-        foreach (var entry in com)
-        {
-            var commodity = entry.Key;
-			totalProfits.Add(commodity, 0);
-			numAgents.Add(commodity, 0);
-        }
-		//accumulate
-        foreach (var agent in agents)
-        {
-			if (agent is Government)
-				continue;
-            var commodity = agent.outputNames[0];
-            //totalProfits[commodity] += agent.TaxProfit(taxRate);
-            totalProfits[commodity] += agent.GetProfit();
-			numAgents[commodity] ++;
-        }
-		//average
-		// foreach (var entry in com)
-		// {
-		// 	var commodity = entry.Key;
-		// 	var profit = totalProfits[commodity];
-		// 	if (profit == 0)
-		// 	{
-		// 		Debug.Log(commodity + " no profit earned this round");
-		// 	} else {
-        //         entry.Value.profits.Add(profit);
-		// 	}
-		// 	if (auctionTracker.round > 100 && entry.Value.profits.LastAverage(100) < 0)
-		// 	{
-		// 		Debug.Log("quitting!! last 10 round average was : " + entry.Value.profits.LastAverage(100));
-		// 		//TODO should be no trades in n rounds
-		// 	} else {
-		// 		Debug.Log("last 10 round average was : " + entry.Value.profits.LastAverage(100));
-		// 	}
-		// 	if (float.IsNaN(profit) || profit > 10000)
-		// 	{
-		// 		profit = -42; //special case
-		// 	}
-        //     //SetGraph(gCash, commodity, profit);
-		// }
 	}
 	protected void QuitIf()
 	{
