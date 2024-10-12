@@ -17,9 +17,11 @@ public class FiscalPolicy
 {
     protected AgentConfig config;
     public float taxed = 0;
-    public FiscalPolicy(AgentConfig cfg)
+    public EconAgent gov;
+    public FiscalPolicy(AgentConfig cfg, EconAgent g)
     {
         config = cfg;
+        gov = g;
     }
     public virtual void Tax(AuctionBook book, List<EconAgent> agents)
     {
@@ -68,7 +70,7 @@ public class Range
 [Serializable]
 public class FlatTaxPolicy : FiscalPolicy
 {
-    public FlatTaxPolicy(AgentConfig cfg) : base(cfg) {}
+    public FlatTaxPolicy(AgentConfig cfg, EconAgent g) : base(cfg, g) {}
 }
 
 [Serializable]
@@ -101,7 +103,7 @@ Reduction of social welfare spending: Cutting back on social programs, which all
         {new Range(0, 1), 0.1f}
         //{1f, 0.1f}
     };
-    public ProgressivePolicy(AgentConfig cfg) : base(cfg)
+    public ProgressivePolicy(AgentConfig cfg, EconAgent g) : base(cfg, g)
     {
     }
     public override void Tax(AuctionBook book, List<EconAgent> agents)
@@ -125,6 +127,7 @@ Reduction of social welfare spending: Cutting back on social programs, which all
         if (numProduced > 0) return;
 
         float idleTax = agent.PayTax(IdleTaxRate);
+        gov.Pay(-idleTax);
         taxed += idleTax;
         //Utilities.TransferQuantity(idleTax, agent, irs);
         Debug.Log(AuctionStats.Instance.round + " " + agent.name + " has "
@@ -154,6 +157,7 @@ Reduction of social welfare spending: Cutting back on social programs, which all
         var finalTaxRate = tax / income;
         //what is this?? tax += agent.PayTax(finalTaxRate);
         agent.Pay(tax);
+        gov.Pay(-tax);
         taxed += tax;
         Debug.Log(AuctionStats.Instance.round + " " + agent.name + " has "
             + agent.cash.ToString("c2") + " income " + income.ToString("c2")

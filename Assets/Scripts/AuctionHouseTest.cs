@@ -17,7 +17,6 @@ public class AuctionHouseTest : AuctionHouse {
 		var com = auctionTracker.book;
 	
 		config = GetComponent<AgentConfig>();
-		irs = 0; //GetComponent<EconAgent>();
 		var prefab = Resources.Load("Agent");
 
 		for (int i = transform.childCount; i < numAgents.Values.Sum(); i++)

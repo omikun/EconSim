@@ -239,7 +239,15 @@ public class EconAgent : MonoBehaviour {
 				+ " or starving where food=" + inventory["Food"].Quantity
 				+ " or " + config.changeProfessionAfterNDays + " days no sell");
 			bool resetCash = changedProfession;
-			taxConsumed = -cash + ChangeProfession(resetCash); //existing debt + 
+			//gov absorbs debt or cash on change profession
+			//probably should be more complex than this
+			//like agent takes out a loan, if after a certain point can declare bankruptcy and get out of debt
+				//this only makes sense if there is high demand and supply of inputs exist
+				//if high demand but no supply, change role to supplier??
+			//gov can hand out food if starving
+			//change jobs when not profitable, 
+			//these 3 things can be separate events instead of rolled into one
+			taxConsumed += ChangeProfession(resetCash); 
 			noSaleIn.Reset();
 			noPurchaseIn.Reset();
 		}
@@ -295,9 +303,11 @@ public class EconAgent : MonoBehaviour {
 		}
 		List<string> b = new List<string>();
 		b.Add(mostDemand);
+		var existingCash = cash;
 		var rc = (resetCash) ? initCash : 0;
 		Reinit(rc, b);
-		return rc;
+		//return amount of money taken from gov
+		return rc - existingCash;
 	}
 
 	/*********** Trading ************/

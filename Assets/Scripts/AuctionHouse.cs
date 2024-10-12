@@ -44,7 +44,6 @@ public class AuctionHouse : MonoBehaviour {
     public float tickInterval = .001f;
 
 	protected List<EconAgent> agents = new();
-	protected float irs;
 	protected float taxed;
 	protected bool timeToQuit = false;
     protected OfferTable askTable, bidTable;
@@ -53,7 +52,7 @@ public class AuctionHouse : MonoBehaviour {
 	protected Dictionary<string, Dictionary<string, float>> trackBids = new();
 	protected float lastTick;
 	ESStreamingGraph meanPriceGraph;
-	EconAgent gov;
+	public EconAgent gov { get; private set; }
 
 	void Start () {
 		Debug.unityLogger.logEnabled=EnableDebug;
@@ -68,7 +67,7 @@ public class AuctionHouse : MonoBehaviour {
 		meanPriceGraph = GetComponent<ESStreamingGraph>();
 		Assert.IsFalse(meanPriceGraph == null);
 
-		irs = 0; //GetComponent<EconAgent>();
+
 		taxed = 0;
 		var prefab = Resources.Load("Agent");
 
@@ -88,6 +87,7 @@ public class AuctionHouse : MonoBehaviour {
 			InitGovernment(gov);
 			agents.Add(gov);
 		}
+		progressivePolicy = new ProgressivePolicy(config, gov);
 		
 		int agentIndex = 0;
 		var professions = numAgents.Keys;
@@ -261,10 +261,6 @@ public class AuctionHouse : MonoBehaviour {
 		}
 		TickAgent();
 		progressivePolicy.Tax(book, agents);
-		var oldTaxed = taxed;
-		taxed = progressivePolicy.taxed;
-		float taxCollected = taxed - oldTaxed;
-		irs += taxCollected;
 		QuitIf();
 	}
 	void PrintAuctionStats()
@@ -272,7 +268,7 @@ public class AuctionHouse : MonoBehaviour {
 		if (!EnableLog)
 			return;
 		var header = auctionTracker.round + ", auction, none, none, ";
-		var msg = header + "irs, " + irs + ", n/a\n";
+		var msg = header + "irs, " + gov.cash + ", n/a\n";
 		msg += header + "taxed, " + taxed + ", n/a\n";
 		msg += auctionTracker.GetLog();
 		msg += info.GetLog(header);
@@ -287,7 +283,7 @@ public class AuctionHouse : MonoBehaviour {
 		if (numProduced == 0)
 		{
 			idleTax = agent.PayTax(config.idleTaxRate);
-			irs += idleTax;
+			gov.Pay(-idleTax);
 			taxed += idleTax;
 			//Utilities.TransferQuantity(idleTax, agent, irs);
 		}
@@ -497,7 +493,8 @@ public class AuctionHouse : MonoBehaviour {
 				book[profession].bankrupted[^1]++;
 			if (changedProfession)
 				book[profession].changedProfession[^1]++;
-			irs -= amount;
+			gov.Pay(amount);
+			Debug.Log(agent.name + " total cash line: " + agents.Sum(x => x.cash).ToString("c2") + amount.ToString("c2"));
 		}
 		foreach (var rsc in book.Values)
 		{

@@ -7,6 +7,7 @@ using Sirenix.OdinInspector;
 using System.Linq;
 using System.Collections.Generic;
 using System;
+using TMPro;
 
 public class ESStreamingGraph : MonoBehaviour
 {
@@ -82,11 +83,19 @@ public class ESStreamingGraph : MonoBehaviour
         lastX = 0;
         //*/
     }
-    void InitGraph(GraphChart graph)
+    void InitGraph(GraphChart graph, string title)
     {
         Assert.IsFalse(graph == null);
 
-        graph.DataSource.StartBatch(); 
+        graph.DataSource.StartBatch();
+        // Find the specific child by name and then get the component
+        Transform childTransform = transform.Find("Title");
+        if (childTransform != null)
+        {
+            TextMeshProUGUI tmp = childTransform.GetComponent<TextMeshProUGUI>();
+            Assert.IsTrue (tmp != null);
+                tmp.text = title;
+        }
 
         int index = 0;
         foreach (var good in auctionTracker.book.Keys)
@@ -113,8 +122,8 @@ public class ESStreamingGraph : MonoBehaviour
         vaxisTradeGraph = InventoryGraph.transform.GetComponent<VerticalAxis>();
         Assert.IsFalse(vaxisPriceGraph == null);
 
-        InitGraph(meanPriceGraph);
-        InitGraph(InventoryGraph);
+        InitGraph(meanPriceGraph, "Changed Profession -test");
+        InitGraph(InventoryGraph, "Trades");
         //InitPieChart(jobChart);
 
         lastX = 0;//TotalPoints;
@@ -130,10 +139,10 @@ public class ESStreamingGraph : MonoBehaviour
 
         foreach (var rsc in auctionTracker.book.Values)
         {
-            var values = rsc.starving;
+            var values = rsc.changedProfession;
             var values2 = rsc.trades;
-            values = rsc.avgClearingPrice;
-            jobChart.DataSource.SetValue(rsc.name, values[^1]);
+            //values = rsc.avgClearingPrice;
+            jobChart.DataSource.SetValue(rsc.name, rsc.numAgents);
             meanPriceGraph.DataSource.AddPointToCategoryRealtime(rsc.name, lastX, values[^1], SlideTime);
             InventoryGraph.DataSource.AddPointToCategoryRealtime(rsc.name, lastX,values2[^1], SlideTime);
 
