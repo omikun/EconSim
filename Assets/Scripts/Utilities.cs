@@ -8,7 +8,7 @@ using System;
 using System.Net.WebSockets;
 using System.Security.Cryptography.X509Certificates;
 
-public class Utilities : MonoBehaviour
+public class Utilities 
 {
     // Start is called before the first frame update
     void Start()
@@ -31,16 +31,12 @@ public class Utilities : MonoBehaviour
 public class ESList : List<float>
 {
     float avg;
-    int lastRound = 0;
-    AuctionStats comInstance;
     public ESList()
     {
-        comInstance = AuctionStats.Instance;
     }
     new public void Add(float num)
     {
         base.Add(num);
-        lastRound = comInstance.round;
     }
     public float LastHighest(int history)
     {

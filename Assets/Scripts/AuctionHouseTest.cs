@@ -13,7 +13,6 @@ public class AuctionHouseTest : AuctionHouse {
 
 		UnityEngine.Random.InitState(seed);
 		lastTick = 0;
-		auctionTracker = AuctionStats.Instance;
 		var com = auctionTracker.book;
 	
 		config = GetComponent<AgentConfig>();
@@ -39,8 +38,8 @@ public class AuctionHouseTest : AuctionHouse {
 				++agentIndex;
 			}
 		}
-		askTable = new OfferTable();
-        bidTable = new OfferTable();
+		askTable = new OfferTable(com);
+        bidTable = new OfferTable(com);
 
 		foreach (var entry in com)
 		{
@@ -68,6 +67,6 @@ public class AuctionHouseTest : AuctionHouse {
 		// TODO: This may cause uneven maxStock between agents
 		var maxStock = Mathf.Max(initStock, config.maxStock);
 
-        agent.Init(config, initCash, buildables, initStock, maxStock);
+        agent.Init(config, auctionTracker, initCash, buildables, initStock, maxStock);
 	}
 }

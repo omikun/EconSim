@@ -8,6 +8,7 @@ using System;
 using AYellowpaper.SerializedCollections;
 using System.Security.Cryptography.X509Certificates;
 using System.Net.WebSockets;
+using Sirenix.Serialization;
 
 public class AuctionBook : Dictionary<string, ResourceController>{}
 public class AuctionStats : MonoBehaviour
@@ -15,7 +16,7 @@ public class AuctionStats : MonoBehaviour
 	public int historySize = 10;
 	public bool changeToHighestBidPrice = false;
 	public bool probabilisticHottestGood = true;
-    public static AuctionStats Instance { get; private set; }
+    //public static AuctionStats Instance { get; private set; }
 
 	public AuctionBook book { get; private set; }
 	public int round { get; private set; }
@@ -60,7 +61,8 @@ public class AuctionStats : MonoBehaviour
 		}
 	}
 	[SerializedDictionary("ID", "Recipe")]
-	public SerializedDictionary<string, SerializedDictionary<string, float>> initialization;
+	//[OdinSerialize]
+	public SerializedDictionary<string, SerializedDictionary<string, float>> initialization = new();
 	string log_msg = "";
 	public string GetLog()
 	{
@@ -75,10 +77,6 @@ public class AuctionStats : MonoBehaviour
 	}
     private void Awake()
     {
-        Instance = this;
-		book = new AuctionBook();
-		round = 0;
-		Init();
     }
     public string GetMostProfitableProfession(String exclude_key)
 	{
@@ -106,7 +104,7 @@ public class AuctionStats : MonoBehaviour
 	//get price of good
 	int gotHottestGoodRound = 0;
 	string mostDemand = "invalid";
-	WeightedRandomPicker<string> picker = new WeightedRandomPicker<string>();
+	WeightedRandomPicker<string> picker = new ();
 	public string GetHottestGood()
 	{
 		if (round != gotHottestGoodRound)
@@ -166,7 +164,7 @@ public class AuctionStats : MonoBehaviour
 		gotHottestGoodRound = round;
 		return mostDemand;
 	}
-	bool Add(string name, float production, float productionMultiplier, Recipe dep)
+	bool AddToBook(string name, float production, float productionMultiplier, Recipe dep)
 	{
 		if (book.ContainsKey(name)) { return false; }
 		Assert.IsNotNull(dep);
@@ -189,9 +187,43 @@ public class AuctionStats : MonoBehaviour
 			}
 		}
 	}
+	void InitInitialization() 
+	{
+		initialization["Food"] = new() { 
+			{ "Wood", .1f}, 
+			{ "Prod_multiplier", 1f}, 
+			{ "Tool", .1f}, 
+			{ "Prod_rate", 5f}, 
+			};
+		initialization["Wood"] = new() { 
+			{ "Food", 1f}, 
+			{ "Prod_multiplier", 1f}, 
+			{ "Prod_rate", 1f}, 
+			};
+		initialization["Ore"] = new() { 
+			{ "Food", 1f}, 
+			{ "Prod_multiplier", 1f}, 
+			{ "Prod_rate", 5f}, 
+			};
+		initialization["Metal"] = new() { 
+			{ "Food", 1f}, 
+			{ "Ore", 2f}, 
+			{ "Prod_multiplier", 1f}, 
+			{ "Prod_rate", 3f}, 
+			};
+		initialization["Tool"] = new() { 
+			{ "Food", 1f}, 
+			{ "Metal", 2f}, 
+			{ "Prod_multiplier", 1f}, 
+			{ "Prod_rate", 1f}, 
+			};
+	}
     // Use this for initialization
-    void Init () {
+    public void Init () {
 		Debug.Log("Initializing commodities");
+		book = new AuctionBook();
+		round = 0;
+		//InitInitialization();
 		foreach( var item in initialization)
 		{
 			Recipe dep = new Recipe();
@@ -211,7 +243,7 @@ public class AuctionStats : MonoBehaviour
 				}
 				dep.Add(field.Key, field.Value);
 			}
-			if (!Add(item.Key, prod_rate, prod_multiplier, dep))
+			if (!AddToBook(item.Key, prod_rate, prod_multiplier, dep))
 			{
 				Debug.Log("Failed to add commodity; duplicate?");
 			}

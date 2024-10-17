@@ -10,6 +10,8 @@ public class InfoDisplay : MonoBehaviour
     //happiness level
     [Required]
     public AuctionStats district;
+    [Required]
+    public AuctionHouse auctionHouse;
     TextMeshProUGUI text;
     bool updateInfo = false;
     // Start is called before the first frame update
@@ -22,7 +24,7 @@ public class InfoDisplay : MonoBehaviour
     int lastRound = -1;
     void LateUpdate()
     {
-        if (AuctionStats.Instance.round == lastRound)
+        if (district.round == lastRound)
         {
             return;
         }
@@ -34,8 +36,9 @@ public class InfoDisplay : MonoBehaviour
 
         UpdateValue<int>(ref numStarving, district.numStarving);
         UpdateValue<int>(ref numBankrupt, district.numBankrupted);
+        UpdateValue<float>(ref govDebt, auctionHouse.gov.cash);
         //Update
-        lastRound = AuctionStats.Instance.round;
+        lastRound = district.round;
         UpdateText();
     }
     void UpdateValue<T>(ref T old, T newNum)
@@ -51,6 +54,7 @@ public class InfoDisplay : MonoBehaviour
     public int numNegProfit = 0;
     public float gini = 0;
     public float gdp = 0f;
+    public float govDebt = 0f;
     public string GetLog(string header)
     {
 		string msg = header + "approval, " + happiness.ToString("n2") + ", n/a\n";
@@ -59,6 +63,7 @@ public class InfoDisplay : MonoBehaviour
 		msg += header + "-profit, " + numNegProfit.ToString("n0") + ", n/a\n";
 		msg += header + "gini, " + gini.ToString("n2") + ", n/a\n";
 		msg += header + "gdp, " + gdp.ToString("F2", System.Globalization.CultureInfo.InvariantCulture) + ", n/a\n";
+		msg += header + "govdebt, " + govDebt.ToString("F2", System.Globalization.CultureInfo.InvariantCulture) + ", n/a\n";
         return msg;
     }
     public void UpdateText()
@@ -72,6 +77,10 @@ public class InfoDisplay : MonoBehaviour
             text.text += "\n-Profit: " + numNegProfit.ToString("n0");
             text.text += "\nGini: " + gini.ToString("n2");
             text.text += "\nGDP: " + gdp.ToString("c2");
+            if (govDebt > 0f)
+                text.text += "\ngov surplus: " + govDebt.ToString("c2");
+            else
+                text.text += "\ngov debt: " + govDebt.ToString("c2");
         }
         updateInfo = false;
     }

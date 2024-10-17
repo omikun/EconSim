@@ -9,15 +9,15 @@ using Sirenix.Reflection.Editor;
 using DG.Tweening;
 
 public class Government : EconAgent {
-	public override void Init(AgentConfig cfg, float _initCash, List<string> b, float _initStock, float maxstock) {
+	public override void Init(AgentConfig cfg, AuctionStats at, float _initCash, List<string> b, float _initStock, float maxstock) {
 		config = cfg;
 		uid = uid_idx++;
 		initStock = _initStock;
 		initCash = _initCash;
 		maxStock = maxstock;
 
-        if (book == null)
-			book = AuctionStats.Instance.book;
+		book = at.book;
+		auctionStats = at;
 		//list of commodities self can produce
 		//get initial stockpiles
 		outputNames = b;
@@ -56,22 +56,44 @@ public class Government : EconAgent {
 	}
     public void InsertBid(string com, float quant, float price)
     {
-        inventory[com].bidQuantity = quant;
-        inventory[com].bidPrice = price;
+		inventory[com].ChangePendingOffer(quant, price);
     }
-	public override Offers Consume(AuctionBook book) {
+	public void QueueOffer(string com, float quant)
+	{
+		inventory[com].ChangePendingOffer(quant);
+	}
+	public override Offers Consume(AuctionBook book) 
+	{
         var bids = new Offers();
 
         //replenish depended commodities
         foreach (var entry in inventory)
 		{
 			var item = entry.Value;
-			if (item.bidQuantity <= 0)
-				continue;
+			// if (item.bidQuantity <= 0)
+				// continue;
 
-			bids.Add(item.name, new Offer(item.name, item.bidPrice, item.bidQuantity, this));
+			if (item.OfferQuantity > 0)
+				bids.Add(item.name, new Offer(item.name, item.OfferPrice, item.OfferQuantity, this));
+			//bids.Add(item.name, new Offer(item.name, item.bidPrice, item.bidQuantity, this));
+			//TODO add either bid or asks from offer quantity/price
+			//add back to offer when unsold or unbought
+			//or only subtract on successful transaction
 		}
         return bids;
+	}
+	public override Offers CreateAsks()
+	{
+		var asks = new Offers();
+
+        foreach (var entry in inventory)
+		{
+			var item = entry.Value;
+
+			if (item.OfferQuantity < 0)
+				asks.Add(item.name, new Offer(item.name, item.OfferPrice, -item.OfferQuantity, this));
+		}
+		return asks;
 	}
 
     public override float Tick(ref bool changedProfession, ref bool bankrupted, ref bool starving)

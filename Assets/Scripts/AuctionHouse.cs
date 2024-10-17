@@ -54,20 +54,24 @@ public class AuctionHouse : MonoBehaviour {
 	ESStreamingGraph meanPriceGraph;
 	public EconAgent gov { get; private set; }
 
-	void Start () {
+	void Awake()
+	{
+		auctionTracker = GetComponent<AuctionStats>();
+		auctionTracker.Init();
+	}
+	void Start()
+	{
 		Debug.unityLogger.logEnabled=EnableDebug;
 		OpenFileForWrite();
 
 		UnityEngine.Random.InitState(seed);
 		lastTick = 0;
-		auctionTracker = AuctionStats.Instance;
-		var com = auctionTracker.book;
-	
+
 		config = GetComponent<AgentConfig>();
 		meanPriceGraph = GetComponent<ESStreamingGraph>();
 		Assert.IsFalse(meanPriceGraph == null);
 
-
+		var com = auctionTracker.book;
 		taxed = 0;
 		var prefab = Resources.Load("Agent");
 
@@ -84,10 +88,10 @@ public class AuctionHouse : MonoBehaviour {
 			go.transform.parent = transform;
 			go.name = "gov";
 			gov = go.AddComponent<Government>();
-			InitGovernment(gov);
+			InitGovernment((Government)gov);
 			agents.Add(gov);
 		}
-		progressivePolicy = new ProgressivePolicy(config, gov);
+		progressivePolicy = new ProgressivePolicy(config, auctionTracker, gov);
 		
 		int agentIndex = 0;
 		var professions = numAgents.Keys;
@@ -102,8 +106,8 @@ public class AuctionHouse : MonoBehaviour {
 				++agentIndex;
 			}
 		}
-		askTable = new OfferTable();
-        bidTable = new OfferTable();
+		askTable = new OfferTable(com);
+        bidTable = new OfferTable(com);
 
 		foreach (var entry in com)
 		{
@@ -170,16 +174,18 @@ public class AuctionHouse : MonoBehaviour {
 		((Government)gov).InsertBid(bidCom, bidQuant, 0f);
 	}
 	bool forestFire = false;
-	void InitGovernment(EconAgent agent)
+	void InitGovernment(Government agent)
 	{
-        List<string> buildables = new List<string>();
+        List<string> buildables = new ();
 		float initStock = 10f;
 		float initCash = 1000f;
 
 		// TODO: This may cause uneven maxStock between agents
 		var maxStock = Mathf.Max(initStock, 50);
 
-        agent.Init(config, initCash, buildables, initStock, maxStock);
+		Assert.IsTrue(config != null);
+		//Assert.IsTrue(auctionTracker != null);
+        agent.Init(config, auctionTracker, initCash, buildables, initStock, maxStock);
 	}
 	void InitAgent(EconAgent agent, string type)
 	{
@@ -196,7 +202,7 @@ public class AuctionHouse : MonoBehaviour {
 		// TODO: This may cause uneven maxStock between agents
 		var maxStock = Mathf.Max(initStock, config.maxStock);
 
-        agent.Init(config, initCash, buildables, initStock, maxStock);
+        agent.Init(config, auctionTracker, initCash, buildables, initStock, maxStock);
 	}
 	
 	void Update () {

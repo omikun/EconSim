@@ -18,7 +18,7 @@ public class EconAgent : MonoBehaviour {
 	protected float initCash = 100f;
 	protected float initStock = 1;
 	protected float maxStock = 1;
-	protected ESList profits = new ESList();
+	protected float profits;
 	public Dictionary<string, InventoryItem> inventory = new();
 	protected Dictionary<string, float> perItemCost = new();
 	float taxesPaidThisRound = 0;
@@ -41,6 +41,7 @@ public class EconAgent : MonoBehaviour {
 	//from the paper (base implementation)
 	// Use this for initialization
 	protected AuctionBook book {get; set;}
+	protected AuctionStats auctionStats;
 	protected Dictionary<string, float> producedThisRound = new();
 	public float numProducedThisRound = 0;
 	protected string log = "";
@@ -76,7 +77,7 @@ public class EconAgent : MonoBehaviour {
 		if (inventory.ContainsKey(name))
 			return;
 
-        inventory.Add(name, new InventoryItem(name, num, max, price, production));
+        inventory.Add(name, new InventoryItem(auctionStats, name, num, max, price, production));
 
 		perItemCost[name] = book[name].price * num;
 	}
@@ -91,15 +92,15 @@ public class EconAgent : MonoBehaviour {
 	{
 		cash -= amount;
 	}
-	public virtual void Init(AgentConfig cfg, float _initCash, List<string> b, float _initStock, float maxstock) {
+	public virtual void Init(AgentConfig cfg, AuctionStats at, float _initCash, List<string> b, float _initStock, float maxstock) {
 		config = cfg;
 		uid = uid_idx++;
 		initStock = _initStock;
 		initCash = _initCash;
 		maxStock = maxstock;
 
-        if (book == null)
-			book = AuctionStats.Instance.book;
+		book = at.book;
+		auctionStats = at;
 		//list of commodities self can produce
 		//get initial stockpiles
 		outputNames = b;
@@ -128,8 +129,7 @@ public class EconAgent : MonoBehaviour {
     }
 	public void Reinit(float initCash, List<string> buildables)
 	{
-        if (book == null)
-			book = AuctionStats.Instance.book;
+		//TODO reinit book and auctionStats? 
 		//list of commodities self can produce
 		//get initial stockpiles
 		outputNames = buildables;
@@ -172,7 +172,7 @@ public class EconAgent : MonoBehaviour {
 			{
 				msg += entry.Value.Quantity + " " + entry.Key + ", ";
 			}
-			Debug.Log(AuctionStats.Instance.round + ": " + name + " " + label + " reinit2: " + msg );
+			Debug.Log(auctionStats.round + ": " + name + " " + label + " reinit2: " + msg );
 	}
 
 	public float TaxProfit(float taxRate)
@@ -213,7 +213,7 @@ public class EconAgent : MonoBehaviour {
 			{
 				var foodAmount = food.Decrease(foodConsumed);
 				foodExpense += food.cost * foodConsumed;
-				Debug.Log(AuctionStats.Instance.round + ": " + name + "consumed " + foodConsumed.ToString("n2") + " food expense " + foodExpense);
+				Debug.Log(auctionStats.round + ": " + name + "consumed " + foodConsumed.ToString("n2") + " food expense " + foodExpense);
 			}
 			starving = food.Quantity <= 0.1f;
 		}
@@ -224,7 +224,7 @@ public class EconAgent : MonoBehaviour {
         }
 
 		CalculateProfit();
-		profits.Add(GetProfit());
+		profits = GetProfit();
 		prevCash = cash;
 
 		//ClearRoundStats();
@@ -235,7 +235,7 @@ public class EconAgent : MonoBehaviour {
 		bankrupted = IsBankrupt();
         if (config.changeProfession && (changedProfession || changeProfessionAfterNRounds))
 		{
-			Debug.Log(AuctionStats.Instance.round + " " + name + " producing " + outputNames[0] + " is bankrupt: " + cash.ToString("c2") 
+			Debug.Log(auctionStats.round + " " + name + " producing " + outputNames[0] + " is bankrupt: " + cash.ToString("c2") 
 				+ " or starving where food=" + inventory["Food"].Quantity
 				+ " or " + config.changeProfessionAfterNDays + " days no sell");
 			bool resetCash = changedProfession;
@@ -283,8 +283,8 @@ public class EconAgent : MonoBehaviour {
 
 	float ChangeProfession(bool resetCash = true)
 	{
-		string bestGood = AuctionStats.Instance.GetHottestGood();
-		string bestProf = AuctionStats.Instance.GetMostProfitableProfession(outputNames[0]);
+		string bestGood = auctionStats.GetHottestGood();
+		string bestProf = auctionStats.GetMostProfitableProfession(outputNames[0]);
 
 		string mostDemand = bestProf;
 		Debug.Log("bestGood: " + bestGood + " bestProfession: " + bestProf);
@@ -337,7 +337,7 @@ public class EconAgent : MonoBehaviour {
 		boughtThisRound = true;
 		return boughtQuantity;
 	}
-	public void Sell(string commodity, float quantity, float price)
+	public virtual void Sell(string commodity, float quantity, float price)
 	{
 		Assert.IsTrue(inventory[commodity].Quantity >= 0);
 		inventory[commodity].Sell(quantity, price);
@@ -408,7 +408,7 @@ public class EconAgent : MonoBehaviour {
 					+ "<" + item.maxPriceBelief.ToString("n2"));
 				Assert.IsFalse(buyPrice > 1000);
 			}
-			Debug.Log(AuctionStats.Instance.round + ": " + this.name 
+			Debug.Log(auctionStats.round + ": " + this.name 
 				+ " wants to buy " + numBids.ToString("n2") + item.name 
 				+ " for " + buyPrice.ToString("c2") 
 				+ " each min/maxPriceBeliefs " + item.minPriceBelief.ToString("c2") 
@@ -449,7 +449,7 @@ public class EconAgent : MonoBehaviour {
 
 			stock.Produced(numProduced * multiplier, numProduced * GetCostOf(com)); 
 
-			Debug.Log(AuctionStats.Instance.round + " " + name 
+			Debug.Log(auctionStats.round + " " + name 
 				+ " has " + cash.ToString("c2") 
 				+ " made " + numProduced.ToString("n2") + " " + outputName 
 				+ " total: " + stock.Quantity 
@@ -473,7 +473,7 @@ public class EconAgent : MonoBehaviour {
 			var numNeeded = dep.Value;
 			var numAvail = inventory[dep.Key].Quantity;
 			numProduced = Mathf.Min(numProduced, numAvail / numNeeded);
-			Debug.Log(AuctionStats.Instance.round + " " + name 
+			Debug.Log(auctionStats.round + " " + name 
 				+ "can produce " + numProduced 
 				+ " w/" + numAvail + "/" + numNeeded + " " + dep.Key);
 		}
@@ -481,7 +481,7 @@ public class EconAgent : MonoBehaviour {
 		numProduced = Mathf.Clamp(numProduced, 0, item.GetProductionRate());
 		numProduced = Mathf.Floor(numProduced);
 
-		Debug.Log(AuctionStats.Instance.round + " " + name 
+		Debug.Log(auctionStats.round + " " + name 
 			+ " producing " + rsc.name 
 			+ " currently in stock " + item.Quantity 
 			+ " production rate: " + item.GetProductionRate() 
@@ -535,7 +535,7 @@ public class EconAgent : MonoBehaviour {
 
 			if (sellQuantity > 0 && sellPrice > 0)
 			{
-				Debug.Log(AuctionStats.Instance.round + ": " + name 
+				Debug.Log(auctionStats.round + ": " + name 
 					+ " wants to sell " + sellQuantity + " " + commodityName 
 					+ " for " + sellPrice.ToString("c2") 
 					+ ", has in stock" + inventory[commodityName].Surplus());

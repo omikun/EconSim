@@ -17,10 +17,10 @@ public class OncePerRoundFloat {
     int round = 0;
     public float get()
         { 
-        if (AuctionStats.Instance.round == round) {
+        if (auctionStats.round == round) {
             return value;
         } else {
-            round = AuctionStats.Instance.round;
+            round = auctionStats.round;
             value = ComputeProduction();
             return value;
         }
@@ -29,6 +29,7 @@ public class OncePerRoundFloat {
 //*/
 public class InventoryItem {
 	public string name { get; private set; }
+    protected AuctionStats auctionStats;
 	const float significant = 0.25f;
 	const float sig_imbalance = .33f;
 	const float lowInventory = .1f;
@@ -38,6 +39,8 @@ public class InventoryItem {
 	public float cost = 1; //cost per unit
 	public float wobble = .02f;
 	public float Quantity { get; private set; }
+    public float OfferQuantity { get; private set; }
+    public float OfferPrice;// { get; private set; }
     public float quantityTradedThisRound = 0;
     public float costThisRound = 0;
 	public float maxQuantity;
@@ -65,7 +68,7 @@ public class InventoryItem {
     int lastRoundComputedProductionRate = -1;
     public float GetProductionRate()
     {
-        if (AuctionStats.Instance.round == lastRoundComputedProductionRate)
+        if (auctionStats.round == lastRoundComputedProductionRate)
         {
             return realProductionRate;
         }
@@ -75,7 +78,7 @@ public class InventoryItem {
         var chance = productionChance;
         realProductionRate = (UnityEngine.Random.value < chance) ? rate : 0;
 
-        lastRoundComputedProductionRate = AuctionStats.Instance.round;
+        lastRoundComputedProductionRate = auctionStats.round;
         return realProductionRate;
     }
 
@@ -112,9 +115,10 @@ public class InventoryItem {
         askPrice = 0;
         return ret;
     }
-	public InventoryItem (string _name, float _quantity=1, float _maxQuantity=10, 
+	public InventoryItem (AuctionStats at, string _name, float _quantity=1, float _maxQuantity=10, 
 					float _meanPrice=1, float _production=1)
 	{
+        auctionStats = at;
 		buyHistory = new TransactionHistory();
 		sellHistory = new TransactionHistory();
 		name = _name;
@@ -132,6 +136,21 @@ public class InventoryItem {
 	public void Tick()
 	{
 	}
+    public void ChangePendingOffer(float quant, float price = 0)
+    {
+        //if going back towards zero, make sure don't overshoot to simplify zeroing out offer
+        if (Mathf.Sign(OfferQuantity) != Mathf.Sign(quant) && Mathf.Abs(quant) > Mathf.Abs(OfferQuantity))
+        {
+            OfferQuantity = 0;
+        } else {
+            OfferQuantity += quant;
+        }
+        if (price == 0)
+            OfferPrice = meanPriceThisRound;
+        else
+            OfferPrice = price;
+
+    }
     public float Increase(float quant)
     {
         Quantity += quant;
@@ -163,6 +182,7 @@ public class InventoryItem {
 
         meanCost = (meanCost * Quantity + quant * price) / (Quantity + quant);
 		Quantity += quant;
+        OfferQuantity -= quant;
         bidQuantity -= quant;
 
         quantityTradedThisRound += quant;
@@ -187,6 +207,7 @@ public class InventoryItem {
         if (quant <= 0)
             return;
 
+        OfferQuantity += quant; //offerQuantity is negative for sales
 		Quantity -= quant;
         askQuantity -= quant;
         quantityTradedThisRound += quant;
@@ -224,7 +245,7 @@ public class InventoryItem {
 
 			Assert.IsTrue(numAsks <= Quantity);
 
-            //Debug.Log(AuctionStats.Instance.round + " " + agent.name + " FindSellCount " + c + ": avgPrice: " + avgPrice.ToString("c2") + " favorability: " + favorability.ToString("n2") + " numAsks: " + numAsks.ToString("n2") + " highestPrice: " + highestPrice.ToString("c2") + ", lowestPrice: " + lowestPrice.ToString("c2"));
+            //Debug.Log(auctionStats.round + " " + agent.name + " FindSellCount " + c + ": avgPrice: " + avgPrice.ToString("c2") + " favorability: " + favorability.ToString("n2") + " numAsks: " + numAsks.ToString("n2") + " highestPrice: " + highestPrice.ToString("c2") + ", lowestPrice: " + lowestPrice.ToString("c2"));
         }
 		return numAsks;
 	}
@@ -249,7 +270,7 @@ public class InventoryItem {
 			numBids = Mathf.Floor(numBids);
 			numBids = Mathf.Max(0, numBids);
 
-			//Debug.Log(AuctionStats.Instance.round + " " + agent.name + " FindBuyCount " + name + ": avgPrice: " + avgPrice.ToString("c2") + " favorability: " + (1 - favorability).ToString("n2") + " numBids: " + numBids.ToString("n2") + " highestPrice: " + highestPrice.ToString("c2") + ", lowestPrice: " + lowestPrice.ToString("c2"));
+			//Debug.Log(auctionStats.round + " " + agent.name + " FindBuyCount " + name + ": avgPrice: " + avgPrice.ToString("c2") + " favorability: " + (1 - favorability).ToString("n2") + " numBids: " + numBids.ToString("n2") + " highestPrice: " + highestPrice.ToString("c2") + ", lowestPrice: " + lowestPrice.ToString("c2"));
 			Assert.IsTrue(numBids <= Deficit());
 		}
 		return numBids;

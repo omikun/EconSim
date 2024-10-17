@@ -16,11 +16,13 @@ using Sirenix.Serialization;
 public class FiscalPolicy 
 {
     protected AgentConfig config;
+    protected AuctionStats auctionStats;
     public float taxed = 0;
     public EconAgent gov;
-    public FiscalPolicy(AgentConfig cfg, EconAgent g)
+    public FiscalPolicy(AgentConfig cfg, AuctionStats at, EconAgent g)
     {
         config = cfg;
+        auctionStats = at;
         gov = g;
     }
     public virtual void Tax(AuctionBook book, List<EconAgent> agents)
@@ -70,7 +72,7 @@ public class Range
 [Serializable]
 public class FlatTaxPolicy : FiscalPolicy
 {
-    public FlatTaxPolicy(AgentConfig cfg, EconAgent g) : base(cfg, g) {}
+    public FlatTaxPolicy(AgentConfig cfg, AuctionStats at, EconAgent g) : base(cfg, at, g) {}
 }
 
 [Serializable]
@@ -103,7 +105,7 @@ Reduction of social welfare spending: Cutting back on social programs, which all
         {new Range(0, 1), 0.1f}
         //{1f, 0.1f}
     };
-    public ProgressivePolicy(AgentConfig cfg, EconAgent g) : base(cfg, g)
+    public ProgressivePolicy(AgentConfig cfg, AuctionStats at, EconAgent g) : base(cfg, at, g)
     {
     }
     public override void Tax(AuctionBook book, List<EconAgent> agents)
@@ -130,7 +132,7 @@ Reduction of social welfare spending: Cutting back on social programs, which all
         gov.Pay(-idleTax);
         taxed += idleTax;
         //Utilities.TransferQuantity(idleTax, agent, irs);
-        Debug.Log(AuctionStats.Instance.round + " " + agent.name + " has "
+        Debug.Log(auctionStats.round + " " + agent.name + " has "
             + agent.cash.ToString("c2") + " produced " + numProduced
             + " goods and idle taxed " + idleTax.ToString("c2"));
 
@@ -159,7 +161,7 @@ Reduction of social welfare spending: Cutting back on social programs, which all
         agent.Pay(tax);
         gov.Pay(-tax);
         taxed += tax;
-        Debug.Log(AuctionStats.Instance.round + " " + agent.name + " has "
+        Debug.Log(auctionStats.round + " " + agent.name + " has "
             + agent.cash.ToString("c2") + " income " + income.ToString("c2")
             + " taxed " + tax.ToString("c2") + " at rate of " + finalTaxRate.ToString("P2"));
     }

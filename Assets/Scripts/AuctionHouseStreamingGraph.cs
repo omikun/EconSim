@@ -14,6 +14,8 @@ public class ESStreamingGraph : MonoBehaviour
     [Required]
     public AuctionHouse district;
     [Required]
+    public AuctionStats auctionTracker;
+    [Required]
     public GraphChart meanPriceGraph;
     [Required]
     public GraphChart InventoryGraph;
@@ -22,7 +24,6 @@ public class ESStreamingGraph : MonoBehaviour
     public int TotalPoints = 20;
     float lastTime = 0f;
     float lastX = 0f;
-    AuctionStats auctionTracker;
     VerticalAxis vaxisPriceGraph;
     VerticalAxis vaxisTradeGraph;
     [Serializable]
@@ -117,7 +118,6 @@ public class ESStreamingGraph : MonoBehaviour
     }
     void Start()
     {
-		auctionTracker = AuctionStats.Instance;
         vaxisPriceGraph = meanPriceGraph.transform.GetComponent<VerticalAxis>();
         vaxisTradeGraph = InventoryGraph.transform.GetComponent<VerticalAxis>();
         Assert.IsFalse(vaxisPriceGraph == null);
