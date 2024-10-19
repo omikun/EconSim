@@ -7,6 +7,7 @@ using UnityEngine.XR;
 using System;
 using Sirenix.Reflection.Editor;
 using DG.Tweening;
+using UnityEngine.UIElements;
 
 public class EconAgent : MonoBehaviour {
 	protected AgentConfig config;
@@ -127,7 +128,7 @@ public class EconAgent : MonoBehaviour {
 			Debug.Log("New " + gameObject.name + " has " + inventory[buildable].Quantity + " " + buildable);
 		}
     }
-	public void Reinit(float initCash, List<string> buildables)
+	public void Reinit(float initCash, List<string> buildables, Government gov = null)
 	{
 		//TODO reinit book and auctionStats? 
 		//list of commodities self can produce
@@ -152,7 +153,12 @@ public class EconAgent : MonoBehaviour {
 
 			PrintInventory("before reinit");
 			
-			inventory["Food"].Increase(2);
+			if (gov != null)
+			{
+				gov.Welfare(this);
+			} else {
+				inventory["Food"].Increase(2); //spawn food only at start of game
+			}
 			foreach (var dep in output.recipe)
 			{
 				var com = book[dep.Key];
@@ -199,7 +205,7 @@ public class EconAgent : MonoBehaviour {
 	{
 		return cash < bankruptcyThreshold;
 	}
-    public virtual float Tick(ref bool changedProfession, ref bool bankrupted, ref bool starving)
+    public virtual float Tick(Government gov, ref bool changedProfession, ref bool bankrupted, ref bool starving)
 	{
 		Debug.Log("agents ticking!");
 		float taxConsumed = 0;
@@ -247,7 +253,7 @@ public class EconAgent : MonoBehaviour {
 			//gov can hand out food if starving
 			//change jobs when not profitable, 
 			//these 3 things can be separate events instead of rolled into one
-			taxConsumed += ChangeProfession(resetCash); 
+			taxConsumed += ChangeProfession(gov, resetCash); 
 			noSaleIn.Reset();
 			noPurchaseIn.Reset();
 		}
@@ -281,7 +287,7 @@ public class EconAgent : MonoBehaviour {
 
 	}
 
-	float ChangeProfession(bool resetCash = true)
+	float ChangeProfession(Government gov, bool resetCash = true)
 	{
 		string bestGood = auctionStats.GetHottestGood();
 		string bestProf = auctionStats.GetMostProfitableProfession(outputNames[0]);
@@ -305,7 +311,7 @@ public class EconAgent : MonoBehaviour {
 		b.Add(mostDemand);
 		var existingCash = cash;
 		var rc = (resetCash) ? initCash : 0;
-		Reinit(rc, b);
+		Reinit(rc, b, gov);
 		//return amount of money taken from gov
 		return rc - existingCash;
 	}
@@ -328,6 +334,10 @@ public class EconAgent : MonoBehaviour {
 	}
 	public float Buy(string commodity, float quantity, float price)
 	{
+		if (this is Government)
+		{
+			Debug.Log(auctionStats.round + " gov buying " + quantity.ToString("n0") + " " + commodity);
+		}
 		Assert.IsFalse(outputNames.Contains(commodity)); //agents shouldn't buy what they produce
 		var boughtQuantity = inventory[commodity].Buy(quantity, price);
 		Debug.Log(name + " has " + cash.ToString("c2") 
@@ -339,6 +349,10 @@ public class EconAgent : MonoBehaviour {
 	}
 	public virtual void Sell(string commodity, float quantity, float price)
 	{
+		if (this is Government)
+		{
+			Debug.Log(auctionStats.round + " gov selling " + quantity.ToString("n0") + " " + commodity);
+		}
 		Assert.IsTrue(inventory[commodity].Quantity >= 0);
 		inventory[commodity].Sell(quantity, price);
 		Assert.IsTrue(inventory[commodity].Quantity >= 0);
@@ -374,11 +388,12 @@ public class EconAgent : MonoBehaviour {
 	}
 	public virtual Offers Consume(AuctionBook book) {
         var bids = new Offers();
+
 		if (cash <= 0)
 			return bids;
 
-        //replenish depended commodities
-        foreach (var entry in inventory)
+		//replenish depended commodities
+		foreach (var entry in inventory)
 		{
 			var item = entry.Value;
 			if (!inputs.Contains(item.name) || outputNames.Contains(item.name)) 
@@ -392,8 +407,15 @@ public class EconAgent : MonoBehaviour {
 
 			//maybe buy less if expensive?
 			float buyPrice = item.GetPrice();
-			if (config.onlyBuyWhatsAffordable)
-				buyPrice = Mathf.Min(cash / numBids, buyPrice);
+			if (config.baselineAuction)
+			{
+				buyPrice = book[item.name].avgClearingPrice[^1];
+				buyPrice *= UnityEngine.Random.Range(.97f, 1.03f);
+				buyPrice = Mathf.Max(buyPrice, .01f);
+			}
+			if (config.onlyBuyWhatsAffordable)	//TODO this only accounts for 1 com, what about others?
+				//buyPrice = Mathf.Min(cash / numBids, buyPrice);
+				numBids = (float)(int)Mathf.Min(cash/buyPrice, numBids);
 			Assert.IsTrue(buyPrice > 0);
 
 			bids.Add(item.name, new Offer(item.name, buyPrice, numBids, this));
@@ -406,7 +428,7 @@ public class EconAgent : MonoBehaviour {
 				Debug.Log(item.name + "buyPrice: " + buyPrice.ToString("c2") 
 					+ " : " + item.minPriceBelief.ToString("n2") 
 					+ "<" + item.maxPriceBelief.ToString("n2"));
-				Assert.IsFalse(buyPrice > 1000);
+				//Assert.IsFalse(buyPrice > 1000);
 			}
 			Debug.Log(auctionStats.round + ": " + this.name 
 				+ " wants to buy " + numBids.ToString("n2") + item.name 
@@ -532,6 +554,12 @@ public class EconAgent : MonoBehaviour {
 			// + cost of food since last sell
 			var expense = Mathf.Max(0, foodExpense);
 			float sellPrice = inventory[commodityName].cost * config.profitMarkup + expense;
+			if (config.baselineAuction)
+			{
+				var baseSellPrice = book[commodityName].avgClearingPrice[^1];
+				baseSellPrice *= UnityEngine.Random.Range(.97f, 1.03f);
+				sellPrice = Mathf.Max(sellPrice, baseSellPrice);
+			}
 
 			if (sellQuantity > 0 && sellPrice > 0)
 			{

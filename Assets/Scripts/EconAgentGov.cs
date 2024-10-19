@@ -30,6 +30,7 @@ public class Government : EconAgent {
             inputs.Add(name);
             AddToInventory(name, 0, maxstock, 1, 0);
         }
+		inventory["Food"].Increase(200);
     }
     public override float Produce() {
         return 0;
@@ -96,8 +97,22 @@ public class Government : EconAgent {
 		return asks;
 	}
 
-    public override float Tick(ref bool changedProfession, ref bool bankrupted, ref bool starving)
+    public override float Tick(Government gov, ref bool changedProfession, ref bool bankrupted, ref bool starving)
     {
         return 0f;
     }
+
+	public void Welfare(EconAgent agent)
+	{
+		//quant should be no more than what gov's inventory holds
+		//only enough to refill agent's inv back to 2
+		//should not be negative in case agent has more than 2 already
+		const float refill = 1f;
+		var quant = Mathf.Min(refill, inventory["Food"].Quantity);
+		quant = Mathf.Min(quant, refill - agent.inventory["Food"].Quantity);
+		quant = Mathf.Max(quant, 0f);
+		inventory["Food"].Decrease(quant);
+		agent.inventory["Food"].Increase(quant);
+		Debug.Log(auctionStats.round + " Fed agent" + agent.name + " " + quant + " food");
+	}
 }

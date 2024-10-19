@@ -88,21 +88,23 @@ Corporate tax cuts: Reducing corporate tax rates to attract businesses and encou
 Privatization: Selling state-owned enterprises and reducing government services, which can lower the need for tax revenue.
 Reduction of social welfare spending: Cutting back on social programs, which allows for lower overall taxation.
     */
-    [InfoBox("Tax fraction of wealth per idle round", "@!EnableIdleTax"),OnValueChanged(nameof(OnEnableIdleTax))]
-    public bool EnableIdleTax = false;
+    [InfoBox("Tax fraction of wealth per idle round", "@!EnableIdleWealthTax"),OnValueChanged(nameof(OnEnableIdleTax))]
+    public bool EnableIdleWealthTax = false;
     [InfoBox("Tax fraction of wealth per round", "@!EnableWealthTax"),OnValueChanged(nameof(OnEnableWealthTax))]
     public bool EnableWealthTax = true;
 
     private void OnEnableWealthTax()
     {
-        EnableIdleTax = !EnableWealthTax;
+        if (EnableWealthTax)
+            EnableIdleWealthTax = false;
     }
     private void OnEnableIdleTax()
     {
-        EnableWealthTax = !EnableIdleTax;
+        if (EnableIdleWealthTax)
+            EnableWealthTax = false;
     }
-    [ShowIf("EnableIdleTax")]
-    public float IdleTaxRate = .1f;
+    [ShowIf("@EnableIdleWealthTax || EnableWealthTax")]
+    public float WealthTaxRate;
 
     [InfoBox("Marginal Income Tax", "@!EnableIncomeTax")]
     public bool EnableIncomeTax = true;
@@ -124,7 +126,7 @@ Reduction of social welfare spending: Cutting back on social programs, which all
         {
 			if (agent is Government)
 				continue;
-            if (EnableIdleTax) applyIdleTax(book, agent);
+            if (EnableIdleWealthTax) applyIdleTax(book, agent);
             if (EnableIncomeTax) applyIncomeTax(book, agent);
         }
     }
@@ -138,7 +140,7 @@ Reduction of social welfare spending: Cutting back on social programs, which all
         var numProduced = agent.numProducedThisRound;
         if (numProduced > 0) return;
 
-        float idleTax = agent.PayTax(IdleTaxRate);
+        float idleTax = agent.PayTax(WealthTaxRate);
         gov.Pay(-idleTax);
         taxed += idleTax;
         //Utilities.TransferQuantity(idleTax, agent, irs);
@@ -146,6 +148,15 @@ Reduction of social welfare spending: Cutting back on social programs, which all
             + agent.cash.ToString("c2") + " produced " + numProduced
             + " goods and idle taxed " + idleTax.ToString("c2"));
 
+    }
+    public float AddSalesTax(float quant, float price)
+    {
+        if (!config.EnableSalesTax)
+            return 0;
+        var salesTax = config.SalesTaxRate * quant * price;
+        gov.Pay(-salesTax);
+        taxed += salesTax;
+        return salesTax;
     }
     void applyIncomeTax(AuctionBook book, EconAgent agent)
     {

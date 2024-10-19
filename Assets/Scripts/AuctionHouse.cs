@@ -52,7 +52,7 @@ public class AuctionHouse : MonoBehaviour {
 	protected Dictionary<string, Dictionary<string, float>> trackBids = new();
 	protected float lastTick;
 	ESStreamingGraph meanPriceGraph;
-	public EconAgent gov { get; private set; }
+	public Government gov { get; private set; }
 
 	void Awake()
 	{
@@ -181,7 +181,7 @@ public class AuctionHouse : MonoBehaviour {
 		float initCash = 1000f;
 
 		// TODO: This may cause uneven maxStock between agents
-		var maxStock = Mathf.Max(initStock, 50);
+		var maxStock = Mathf.Max(initStock, 200);
 
 		Assert.IsTrue(config != null);
 		//Assert.IsTrue(auctionTracker != null);
@@ -251,7 +251,11 @@ public class AuctionHouse : MonoBehaviour {
 		//resolve prices
 		foreach (var entry in book)
 		{
-			ResolveOffers(entry.Value);
+			if (config.baselineAuction)
+				ResolveOffersBaseline(entry.Value);
+			else
+				ResolveOffers(entry.Value);
+			RecordStats(entry.Value);
 			Debug.Log(entry.Key + ": have " + entry.Value.trades[^1] 
 				+ " at price: " + entry.Value.avgClearingPrice[^1]);
 		}
@@ -280,22 +284,6 @@ public class AuctionHouse : MonoBehaviour {
 		PrintToFile(msg);
 	}
 
-	//TODO replace with a generic tax policy to be executed end of round
-	void PayIdleTax(EconAgent agent, float numProduced)
-	{
-		float idleTax = 0;
-		if (numProduced == 0)
-		{
-			idleTax = agent.PayTax(config.idleTaxRate);
-			gov.Pay(-idleTax);
-			taxed += idleTax;
-			//Utilities.TransferQuantity(idleTax, agent, irs);
-		}
-		Debug.Log(auctionTracker.round + " " + agent.name + " has "
-			+ agent.cash.ToString("c2") + " produced " + numProduced
-			+ " goods and idle taxed " + idleTax.ToString("c2"));
-	}
-
 	protected void PrintAuctionStats(string c, float buy, float sell)
 	{
 		if (!EnableLog)
@@ -308,7 +296,9 @@ public class AuctionHouse : MonoBehaviour {
 
 		PrintToFile(msg);
 	}
-	protected void ResolveOffers(ResourceController rsc)
+	float moneyExchangedThisRound = 0;
+	float goodsExchangedThisRound = 0;
+	protected void ResolveOffersBaseline(ResourceController rsc)
 	{
 		var asks = askTable[rsc.name];
 		var bids = bidTable[rsc.name];
@@ -317,10 +307,10 @@ public class AuctionHouse : MonoBehaviour {
 		bids.Shuffle();
 
 		asks.Sort((x, y) => x.offerPrice.CompareTo(y.offerPrice)); //inc
-		//bids.Sort((x, y) => y.offerPrice.CompareTo(x.offerPrice)); //dec
+		bids.Sort((x, y) => y.offerPrice.CompareTo(x.offerPrice)); //dec
 
-		float moneyExchangedThisRound = 0;
-		float goodsExchangedThisRound = 0;
+		moneyExchangedThisRound = 0;
+		goodsExchangedThisRound = 0;
 
 		int askIdx = 0;
 		int bidIdx = 0;
@@ -330,7 +320,7 @@ public class AuctionHouse : MonoBehaviour {
 			var ask = asks[askIdx];
 			var bid = bids[bidIdx];
 
-			var clearingPrice = ask.offerPrice;
+			var clearingPrice = (ask.offerPrice + bid.offerPrice) / 2f;
 			var tradeQuantity = Mathf.Min(bid.remainingQuantity, ask.remainingQuantity);
 			Assert.IsTrue(tradeQuantity > 0);
 			Assert.IsTrue(clearingPrice > 0);
@@ -352,6 +342,64 @@ public class AuctionHouse : MonoBehaviour {
 				bidIdx++;
 		}
 		Assert.IsFalse(goodsExchangedThisRound < 0);
+	}
+	protected void ResolveOffers(ResourceController rsc)
+	{
+		var asks = askTable[rsc.name];
+		var bids = bidTable[rsc.name];
+
+		asks.Shuffle();
+		bids.Shuffle();
+
+		asks.Sort((x, y) => x.offerPrice.CompareTo(y.offerPrice)); //inc
+		bids.Sort((x, y) => x.offerPrice.CompareTo(y.offerPrice)); //inc
+		//bids.Sort((x, y) => y.offerPrice.CompareTo(x.offerPrice)); //dec
+
+		moneyExchangedThisRound = 0;
+		goodsExchangedThisRound = 0;
+
+		int askIdx = 0;
+		int bidIdx = 0;
+
+		while (askIdx < asks.Count && bidIdx < bids.Count)
+		{
+			var ask = asks[askIdx];
+			var bid = bids[bidIdx];
+
+			//buyer should not pay more than bid price
+			if (ask.offerPrice > bid.offerPrice)
+			{
+				bidIdx++;
+				continue;
+			}
+
+			var clearingPrice = (ask.offerPrice + bid.offerPrice)/ 2f;
+			var tradeQuantity = Mathf.Min(bid.remainingQuantity, ask.remainingQuantity);
+			Assert.IsTrue(tradeQuantity > 0);
+			Assert.IsTrue(clearingPrice > 0);
+
+			// =========== trade ============== 
+			var boughtQuantity = Trade(rsc, clearingPrice, tradeQuantity, bid, ask);
+
+			moneyExchangedThisRound += clearingPrice * boughtQuantity;
+			goodsExchangedThisRound += boughtQuantity;
+
+			//this is necessary for price belief updates after the big loop
+			ask.Accepted(clearingPrice, boughtQuantity);
+			bid.Accepted(clearingPrice, boughtQuantity);
+
+			//go to next ask/bid if fullfilled
+			if (ask.remainingQuantity == 0)
+				askIdx++;
+			if (bid.remainingQuantity == 0)
+				bidIdx++;
+		}
+		Assert.IsFalse(goodsExchangedThisRound < 0);
+	}
+	protected void RecordStats(ResourceController rsc)
+	{
+		var asks = askTable[rsc.name];
+		var bids = bidTable[rsc.name];
 
 		var agentDemandRatio = bids.Count / Mathf.Max(.01f, (float)asks.Count); //demand by num agents bid/
 		var quantityToBuy = bids.Sum(item => item.offerQuantity);
@@ -370,6 +418,8 @@ public class AuctionHouse : MonoBehaviour {
 
 		var averagePrice = (goodsExchangedThisRound == 0) ? 0 : moneyExchangedThisRound / goodsExchangedThisRound;
 
+		Debug.Log("avgprice: " + averagePrice.ToString("c2") + " goods exchanged: " + goodsExchangedThisRound.ToString("n2") + " money exchanged: " + moneyExchangedThisRound.ToString("c2"));
+		Assert.IsTrue(averagePrice >= 0f);
 		rsc.avgClearingPrice.Add(averagePrice);
 		rsc.trades.Add(goodsExchangedThisRound);
 		rsc.Update(averagePrice, agentDemandRatio);
@@ -501,7 +551,7 @@ public class AuctionHouse : MonoBehaviour {
 			if (agent.GetProfit() < 0)
 				book[profession].numNegProfit++;
 
-			var amount = agent.Tick(ref changedProfession, ref bankrupted, ref starving);
+			var amount = agent.Tick(gov, ref changedProfession, ref bankrupted, ref starving);
 
 			if (starving)
 				book[profession].starving[^1]++;

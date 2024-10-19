@@ -18,10 +18,14 @@ public class AgentConfig : MonoBehaviour{
 	public bool starvation = false;
 	public bool foodConsumption = false;
 	public float foodConsumptionRate = 0.1f;
+	[InfoBox("Avg bid/ask price; offer price random delta around mkt price")]
+	public bool baselineAuction = false; 
 	[Required]
 	public AnimationCurve foodConsumptionCurve;
     public float profitMarkup = 1.05f;
     public float idleTaxRate = 0f;
+    public bool EnableSalesTax = false;
+    public float SalesTaxRate = .1f;
 	public bool enablePriceFavorability = false;
 	public bool onlyBuyWhatsAffordable = false;
 	public bool changeProfession = true;
