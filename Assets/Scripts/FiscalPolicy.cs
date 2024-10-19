@@ -88,9 +88,19 @@ Corporate tax cuts: Reducing corporate tax rates to attract businesses and encou
 Privatization: Selling state-owned enterprises and reducing government services, which can lower the need for tax revenue.
 Reduction of social welfare spending: Cutting back on social programs, which allows for lower overall taxation.
     */
-    [InfoBox("Tax fraction of wealth per idle round", "@!EnableIdleTax")]
-    public bool EnableIdleTax = true;
+    [InfoBox("Tax fraction of wealth per idle round", "@!EnableIdleTax"),OnValueChanged(nameof(OnEnableIdleTax))]
+    public bool EnableIdleTax = false;
+    [InfoBox("Tax fraction of wealth per round", "@!EnableWealthTax"),OnValueChanged(nameof(OnEnableWealthTax))]
+    public bool EnableWealthTax = true;
 
+    private void OnEnableWealthTax()
+    {
+        EnableIdleTax = !EnableWealthTax;
+    }
+    private void OnEnableIdleTax()
+    {
+        EnableWealthTax = !EnableIdleTax;
+    }
     [ShowIf("EnableIdleTax")]
     public float IdleTaxRate = .1f;
 

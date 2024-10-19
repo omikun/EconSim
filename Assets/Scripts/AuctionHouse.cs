@@ -261,8 +261,6 @@ public class AuctionHouse : MonoBehaviour {
 
 		foreach (var agent in agents)
 		{
-			if (agent is Government)
-				continue;
 			agent.ClearRoundStats();
 		}
 		TickAgent();
@@ -401,6 +399,18 @@ public class AuctionHouse : MonoBehaviour {
 		return boughtQuantity;
 	}
 
+	protected bool Transfer(EconAgent source, EconAgent destination, string commodity, float quant)
+	{
+		if (source.inventory[commodity].Quantity >= quant)
+		{
+			source.inventory[commodity].Decrease(quant);
+			destination.inventory[commodity].Increase(quant);
+			return true;
+		} else {
+			return false;
+		}
+	}
+
 	protected void OpenFileForWrite() {
 		if (!EnableLog)
 			return;
@@ -521,7 +531,7 @@ public class AuctionHouse : MonoBehaviour {
 	}
 	public List<float> GetWealthOfAgents()
 	{
-		return agents.Select(x => x.cash).ToList();
+		return agents.Where(x => x is not Government).Select(x => x.cash).ToList();
 	}
     float GetGini(List<float> values)
     {

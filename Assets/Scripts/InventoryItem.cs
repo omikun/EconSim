@@ -139,11 +139,15 @@ public class InventoryItem {
     public void ChangePendingOffer(float quant, float price = 0)
     {
         //if going back towards zero, make sure don't overshoot to simplify zeroing out offer
-        if (Mathf.Sign(OfferQuantity) != Mathf.Sign(quant) && Mathf.Abs(quant) > Mathf.Abs(OfferQuantity))
+        if (OfferQuantity != 0 && Mathf.Sign(OfferQuantity) != Mathf.Sign(quant) && Mathf.Abs(quant) > Mathf.Abs(OfferQuantity))
         {
             OfferQuantity = 0;
         } else {
             OfferQuantity += quant;
+        }
+        if (Quantity + OfferQuantity < 0)
+        {
+            OfferQuantity = -Quantity;
         }
         if (price == 0)
             OfferPrice = meanPriceThisRound;

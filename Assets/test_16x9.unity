@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.44657886, g: 0.49641275, b: 0.5748176, a: 1}
+  m_IndirectSpecularColor: {r: 0.4465788, g: 0.49641275, b: 0.5748176, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -449,7 +449,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 224029584821562782, guid: 206739ec74e396e439ed908b0005e631, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 1325
+      value: 1385
       objectReference: {fileID: 0}
     - target: {fileID: 224029584821562782, guid: 206739ec74e396e439ed908b0005e631, type: 3}
       propertyPath: m_AnchoredPosition.y
@@ -577,7 +577,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6114090962803476425, guid: 206739ec74e396e439ed908b0005e631, type: 3}
       propertyPath: onClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_StringArgument
-      value: '"Food"'
+      value: Food
       objectReference: {fileID: 0}
     - target: {fileID: 6383165017113114709, guid: 206739ec74e396e439ed908b0005e631, type: 3}
       propertyPath: m_AnchorMax.y
@@ -629,7 +629,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8625187807965266143, guid: 206739ec74e396e439ed908b0005e631, type: 3}
       propertyPath: onClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_StringArgument
-      value: '"Food"'
+      value: Food
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -686,7 +686,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -200, y: -3}
+  m_AnchoredPosition: {x: -219, y: -3}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &23381053
@@ -947,7 +947,8 @@ MonoBehaviour:
   progressivePolicy:
     taxed: 0
     gov: {fileID: 0}
-    EnableIdleTax: 1
+    EnableIdleTax: 0
+    EnableWealthTax: 1
     IdleTaxRate: 0.01
     EnableIncomeTax: 1
     taxBracket:
@@ -1134,6 +1135,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   district: {fileID: 194909946}
+  auctionTracker: {fileID: 194909947}
   meanPriceGraph: {fileID: 1705704345}
   InventoryGraph: {fileID: 2219091}
   jobChart: {fileID: 9178132}
@@ -1569,7 +1571,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -314, y: -3}
+  m_AnchoredPosition: {x: -333, y: -3}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &326925652
@@ -1592,9 +1594,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'Wood
-
-'
+  m_text: Food
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -2155,6 +2155,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   district: {fileID: 0}
+  auctionTracker: {fileID: 0}
   meanPriceGraph: {fileID: 0}
   InventoryGraph: {fileID: 0}
   jobChart: {fileID: 0}
