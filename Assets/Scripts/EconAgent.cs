@@ -195,9 +195,15 @@ public class EconAgent : MonoBehaviour {
 	{
 		return profit;
 	}
+	//want to control when profit gets calculated in round
 	public float CalculateProfit()
 	{
+		var prevProfit = profit;
 		profit = cash - prevCash;
+		if (prevProfit < 0)
+		{
+			profit += prevProfit;
+		}
 		return profit;
 	}
 	const float bankruptcyThreshold = 0;
@@ -229,7 +235,6 @@ public class EconAgent : MonoBehaviour {
 			entry.Value.Tick();
         }
 
-		CalculateProfit();
 		profits = GetProfit();
 		prevCash = cash;
 
