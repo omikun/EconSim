@@ -290,12 +290,11 @@ public class EconAgent : MonoBehaviour {
 	float ChangeProfession(Government gov, bool resetCash = true)
 	{
 		string bestGood = auctionStats.GetHottestGood();
-		string bestProf = auctionStats.GetMostProfitableProfession(outputNames[0]);
+		float profit = 0f;
+		string mostDemand = auctionStats.GetMostProfitableProfession(ref profit, outputNames[0]);
 
-		string mostDemand = bestProf;
-		Debug.Log("bestGood: " + bestGood + " bestProfession: " + bestProf);
 		Assert.AreEqual(outputNames.Count, 1);
-		Debug.Log(name + " changing from " + outputNames[0] + " to " + mostDemand);
+		Debug.Log(auctionStats.round + " " + name + " changing from " + outputNames[0] + " to " + mostDemand + " --  bestGood: " + bestGood + " bestProfession: " + mostDemand);
 
 		if (bestGood != "invalid")
         {

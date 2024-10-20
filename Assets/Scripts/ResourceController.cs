@@ -9,7 +9,18 @@ public class Recipe : Dictionary<string, float> {}
 public class ResourceController
 {
 	const float defaultPrice = 1;
-	public ESList buyers, sellers, bids, asks, avgBidPrice, avgAskPrice, avgClearingPrice, trades, profits, changedProfession, bankrupted, starving;
+	public ESList buyers = new();
+	public ESList sellers = new();
+ 	public ESList bids = new();
+ 	public ESList asks = new();
+ 	public ESList avgBidPrice = new();
+ 	public ESList avgAskPrice = new();
+ 	public ESList avgClearingPrice = new();
+ 	public ESList trades = new();
+ 	public ESList profits = new();
+ 	public ESList changedProfession = new();
+ 	public ESList bankrupted = new();
+ 	public ESList starving = new();
 
 	public int numAgents; //num agents in this profession for current round before profession changes
 	public float happiness;
@@ -39,27 +50,15 @@ public class ResourceController
 		recipe = r;
 		demand = 1;
 
-		buyers   = new ESList();
 		buyers.Add(1);
-		sellers   = new ESList();
 		sellers.Add(1);
-		bids   = new ESList();
 		bids.Add(1);
-		asks   = new  ESList();
 		asks.Add(1);
-		trades = new  ESList();
 		trades.Add(1);
-		avgAskPrice = new  ESList();
 		avgAskPrice.Add(1);
-		avgBidPrice = new  ESList();
 		avgBidPrice.Add(1);
-		avgClearingPrice = new  ESList();
 		avgClearingPrice.Add(1);
-		profits = new ESList();
 		profits.Add(1);
-		bankrupted = new();
-		starving = new();
-		changedProfession = new();
 		bankrupted.Add(1);
 		starving.Add(1);
 		changedProfession.Add(1);

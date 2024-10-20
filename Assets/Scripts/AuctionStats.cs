@@ -78,57 +78,61 @@ public class AuctionStats : MonoBehaviour
     private void Awake()
     {
     }
-    public string GetMostProfitableProfession(String exclude_key)
+    public string GetMostProfitableProfession(ref float mostProfit, String exclude_key="invalid")
 	{
-		string prof = "invalid";
-		float most = 0;
+		string mostProfitableProf = "invalid";
+		mostProfit = 0;
 
 		foreach (var entry in book)
 		{
-			var commodity = entry.Key;
-			if (exclude_key == commodity) 
+			var profession = entry.Key;
+			if (exclude_key == profession) 
 			{
 				continue;
 			}
 			var profitHistory = entry.Value.profits;
 			//WARNING this history refers to the last # agents' profits, not last # rounds... short history if popular profession...
 			var profit = profitHistory.LastAverage(historySize);
-			if (profit > most)
+			if (profit > mostProfit)
 			{
-				prof = commodity;
-				most = profit;
+				mostProfitableProf = profession;
+				mostProfit = profit;
 			}
+			log_msg += round + ", auction, " + profession + ", none, profitability, " + profit + ", n/a\n";
 		}
-		return prof;
+		log_msg += round + ", auction, " + mostProfitableProf + ", none, mostProfit, " + mostProfit + ", n/a\n";
+		return mostProfitableProf;
 	}
 	//get price of good
 	int gotHottestGoodRound = 0;
-	string mostDemand = "invalid";
+	string hottestGood = "invalid";
+	string mostProfitable = "invalid";
 	WeightedRandomPicker<string> picker = new ();
 	public string GetHottestGood()
 	{
+		float best_ratio = 1.5f;
+		string ret = "invalid";
 		if (round != gotHottestGoodRound)
 		{
-			mostDemand = _GetHottestGood();
-			return mostDemand;
+			hottestGood = _GetHottestGood(ref best_ratio);
 		}
 		if (probabilisticHottestGood && !changeToHighestBidPrice)
 		{
-			mostDemand = _GetHottestGood();
 			if (picker.IsEmpty() == false)
 			{
-				mostDemand = picker.PickRandom();
+				ret = picker.PickRandom();
 			}
+		} else {
+			ret = hottestGood;
 		}
-		var best_ratio = picker.GetWeight(mostDemand);
-		Debug.Log(round + " picked demand: " + mostDemand + ": " + best_ratio);
-		log_msg += round + ", auction, " + mostDemand + ", none, hottestGood, " + best_ratio + ", n/a\n";
-		return mostDemand;
+		Debug.Log(round + " picked demand: " + ret + ": " + best_ratio);
+		log_msg += round + ", auction, " + ret + ", none, hottestGood, " + best_ratio + ", n/a\n";
+		return ret;
 	}
-	string _GetHottestGood()
+	string _GetHottestGood(ref float best_ratio)
 	{
-		mostDemand = "invalid";
-		float best_ratio = 1.5f;
+		hottestGood = "invalid";
+		gotHottestGoodRound = round;
 
 		if (changeToHighestBidPrice)
 		{
@@ -139,10 +143,10 @@ public class AuctionStats : MonoBehaviour
 				if (bid > mostBid)
 				{
 					mostBid = bid;
-					mostDemand = c.Key;
+					hottestGood = c.Key;
 				}
 			}
-			return mostDemand;
+			return hottestGood;
 		}
 		picker.Clear();
 		foreach (var c in book)
@@ -155,14 +159,13 @@ public class AuctionStats : MonoBehaviour
 			if (best_ratio < ratio)
 			{
 				best_ratio = ratio;
-				mostDemand = c.Key;
+				hottestGood = c.Key;
 				picker.AddItem(c.Key, 1);//Mathf.Sqrt(ratio)); //less likely a profession dies out
 			}
 			Debug.Log(round + " demand: " + c.Key + ": " + Mathf.Sqrt(best_ratio));
 			log_msg += round + ", auction, " + c.Key + ", none, demandsupplyratio, " + Mathf.Sqrt(ratio) + ", n/a\n";
 		}
-		gotHottestGoodRound = round;
-		return mostDemand;
+		return hottestGood;
 	}
 	bool AddToBook(string name, float production, float productionMultiplier, Recipe dep)
 	{
