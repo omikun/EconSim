@@ -267,8 +267,8 @@ public class AuctionHouse : MonoBehaviour {
 		{
 			agent.ClearRoundStats();
 		}
-		TickAgent();
 		progressivePolicy.Tax(book, agents);
+		TickAgent();
 		QuitIf();
 	}
 	void PrintAuctionStats()
@@ -535,6 +535,8 @@ public class AuctionHouse : MonoBehaviour {
 			bool bankrupted = false;
 			bool starving = false;
 			string profession = agent.Profession;
+
+			agent.CalculateProfit();
 
 			book[profession].numAgents++;
 

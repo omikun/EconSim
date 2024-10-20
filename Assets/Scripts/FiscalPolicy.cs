@@ -12,14 +12,15 @@ using Sirenix.OdinInspector;
 using Sirenix.OdinInspector.Editor;
 using Sirenix.Utilities.Editor;
 using Sirenix.Serialization;
+using UnityEngine.Assertions;
 
 public class FiscalPolicy 
 {
     protected AgentConfig config;
     protected AuctionStats auctionStats;
     public float taxed = 0;
-    public EconAgent gov;
-    public FiscalPolicy(AgentConfig cfg, AuctionStats at, EconAgent g)
+    public Government gov;
+    public FiscalPolicy(AgentConfig cfg, AuctionStats at, Government g)
     {
         config = cfg;
         auctionStats = at;
@@ -72,7 +73,7 @@ public class Range
 [Serializable]
 public class FlatTaxPolicy : FiscalPolicy
 {
-    public FlatTaxPolicy(AgentConfig cfg, AuctionStats at, EconAgent g) : base(cfg, at, g) {}
+    public FlatTaxPolicy(AgentConfig cfg, AuctionStats at, Government g) : base(cfg, at, g) {}
 }
 
 [Serializable]
@@ -88,9 +89,9 @@ Corporate tax cuts: Reducing corporate tax rates to attract businesses and encou
 Privatization: Selling state-owned enterprises and reducing government services, which can lower the need for tax revenue.
 Reduction of social welfare spending: Cutting back on social programs, which allows for lower overall taxation.
     */
-    [InfoBox("Tax fraction of wealth per idle round", "@!EnableIdleWealthTax"),OnValueChanged(nameof(OnEnableIdleTax))]
+    // [InfoBox("Tax fraction of wealth per idle round", "@!EnableIdleWealthTax"),OnValueChanged(nameof(OnEnableIdleTax))]
     public bool EnableIdleWealthTax = false;
-    [InfoBox("Tax fraction of wealth per round", "@!EnableWealthTax"),OnValueChanged(nameof(OnEnableWealthTax))]
+    // [InfoBox("Tax fraction of wealth per round", "@!EnableWealthTax"),OnValueChanged(nameof(OnEnableWealthTax))]
     public bool EnableWealthTax = true;
 
     private void OnEnableWealthTax()
@@ -103,8 +104,9 @@ Reduction of social welfare spending: Cutting back on social programs, which all
         if (EnableIdleWealthTax)
             EnableWealthTax = false;
     }
-    [ShowIf("@EnableIdleWealthTax || EnableWealthTax")]
-    public float WealthTaxRate;
+    //[ShowIf("@EnableWealthTax || EnableIdleWealthTax")]
+    public float WealthTaxRate = .1f;
+    public float MinWealthTaxExempt = 50f;
 
     [InfoBox("Marginal Income Tax", "@!EnableIncomeTax")]
     public bool EnableIncomeTax = true;
@@ -112,12 +114,8 @@ Reduction of social welfare spending: Cutting back on social programs, which all
     [ShowIf("EnableIncomeTax")]
     [ShowInInspector, DictionaryDrawerSettings(DisplayMode = DictionaryDisplayOptions.OneLine, KeyLabel = "Income Bracket", ValueLabel = "Marginal Tax Rate")]
     [SerializedDictionary("Income Bracket", "Marginal Tax Rate")]
-    public SerializedDictionary<Range, float> taxBracket = new()
-    {
-        {new Range(0, 1), 0.1f}
-        //{1f, 0.1f}
-    };
-    public ProgressivePolicy(AgentConfig cfg, AuctionStats at, EconAgent g) : base(cfg, at, g)
+    public SerializedDictionary<Range, float> taxBracket;
+    public ProgressivePolicy(AgentConfig cfg, AuctionStats at, Government g) : base(cfg, at, g)
     {
     }
     public override void Tax(AuctionBook book, List<EconAgent> agents)
@@ -126,34 +124,46 @@ Reduction of social welfare spending: Cutting back on social programs, which all
         {
 			if (agent is Government)
 				continue;
-            if (EnableIdleWealthTax) applyIdleTax(book, agent);
+            if (EnableIdleWealthTax) applyIdleWealthTax(book, agent);
+            if (EnableWealthTax) applyWealthTax(book, agent);
             if (EnableIncomeTax) applyIncomeTax(book, agent);
         }
     }
     public override void ApplyTax(AuctionBook book, EconAgent agent)
     {
         base.ApplyTax(book, agent);
-        applyIdleTax(book, agent);
+        applyIdleWealthTax(book, agent);
     }
-    void applyIdleTax(AuctionBook book, EconAgent agent)
+    void applyWealthTax(AuctionBook book, EconAgent agent)
+    {
+        float wealthTax = agent.PayWealthTax(MinWealthTaxExempt, WealthTaxRate);
+        Assert.IsTrue(wealthTax >= 0);
+        gov.Pay(-wealthTax);
+        taxed += wealthTax;
+        //Utilities.TransferQuantity(idleTax, agent, irs);
+        Debug.Log(auctionStats.round + " " + agent.name + " has "
+            + agent.cash.ToString("c2") + "wealth taxed " + wealthTax.ToString("c2"));
+    }
+    void applyIdleWealthTax(AuctionBook book, EconAgent agent)
     {
         var numProduced = agent.numProducedThisRound;
         if (numProduced > 0) return;
 
-        float idleTax = agent.PayTax(WealthTaxRate);
+        float idleTax = agent.PayWealthTax(MinWealthTaxExempt, WealthTaxRate);
+        Assert.IsTrue(idleTax >= 0);
         gov.Pay(-idleTax);
         taxed += idleTax;
         //Utilities.TransferQuantity(idleTax, agent, irs);
         Debug.Log(auctionStats.round + " " + agent.name + " has "
             + agent.cash.ToString("c2") + " produced " + numProduced
             + " goods and idle taxed " + idleTax.ToString("c2"));
-
     }
     public float AddSalesTax(float quant, float price)
     {
         if (!config.EnableSalesTax)
             return 0;
         var salesTax = config.SalesTaxRate * quant * price;
+        Assert.IsTrue(salesTax > 0);
         gov.Pay(-salesTax);
         taxed += salesTax;
         return salesTax;
@@ -181,6 +191,7 @@ Reduction of social welfare spending: Cutting back on social programs, which all
 
         var finalTaxRate = tax / income;
         //what is this?? tax += agent.PayTax(finalTaxRate);
+        Assert.IsTrue(tax >= 0);
         agent.Pay(tax);
         gov.Pay(-tax);
         taxed += tax;

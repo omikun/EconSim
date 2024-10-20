@@ -82,12 +82,15 @@ public class EconAgent : MonoBehaviour {
 
 		perItemCost[name] = book[name].price * num;
 	}
-	public float PayTax(float taxRate)
+	public float PayWealthTax(float amountExempt, float taxRate)
 	{
-		var idleTax = cash * taxRate;
-		cash -= idleTax;
-		taxesPaidThisRound = idleTax;
-		return idleTax;
+		var taxableAmount = cash - amountExempt;
+		if (taxableAmount <= 0)
+			return 0f;
+		var tax = taxableAmount * taxRate;
+		cash -= tax;
+		taxesPaidThisRound = tax;
+		return tax;
 	}
 	public void Pay(float amount)
 	{
