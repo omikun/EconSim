@@ -20,6 +20,7 @@ public class AgentConfig : MonoBehaviour{
 	public float foodConsumptionRate = 0.1f;
 	[InfoBox("Avg bid/ask price; offer price random delta around mkt price")]
 	public bool baselineAuction = false; 
+	public bool sanityCheck = false; 
 	[Required]
 	public AnimationCurve foodConsumptionCurve;
     public float profitMarkup = 1.05f;

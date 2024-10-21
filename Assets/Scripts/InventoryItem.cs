@@ -185,7 +185,7 @@ public class InventoryItem {
         meanCost = (meanCost * Quantity + quant * price) / (Quantity + quant);
 		Quantity += quant;
         OfferQuantity -= quant;
-        Assert.IsTrue(OfferQuantity >= 0);
+        OfferQuantity = Mathf.Max(0, OfferQuantity);
         bidQuantity -= quant;
 
         quantityTradedThisRound += quant;

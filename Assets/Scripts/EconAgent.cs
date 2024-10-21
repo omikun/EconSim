@@ -80,7 +80,7 @@ public class EconAgent : MonoBehaviour {
 
         inventory.Add(name, new InventoryItem(auctionStats, name, num, max, price, production));
 
-		perItemCost[name] = book[name].price * num;
+		perItemCost[name] = book[name].marketPrice * num;
 	}
 	public float PayWealthTax(float amountExempt, float taxRate)
 	{
@@ -125,9 +125,9 @@ public class EconAgent : MonoBehaviour {
 				var commodity = dep.Key;
 				inputs.Add(commodity);
                 //Debug.Log("::" + commodity);
-				AddToInventory(commodity, initStock, maxStock, book[commodity].price, book[commodity].production);
+				AddToInventory(commodity, initStock, maxStock, book[commodity].marketPrice, book[commodity].production);
 			}
-			AddToInventory(buildable, 0, maxStock, book[buildable].price, book[buildable].production);
+			AddToInventory(buildable, 0, maxStock, book[buildable].marketPrice, book[buildable].production);
 			Debug.Log("New " + gameObject.name + " has " + inventory[buildable].Quantity + " " + buildable);
 		}
     }
@@ -166,9 +166,9 @@ public class EconAgent : MonoBehaviour {
 			{
 				var com = book[dep.Key];
 				inputs.Add(com.name);
-				AddToInventory(com.name, 0, maxStock, com.price, com.production);
+				AddToInventory(com.name, 0, maxStock, com.marketPrice, com.production);
 			}
-			AddToInventory(outputName, 0, maxStock, output.price, output.production);
+			AddToInventory(outputName, 0, maxStock, output.marketPrice, output.production);
 			
 			PrintInventory("post reinit");
 		}
@@ -299,23 +299,25 @@ public class EconAgent : MonoBehaviour {
 	{
 		string bestGood = auctionStats.GetHottestGood();
 		float profit = 0f;
-		string mostDemand = auctionStats.GetMostProfitableProfession(ref profit, outputNames[0]);
+		string mostDemand = auctionStats.GetMostProfitableProfession(ref profit, Profession);
 
 		Assert.AreEqual(outputNames.Count, 1);
-		Debug.Log(auctionStats.round + " " + name + " changing from " + outputNames[0] + " to " + mostDemand + " --  bestGood: " + bestGood + " bestProfession: " + mostDemand);
-
 		if (bestGood != "invalid")
         {
             mostDemand = bestGood;
-			outputNames[0] = mostDemand;
 		}
-				
+		Debug.Log(auctionStats.round + " " + name + " changing from " + Profession + " to " + mostDemand + " --  bestGood: " + bestGood + " bestProfession: " + mostDemand);
+		
+		List<string> b = new List<string>();
+		if (mostDemand != "invalid")
+			b.Add(mostDemand);
+		else
+			b.Add(Profession);
+
 		if (config.clearInventory) 
 		{
 			inventory.Clear();
 		}
-		List<string> b = new List<string>();
-		b.Add(mostDemand);
 		var existingCash = cash;
 		var rc = (resetCash) ? initCash : 0;
 		Reinit(rc, b, gov);
@@ -416,14 +418,29 @@ public class EconAgent : MonoBehaviour {
 			float buyPrice = item.GetPrice();
 			if (config.baselineAuction)
 			{
-				buyPrice = book[item.name].avgClearingPrice[^1];
+				buyPrice = book[item.name].marketPrice;
 				buyPrice *= UnityEngine.Random.Range(.97f, 1.03f);
 				buyPrice = Mathf.Max(buyPrice, .01f);
 			}
+			if (config.sanityCheck)
+			{
+				buyPrice = book[item.name].setPrice;
+				foreach (var dep in book[Profession].recipe)
+				{
+					if (dep.Key == item.name)
+					{
+						var numNeeded = dep.Value;
+						numBids = numNeeded * inventory[Profession].GetProductionRate();
+						break;
+					}
+				}
+			}
+			Debug.Log(auctionStats.round + " " + name + " bidding " + buyPrice.ToString("c2") + " for " + numBids.ToString("n2") + " " + item.name);
 			if (config.onlyBuyWhatsAffordable)	//TODO this only accounts for 1 com, what about others?
 				//buyPrice = Mathf.Min(cash / numBids, buyPrice);
 				numBids = (float)(int)Mathf.Min(cash/buyPrice, numBids);
 			Assert.IsTrue(buyPrice > 0);
+			Assert.IsTrue(numBids > 0);
 
 			bids.Add(item.name, new Offer(item.name, buyPrice, numBids, this));
 			item.bidPrice = buyPrice;
@@ -463,6 +480,10 @@ public class EconAgent : MonoBehaviour {
 	public virtual float Produce() {
 		foreach (var outputName in outputNames)
 		{
+			if (!book.ContainsKey(outputName))
+			{
+				Debug.Log(auctionStats.round + " " + name + " not valid output " + outputName);
+			}
 			Assert.IsTrue(book.ContainsKey(outputName));
 			var com = book[outputName];
 			var stock = inventory[outputName];
@@ -543,6 +564,13 @@ public class EconAgent : MonoBehaviour {
 		return cost;
 	}
 
+	// public virtual GetSellPrice()
+	// {
+	// 	var baseSellPrice = book[commodityName].price;
+	// 	baseSellPrice *= UnityEngine.Random.Range(.97f, 1.03f);
+	// 	sellPrice = Mathf.Max(sellPrice, baseSellPrice);
+	// }
+
 	public virtual Offers CreateAsks()
 	{
 		//sell everything not needed by output
@@ -563,9 +591,15 @@ public class EconAgent : MonoBehaviour {
 			float sellPrice = inventory[commodityName].cost * config.profitMarkup + expense;
 			if (config.baselineAuction)
 			{
-				var baseSellPrice = book[commodityName].avgClearingPrice[^1];
+				var baseSellPrice = book[commodityName].marketPrice;
 				baseSellPrice *= UnityEngine.Random.Range(.97f, 1.03f);
 				sellPrice = Mathf.Max(sellPrice, baseSellPrice);
+			}
+			if (config.sanityCheck)
+			{
+				sellPrice = book[commodityName].setPrice;
+				sellQuantity = item.Value.GetProductionRate();
+				sellQuantity = Mathf.Min(sellQuantity, inventory[commodityName].Surplus());
 			}
 
 			if (sellQuantity > 0 && sellPrice > 0)

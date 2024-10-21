@@ -35,18 +35,20 @@ public class ResourceController
 	float quantity = 10; //total quantity of resource agents can extract
 	
 	float avgPrice = 1;
+    public float setPrice = 1; //predetermined price from initializer for sanity check
 	public float GetAvgPrice(int history) //average of last history size
 	{
         var skip = Mathf.Max(0, avgClearingPrice.Count - history);
         avgPrice = avgClearingPrice.Skip(skip).Average();
         return avgPrice;
 	}
-	public ResourceController(string n, float p, float pm, Recipe r)
+	public ResourceController(string n, float p, float pm, float sp,Recipe r)
 	{
 		name = n;
 		production = p;
 		productionMultiplier = pm;
-		price = defaultPrice;
+		setPrice = sp; //why can't setPrice and price be the same thing?
+		marketPrice = defaultPrice;
 		recipe = r;
 		demand = 1;
 
@@ -65,7 +67,7 @@ public class ResourceController
 	}
 	public void Update(float p, float dem)
 	{
-		price = p;
+		marketPrice = p;
 		demand = dem;
 	}
 	public void ChangeProductionMultiplier(float pm)
@@ -73,7 +75,7 @@ public class ResourceController
 		productionMultiplier = pm;
 	}
 	public string name { get; private set; }
-	public float price { get; private set; } //market price
+	public float marketPrice { get; private set; } //market price
 	public float demand { get; private set; }
 	public float production { get; private set; }
 	public float productionMultiplier { get; private set; } //forest fire or rich mineral vein

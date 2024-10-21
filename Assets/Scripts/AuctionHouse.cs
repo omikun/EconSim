@@ -257,7 +257,7 @@ public class AuctionHouse : MonoBehaviour {
 				ResolveOffers(entry.Value);
 			RecordStats(entry.Value);
 			Debug.Log(entry.Key + ": have " + entry.Value.trades[^1] 
-				+ " at price: " + entry.Value.avgClearingPrice[^1]);
+				+ " at price: " + entry.Value.marketPrice);
 		}
 
 		PrintAuctionStats();
@@ -570,7 +570,7 @@ public class AuctionHouse : MonoBehaviour {
 		foreach (var rsc in book.Values)
 		{
 			rsc.happiness /= rsc.numAgents;
-			rsc.gdp = rsc.trades[^1] * rsc.avgClearingPrice[^1];
+			rsc.gdp = rsc.trades[^1] * rsc.marketPrice;
 			auctionTracker.gdp += rsc.gdp;
 
 			auctionTracker.numBankrupted += rsc.numBankrupted;

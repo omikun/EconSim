@@ -61,7 +61,7 @@ public class Government : EconAgent {
     }
 	public void QueueOffer(string com, float quant)
 	{
-		var offerPrice = book[com].avgClearingPrice[^1] * 1.05f;
+		var offerPrice = book[com].marketPrice * 1.05f;
 		inventory[com].ChangePendingOffer(quant, offerPrice);
 	}
 	public override Offers Consume(AuctionBook book) 
@@ -79,12 +79,11 @@ public class Government : EconAgent {
 			if (item.OfferQuantity > 0)
 			{
 				bids.Add(item.name, new Offer(item.name, item.OfferPrice, item.OfferQuantity, this));
-			} else if (item.Quantity < minQuantity)
-			{
-				var offerPrice = book[item.name].avgClearingPrice[^1] * 1.05f;
-				var delta = minQuantity - item.Quantity;
-				bids.Add(item.name, new Offer(item.name, offerPrice, delta, this));
-
+			// } else if (item.Quantity < minQuantity)
+			// {
+			// 	var offerPrice = book[item.name].marketPrice * 1.05f;
+			// 	var delta = minQuantity - item.Quantity;
+			// 	bids.Add(item.name, new Offer(item.name, offerPrice, delta, this));
 			}
 			//bids.Add(item.name, new Offer(item.name, item.bidPrice, item.bidQuantity, this));
 			//TODO add either bid or asks from offer quantity/price
