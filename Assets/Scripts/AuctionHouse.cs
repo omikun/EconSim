@@ -40,7 +40,7 @@ public class AuctionHouse : MonoBehaviour {
 
 	public bool autoNextRound = false;
 	//[CustomValueDrawer("TickIntervalDrawer")]
-	[Range(.001f, 0.5f)]
+	[Range(.001f, 5f)]
     public float tickInterval = .001f;
 
 	protected List<EconAgent> agents = new();
@@ -263,10 +263,6 @@ public class AuctionHouse : MonoBehaviour {
 		PrintAuctionStats();
 		AgentsStats();
 
-		foreach (var agent in agents)
-		{
-			agent.ClearRoundStats();
-		}
 		progressivePolicy.Tax(book, agents);
 		TickAgent();
 		QuitIf();
@@ -568,6 +564,8 @@ public class AuctionHouse : MonoBehaviour {
 				book[profession].changedProfession[^1]++;
 			gov.Pay(amount);
 			Debug.Log(agent.name + " total cash line: " + agents.Sum(x => x.cash).ToString("c2") + amount.ToString("c2"));
+
+			agent.ClearRoundStats();
 		}
 		foreach (var rsc in book.Values)
 		{

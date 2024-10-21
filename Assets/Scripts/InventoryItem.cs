@@ -136,7 +136,7 @@ public class InventoryItem {
 	public void Tick()
 	{
 	}
-    public void ChangePendingOffer(float quant, float price = 0)
+    public void ChangePendingOffer(float quant, float price)
     {
         //if going back towards zero, make sure don't overshoot to simplify zeroing out offer
         if (OfferQuantity != 0 && Mathf.Sign(OfferQuantity) != Mathf.Sign(quant) && Mathf.Abs(quant) > Mathf.Abs(OfferQuantity))
@@ -145,14 +145,12 @@ public class InventoryItem {
         } else {
             OfferQuantity += quant;
         }
+        //don't sell more than what's in inventory
         if (Quantity + OfferQuantity < 0)
         {
             OfferQuantity = -Quantity;
         }
-        if (price == 0)
-            OfferPrice = meanPriceThisRound;
-        else
-            OfferPrice = price;
+        OfferPrice = price;
 
     }
     public float Increase(float quant)
@@ -187,6 +185,7 @@ public class InventoryItem {
         meanCost = (meanCost * Quantity + quant * price) / (Quantity + quant);
 		Quantity += quant;
         OfferQuantity -= quant;
+        Assert.IsTrue(OfferQuantity >= 0);
         bidQuantity -= quant;
 
         quantityTradedThisRound += quant;

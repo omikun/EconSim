@@ -932,8 +932,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fcf52a7eecf2647fe978d330319f1f44, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  EnableDebug: 0
-  EnableLog: 1
+  EnableDebug: 1
+  EnableLog: 0
   info: {fileID: 1010474683}
   seed: 49
   appendTimeToLog: 1
@@ -981,7 +981,7 @@ MonoBehaviour:
   FlatTaxPolicy:
     taxed: 0
     gov: {fileID: 0}
-  autoNextRound: 0
+  autoNextRound: 1
   tickInterval: 0.001
   bidCom: Wood
   bidQuant: 0
@@ -1151,7 +1151,7 @@ MonoBehaviour:
   meanPriceGraph: {fileID: 1705704345}
   InventoryGraph: {fileID: 2219091}
   jobChart: {fileID: 9178132}
-  TotalPoints: 20
+  TotalPoints: 40
   template:
     category: Invalid
     lineThickness: 2.5799999237060547

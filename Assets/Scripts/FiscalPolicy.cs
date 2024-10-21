@@ -105,16 +105,15 @@ Reduction of social welfare spending: Cutting back on social programs, which all
             EnableWealthTax = false;
     }
     //[ShowIf("@EnableWealthTax || EnableIdleWealthTax")]
-    public float WealthTaxRate = .1f;
+    public float WealthTaxRate = .3f;
     public float MinWealthTaxExempt = 50f;
 
     [InfoBox("Marginal Income Tax", "@!EnableIncomeTax")]
     public bool EnableIncomeTax = true;
 
-    [ShowIf("EnableIncomeTax")]
     [ShowInInspector, DictionaryDrawerSettings(DisplayMode = DictionaryDisplayOptions.OneLine, KeyLabel = "Income Bracket", ValueLabel = "Marginal Tax Rate")]
     [SerializedDictionary("Income Bracket", "Marginal Tax Rate")]
-    public SerializedDictionary<Range, float> taxBracket;
+    public SerializedDictionary<Range, float> taxBracket = new();
     public ProgressivePolicy(AgentConfig cfg, AuctionStats at, Government g) : base(cfg, at, g)
     {
     }

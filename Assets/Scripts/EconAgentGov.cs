@@ -61,7 +61,8 @@ public class Government : EconAgent {
     }
 	public void QueueOffer(string com, float quant)
 	{
-		inventory[com].ChangePendingOffer(quant);
+		var offerPrice = book[com].avgClearingPrice[^1] * 1.05f;
+		inventory[com].ChangePendingOffer(quant, offerPrice);
 	}
 	public override Offers Consume(AuctionBook book) 
 	{
@@ -73,9 +74,18 @@ public class Government : EconAgent {
 			var item = entry.Value;
 			// if (item.bidQuantity <= 0)
 				// continue;
+			var minQuantity = 100f;
 
 			if (item.OfferQuantity > 0)
+			{
 				bids.Add(item.name, new Offer(item.name, item.OfferPrice, item.OfferQuantity, this));
+			} else if (item.Quantity < minQuantity)
+			{
+				var offerPrice = book[item.name].avgClearingPrice[^1] * 1.05f;
+				var delta = minQuantity - item.Quantity;
+				bids.Add(item.name, new Offer(item.name, offerPrice, delta, this));
+
+			}
 			//bids.Add(item.name, new Offer(item.name, item.bidPrice, item.bidQuantity, this));
 			//TODO add either bid or asks from offer quantity/price
 			//add back to offer when unsold or unbought
@@ -92,7 +102,10 @@ public class Government : EconAgent {
 			var item = entry.Value;
 
 			if (item.OfferQuantity < 0)
+			{
 				asks.Add(item.name, new Offer(item.name, item.OfferPrice, -item.OfferQuantity, this));
+				Debug.Log(auctionStats.round + " gov asked " + item.OfferQuantity.ToString("n2") + " " + item.name);
+			}
 		}
 		return asks;
 	}
