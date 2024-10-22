@@ -535,6 +535,7 @@ public class EconAgent : MonoBehaviour {
 			+ " producing " + rsc.name 
 			+ " currently in stock " + item.Quantity 
 			+ " production rate: " + item.GetProductionRate() 
+			+ " produced: " + numProduced
 			+ " room: " + item.Deficit());
 		Assert.IsTrue(numProduced >= 0);
 		return numProduced;

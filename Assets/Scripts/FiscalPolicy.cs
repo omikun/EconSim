@@ -16,8 +16,8 @@ using UnityEngine.Assertions;
 
 public class FiscalPolicy 
 {
-    protected AgentConfig config;
-    protected AuctionStats auctionStats;
+    public AgentConfig config;
+    public AuctionStats auctionStats;
     public float taxed = 0;
     public Government gov;
     public FiscalPolicy(AgentConfig cfg, AuctionStats at, Government g)

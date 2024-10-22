@@ -15,7 +15,8 @@ public class AuctionHouse : MonoBehaviour {
 	public bool EnableLog = false;
 	[Required]
 	public InfoDisplay info;
-	protected AgentConfig config;
+	public AgentConfig config;
+	public AuctionStats auctionTracker;
 	public int seed = 42;
 	public bool appendTimeToLog = false;
 	public int maxRounds = 10;
@@ -48,11 +49,10 @@ public class AuctionHouse : MonoBehaviour {
 	protected bool timeToQuit = false;
     protected OfferTable askTable, bidTable;
 	protected StreamWriter sw;
-	protected AuctionStats auctionTracker;
 	protected Dictionary<string, Dictionary<string, float>> trackBids = new();
 	protected float lastTick;
 	ESStreamingGraph meanPriceGraph;
-	public Government gov { get; private set; }
+	public Government gov { get; protected set; }
 
 	void Awake()
 	{
@@ -91,7 +91,10 @@ public class AuctionHouse : MonoBehaviour {
 			InitGovernment((Government)gov);
 			agents.Add(gov);
 		}
-		progressivePolicy = new ProgressivePolicy(config, auctionTracker, gov);
+		progressivePolicy.gov = gov;
+		progressivePolicy.config = config;
+		progressivePolicy.auctionStats = auctionTracker;
+		//progressivePolicy = new ProgressivePolicy(config, auctionTracker, gov);
 		
 		int agentIndex = 0;
 		var professions = numAgents.Keys;
@@ -414,7 +417,7 @@ public class AuctionHouse : MonoBehaviour {
 
 		var averagePrice = (goodsExchangedThisRound == 0) ? 0 : moneyExchangedThisRound / goodsExchangedThisRound;
 
-		Debug.Log("avgprice: " + averagePrice.ToString("c2") + " goods exchanged: " + goodsExchangedThisRound.ToString("n2") + " money exchanged: " + moneyExchangedThisRound.ToString("c2"));
+		Debug.Log(auctionTracker.round + " " + rsc.name + " avgprice: " + averagePrice.ToString("c2") + " goods exchanged: " + goodsExchangedThisRound.ToString("n2") + " money exchanged: " + moneyExchangedThisRound.ToString("c2"));
 		Assert.IsTrue(averagePrice >= 0f);
 		rsc.avgClearingPrice.Add(averagePrice);
 		rsc.trades.Add(goodsExchangedThisRound);
@@ -563,7 +566,7 @@ public class AuctionHouse : MonoBehaviour {
 			if (changedProfession)
 				book[profession].changedProfession[^1]++;
 			gov.Pay(amount);
-			Debug.Log(agent.name + " total cash line: " + agents.Sum(x => x.cash).ToString("c2") + amount.ToString("c2"));
+			// Debug.Log(agent.name + " total cash line: " + agents.Sum(x => x.cash).ToString("c2") + amount.ToString("c2"));
 
 			agent.ClearRoundStats();
 		}
