@@ -358,8 +358,8 @@ public class AuctionHouse : MonoBehaviour {
 		bids.Shuffle();
 
 		asks.Sort((x, y) => x.offerPrice.CompareTo(y.offerPrice)); //inc
-		bids.Sort((x, y) => x.offerPrice.CompareTo(y.offerPrice)); //inc
-		//bids.Sort((x, y) => y.offerPrice.CompareTo(x.offerPrice)); //dec
+		//bids.Sort((x, y) => x.offerPrice.CompareTo(y.offerPrice)); //inc
+		bids.Sort((x, y) => y.offerPrice.CompareTo(x.offerPrice)); //dec
 
 		moneyExchangedThisRound = 0;
 		goodsExchangedThisRound = 0;

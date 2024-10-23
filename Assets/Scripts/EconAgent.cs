@@ -193,6 +193,7 @@ public class EconAgent : MonoBehaviour {
 	{
 		var prevProfit = Profit;
 		Profit = cash - prevCash;
+		prevCash = cash;
 		if (prevProfit < 0)
 		{
 			Profit += prevProfit;
