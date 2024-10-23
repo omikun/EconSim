@@ -19,7 +19,7 @@ public class EconAgent : MonoBehaviour {
 	protected float initCash = 100f;
 	protected float initStock = 1;
 	protected float maxStock = 1;
-	protected float profits;
+	protected float profit;
 	public Dictionary<string, InventoryItem> inventory = new();
 	protected Dictionary<string, float> perItemCost = new();
 	float taxesPaidThisRound = 0;
@@ -193,7 +193,6 @@ public class EconAgent : MonoBehaviour {
 		cash -= taxAmt;
 		return profit - taxAmt;
 	}
-	float profit = 0;
 	public float GetProfit()
 	{
 		return profit;
@@ -223,7 +222,9 @@ public class EconAgent : MonoBehaviour {
 		{
 			var food = inventory["Food"];
 
-			var foodConsumed = config.foodConsumptionCurve.Evaluate(food.Quantity/food.maxQuantity);
+			var foodConsumed = config.foodConsumptionRate;
+			if (config.useFoodConsumptionCurve)
+				foodConsumed = config.foodConsumptionCurve.Evaluate(food.Quantity/food.maxQuantity);
 			if (food.Quantity >= foodConsumed)
 			{
 				var foodAmount = food.Decrease(foodConsumed);
@@ -238,13 +239,10 @@ public class EconAgent : MonoBehaviour {
 			entry.Value.Tick();
         }
 
-		profits = GetProfit();
-		prevCash = cash;
 
 		//ClearRoundStats();
 
-		bool changeProfessionAfterNRounds =  (config.earlyProfessionChange 
-			&& (noSaleIn.Count() >= config.changeProfessionAfterNDays));
+		bool changeProfessionAfterNRounds =  (config.earlyProfessionChange && (noSaleIn.Count() >= config.changeProfessionAfterNDays));
 		changedProfession = (config.declareBankruptcy && IsBankrupt()) || (config.starvation && starving);
 		bankrupted = IsBankrupt();
         if (config.changeProfession && (changedProfession || changeProfessionAfterNRounds))
@@ -422,9 +420,12 @@ public class EconAgent : MonoBehaviour {
 				buyPrice *= UnityEngine.Random.Range(.97f, 1.03f);
 				buyPrice = Mathf.Max(buyPrice, .01f);
 			}
-			if (config.sanityCheck)
+			if (config.sanityCheckBuyPrice)
 			{
 				buyPrice = book[item.name].setPrice;
+			}
+			if (config.sanityCheckBuyQuant)
+			{
 				foreach (var dep in book[Profession].recipe)
 				{
 					if (dep.Key == item.name)
@@ -593,12 +594,19 @@ public class EconAgent : MonoBehaviour {
 			if (config.baselineAuction)
 			{
 				var baseSellPrice = book[commodityName].marketPrice;
-				baseSellPrice *= UnityEngine.Random.Range(.97f, 1.03f);
-				sellPrice = Mathf.Max(sellPrice, baseSellPrice);
+				var delta = .03f;
+				var min = 1f - delta;
+				var max = 1f + delta;
+				baseSellPrice *= UnityEngine.Random.Range(min, max);
+				sellPrice = baseSellPrice;
+				//sellPrice = Mathf.Max(sellPrice*min, baseSellPrice);
 			}
-			if (config.sanityCheck)
+			if (config.sanityCheckSellPrice)
 			{
 				sellPrice = book[commodityName].setPrice;
+			}
+			if (config.sanityCheckSellQuant)
+			{
 				sellQuantity = item.Value.GetProductionRate();
 				sellQuantity = Mathf.Min(sellQuantity, inventory[commodityName].Surplus());
 			}

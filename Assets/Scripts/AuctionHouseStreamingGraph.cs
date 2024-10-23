@@ -139,9 +139,9 @@ public class ESStreamingGraph : MonoBehaviour
 
         foreach (var rsc in auctionTracker.book.Values)
         {
-            var values = rsc.changedProfession;
+            //var values = rsc.changedProfession;
+            var values = rsc.avgClearingPrice;
             var values2 = rsc.trades;
-            //values = rsc.avgClearingPrice;
             jobChart.DataSource.SetValue(rsc.name, rsc.numAgents);
             meanPriceGraph.DataSource.AddPointToCategoryRealtime(rsc.name, lastX, values[^1], SlideTime);
             InventoryGraph.DataSource.AddPointToCategoryRealtime(rsc.name, lastX,values2[^1], SlideTime);

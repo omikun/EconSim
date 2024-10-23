@@ -48,7 +48,7 @@ public class ResourceController
 		production = p;
 		productionMultiplier = pm;
 		setPrice = sp; //why can't setPrice and price be the same thing?
-		marketPrice = defaultPrice;
+		marketPrice = sp;
 		recipe = r;
 		demand = 1;
 

@@ -80,15 +80,12 @@ public class Government : EconAgent {
 			{
 				bids.Add(item.name, new Offer(item.name, item.OfferPrice, item.OfferQuantity, this));
 			// } else if (item.Quantity < minQuantity)
+			// auto refill to a certain level - maybe this is the player controllable variable
 			// {
 			// 	var offerPrice = book[item.name].marketPrice * 1.05f;
 			// 	var delta = minQuantity - item.Quantity;
 			// 	bids.Add(item.name, new Offer(item.name, offerPrice, delta, this));
 			}
-			//bids.Add(item.name, new Offer(item.name, item.bidPrice, item.bidQuantity, this));
-			//TODO add either bid or asks from offer quantity/price
-			//add back to offer when unsold or unbought
-			//or only subtract on successful transaction
 		}
         return bids;
 	}

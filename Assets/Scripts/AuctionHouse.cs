@@ -11,7 +11,12 @@ using Sirenix.Serialization;
 using Sirenix.OdinInspector.Editor.ValueResolvers;
 
 public class AuctionHouse : MonoBehaviour {
+	[OnValueChanged(nameof(OnToggleEnableDebug))]
 	public bool EnableDebug = false;
+	private void OnToggleEnableDebug()
+	{
+		Debug.unityLogger.logEnabled=EnableDebug;
+	}
 	public bool EnableLog = false;
 	[Required]
 	public InfoDisplay info;
@@ -319,6 +324,8 @@ public class AuctionHouse : MonoBehaviour {
 			var ask = asks[askIdx];
 			var bid = bids[bidIdx];
 
+			if (ask.offerPrice > bid.offerPrice)
+				break;
 			var clearingPrice = (ask.offerPrice + bid.offerPrice) / 2f;
 			var tradeQuantity = Mathf.Min(bid.remainingQuantity, ask.remainingQuantity);
 			Assert.IsTrue(tradeQuantity > 0);

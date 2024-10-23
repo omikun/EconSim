@@ -254,3 +254,7 @@ Packages/packages-lock.json
 UserSettings/EditorUserSettings.asset
 
 .DS_Store
+
+Misc/sanity_check_init_values.numbers
+
+*.twbr
