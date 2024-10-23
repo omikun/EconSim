@@ -987,8 +987,8 @@ MonoBehaviour:
     auctionStats: {fileID: 0}
     taxed: 0
     gov: {fileID: 0}
-  autoNextRound: 1
-  tickInterval: 0.45
+  autoNextRound: 0
+  tickInterval: 0.001
   bidCom: Wood
   bidQuant: 0
 --- !u!114 &194909947
@@ -1108,8 +1108,8 @@ MonoBehaviour:
   seed: 42
   initCash: 40
   randomInitStock: 0
-  initStock: 30
-  maxStock: 100
+  initStock: 60
+  maxStock: 1000
   clearInventory: 0
   starvation: 1
   foodConsumption: 0

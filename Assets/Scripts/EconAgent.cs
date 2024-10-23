@@ -19,7 +19,8 @@ public class EconAgent : MonoBehaviour {
 	protected float initCash = 100f;
 	protected float initStock = 1;
 	protected float maxStock = 1;
-	protected float profit;
+	public float Profit { get; protected set; }
+	public float TaxableProfit { get; protected set; }
 	public Dictionary<string, InventoryItem> inventory = new();
 	protected Dictionary<string, float> perItemCost = new();
 	float taxesPaidThisRound = 0;
@@ -47,11 +48,6 @@ public class EconAgent : MonoBehaviour {
 	public float numProducedThisRound = 0;
 	protected string log = "";
 
-	public float Income() 
-	{
-		return GetProfit();
-	}
-
 	public virtual String Stats(String header)
 	{
 		header += uid.ToString() + ", " + outputNames[0] + ", "; //profession
@@ -60,7 +56,7 @@ public class EconAgent : MonoBehaviour {
 			log += stock.Value.Stats(header);
 		}
 		log += header + "cash, stock, " + cash + ", n/a\n";
-		log += header + "profit, stock, " + GetProfit() + ", n/a\n";
+		log += header + "profit, stock, " + Profit + ", n/a\n";
 		log += header + "taxes, idle, " + taxesPaidThisRound + ", n/a\n";
 		foreach (var (good, quantity) in producedThisRound)
 		{
@@ -186,27 +182,21 @@ public class EconAgent : MonoBehaviour {
 
 	public float TaxProfit(float taxRate)
 	{
-		var profit = GetProfit();
-		if (profit <= 0)
-			return profit;
-		var taxAmt = profit * taxRate;
+		if (TaxableProfit <= 0)
+			return 0;
+		var taxAmt = TaxableProfit * taxRate;
 		cash -= taxAmt;
-		return profit - taxAmt;
-	}
-	public float GetProfit()
-	{
-		return profit;
+		return TaxableProfit - taxAmt;
 	}
 	//want to control when profit gets calculated in round
-	public float CalculateProfit()
+	public void CalculateProfit()
 	{
-		var prevProfit = profit;
-		profit = cash - prevCash;
+		var prevProfit = Profit;
+		Profit = cash - prevCash;
 		if (prevProfit < 0)
 		{
-			profit += prevProfit;
+			Profit += prevProfit;
 		}
-		return profit;
 	}
 	const float bankruptcyThreshold = 0;
 	public bool IsBankrupt()
@@ -368,7 +358,7 @@ public class EconAgent : MonoBehaviour {
 		// 	+ " for " + price.ToString("c2"));
 		//reset food consumption count?
 		soldThisRound = true;
-		foodExpense = Mathf.Max(0, foodExpense - Mathf.Max(0,Income()));
+		foodExpense = Mathf.Max(0, foodExpense - Mathf.Max(0,Profit));
 		 cash += price * quantity;
 	}
 	public void UpdateSellerPriceBelief(in Offer trade, in ResourceController rsc) 
@@ -431,7 +421,7 @@ public class EconAgent : MonoBehaviour {
 					if (dep.Key == item.name)
 					{
 						var numNeeded = dep.Value;
-						numBids = numNeeded * inventory[Profession].GetProductionRate();
+						numBids = numNeeded * inventory[Profession].GetProductionRate() * 2 ;
 						break;
 					}
 				}
@@ -607,7 +597,7 @@ public class EconAgent : MonoBehaviour {
 			}
 			if (config.sanityCheckSellQuant)
 			{
-				sellQuantity = item.Value.GetProductionRate();
+				sellQuantity = item.Value.GetProductionRate() * 2;
 				sellQuantity = Mathf.Min(sellQuantity, inventory[commodityName].Surplus());
 			}
 

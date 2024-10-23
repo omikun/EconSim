@@ -44,6 +44,7 @@ public class AuctionStats : MonoBehaviour
 
 		foreach (var entry in book.Values)
 		{
+			entry.profits.Add(0);
 			entry.starving.Add(0);
 			entry.bankrupted.Add(0);
 			entry.changedProfession.Add(0);

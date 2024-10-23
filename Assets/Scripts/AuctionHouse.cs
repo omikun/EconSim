@@ -529,10 +529,6 @@ public class AuctionHouse : MonoBehaviour {
 		auctionTracker.ClearStats();
 		var book = auctionTracker.book;
 		
-		foreach (var rsc in book.Values)
-		{
-			rsc.profits.Add(0);
-		}
         foreach (var agent in agents)
         {
 			if (agent is Government)
@@ -560,10 +556,10 @@ public class AuctionHouse : MonoBehaviour {
 			if (agent.CalcMinProduction() < 1)
 				book[profession].numNoInput++;
 			
-			if (agent.GetProfit() < 0)
+			if (agent.Profit < 0)
 				book[profession].numNegProfit++;
 
-			book[profession].profits[^1] += agent.GetProfit();
+			book[profession].profits[^1] += agent.Profit;
 			var amount = agent.Tick(gov, ref changedProfession, ref bankrupted, ref starving);
 
 			if (starving)
