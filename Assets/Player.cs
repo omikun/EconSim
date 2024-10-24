@@ -7,16 +7,28 @@ using Sirenix.OdinInspector;
 using Michsky.MUIP;
 using UnityEngine.UI;
 using TMPro;
+using System;
+using Sirenix.Serialization;
 using Sirenix.OdinInspector.Editor.ValueResolvers;
+using Sirenix.OdinInspector.Editor;
+using Sirenix.Utilities.Editor;
 
+[System.Serializable]
+public class Control
+{
+    [Required]
+    public GameObject go;
+    public TextMeshProUGUI text;
+}
 public class Player : MonoBehaviour
 {
     [Required]
     public AuctionHouse selectedDistrict;
     public Government selectedAgent;
-    [Required]
-    public GameObject hSelector;
-    TextMeshProUGUI text;
+
+    [ShowInInspector, DictionaryDrawerSettings(DisplayMode = DictionaryDisplayOptions.OneLine, KeyLabel = "Comm", ValueLabel = "Control")]
+    [SerializedDictionary("Comm", "Control")]
+    public SerializedDictionary<string, Control> comControls = new();
     // Start is called before the first frame update
     void Start()
     {
@@ -27,19 +39,25 @@ public class Player : MonoBehaviour
 
     void InitTradeUI()
     {
+        foreach (var (com, control) in comControls)
+        {
+            InitCommodityControl(com, control);
+        }
+    }
+
+    void InitCommodityControl(string com, Control control)
+    {
         //get prev, inject QueueOfferMinus into it
-        var onClick = hSelector.transform.Find("Prev").GetComponent<ButtonManager>().onClick;
+        var onClick = control.go.transform.Find("Prev").GetComponent<ButtonManager>().onClick;
         onClick.RemoveAllListeners();
-        onClick.AddListener(delegate{QueueOfferMinus("Food");});
+        onClick.AddListener(delegate{QueueOfferMinus(com);});
 
-        onClick = hSelector.transform.Find("Next").GetComponent<ButtonManager>().onClick;
+        onClick = control.go.transform.Find("Next").GetComponent<ButtonManager>().onClick;
         onClick.RemoveAllListeners();
-        onClick.AddListener(delegate{QueueOfferPlus("Food");});
+        onClick.AddListener(delegate{QueueOfferPlus(com);});
 
 
-        text = hSelector.transform.Find("Main Content").transform.Find("Text").GetComponent<TextMeshProUGUI>();
-        //ButtonManager
-        //onClick
+        control.text = control.go.transform.Find("Main Content").transform.Find("Text").GetComponent<TextMeshProUGUI>();
     }
     public void QueueOfferMinus(string com)
     {
@@ -57,11 +75,14 @@ public class Player : MonoBehaviour
     {
         var entry = selectedAgent.inventory[com];
         var queuedOffer = entry.OfferQuantity;
-        text.text = entry.Quantity.ToString("n0") + " (" + queuedOffer.ToString("n0") + ")";
+        comControls[com].text.text = entry.Quantity.ToString("n0") + " (" + queuedOffer.ToString("n0") + ")";
     }
     // Update is called once per frame
     void Update()
     {
-        Tick("Food");
+        foreach (var key in comControls.Keys)
+        {
+            Tick(key);
+        }
     }
 }
