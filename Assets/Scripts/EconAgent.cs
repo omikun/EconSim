@@ -422,7 +422,7 @@ public class EconAgent : MonoBehaviour {
 					if (dep.Key == item.name)
 					{
 						var numNeeded = dep.Value;
-						numBids = numNeeded * inventory[Profession].GetProductionRate() * 2 ;
+						numBids = numNeeded * inventory[Profession].GetProductionRate() * config.sanityCheckTradeVolume ;
 						break;
 					}
 				}
@@ -598,7 +598,7 @@ public class EconAgent : MonoBehaviour {
 			}
 			if (config.sanityCheckSellQuant)
 			{
-				sellQuantity = item.Value.GetProductionRate() * 2;
+				sellQuantity = item.Value.GetProductionRate() * config.sanityCheckTradeVolume;
 				sellQuantity = Mathf.Min(sellQuantity, inventory[commodityName].Surplus());
 			}
 

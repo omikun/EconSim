@@ -22,9 +22,10 @@ public class AgentConfig : MonoBehaviour{
 	public bool baselineAuction = false; 
 	[OnValueChanged(nameof(OnToggleSanityCheck))]
 	public bool sanityCheck = false; 
+	public float sanityCheckTradeVolume = 1f;
 	public bool sanityCheckSellQuant = false; 
-	public bool sanityCheckSellPrice = false; 
 	public bool sanityCheckBuyQuant = false; 
+	public bool sanityCheckSellPrice = false; 
 	public bool sanityCheckBuyPrice = false; 
 
 	private void OnToggleBaselineAuction()
