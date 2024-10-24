@@ -223,6 +223,7 @@ public class EconAgent : MonoBehaviour {
 				Debug.Log(auctionStats.round + ": " + name + "consumed " + foodConsumed.ToString("n2") + " food expense " + foodExpense);
 			}
 			starving = food.Quantity <= 0.1f;
+			foodExpense = Mathf.Max(0, foodExpense - Mathf.Max(0, Profit));
 		}
 		
 		foreach (var entry in inventory)
@@ -359,7 +360,6 @@ public class EconAgent : MonoBehaviour {
 		// 	+ " for " + price.ToString("c2"));
 		//reset food consumption count?
 		soldThisRound = true;
-		foodExpense = Mathf.Max(0, foodExpense - Mathf.Max(0,Profit));
 		 cash += price * quantity;
 	}
 	public void UpdateSellerPriceBelief(in Offer trade, in ResourceController rsc) 
@@ -589,8 +589,11 @@ public class EconAgent : MonoBehaviour {
 				var min = 1f - delta;
 				var max = 1f + delta;
 				baseSellPrice *= UnityEngine.Random.Range(min, max);
-				sellPrice = baseSellPrice;
-				//sellPrice = Mathf.Max(sellPrice*min, baseSellPrice);
+				// sellPrice = baseSellPrice;
+				if (config.baselineSellPriceMinCost)
+					sellPrice = Mathf.Max(sellPrice, baseSellPrice);
+				else
+					sellPrice = baseSellPrice;
 			}
 			if (config.sanityCheckSellPrice)
 			{

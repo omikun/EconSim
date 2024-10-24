@@ -326,7 +326,7 @@ public class AuctionHouse : MonoBehaviour {
 
 			if (ask.offerPrice > bid.offerPrice)
 				break;
-				
+
 			var clearingPrice = (ask.offerPrice + bid.offerPrice) / 2f;
 			var tradeQuantity = Mathf.Min(bid.remainingQuantity, ask.remainingQuantity);
 			Assert.IsTrue(tradeQuantity > 0);
@@ -380,7 +380,7 @@ public class AuctionHouse : MonoBehaviour {
 				continue;
 			}
 
-			var clearingPrice = (ask.offerPrice + bid.offerPrice)/ 2f;
+			var clearingPrice = ask.offerPrice;
 			var tradeQuantity = Mathf.Min(bid.remainingQuantity, ask.remainingQuantity);
 			Assert.IsTrue(tradeQuantity > 0);
 			Assert.IsTrue(clearingPrice > 0);

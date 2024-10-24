@@ -21,6 +21,7 @@ public class AgentConfig : MonoBehaviour{
 	[InfoBox("Avg bid/ask price; offer price random delta around mkt price")]
 	public bool baselineAuction = false; 
 	public bool baselineSellPrice = false; 
+	public bool baselineSellPriceMinCost = false; 
 	public bool baselineBuyPrice = false; 
 	[OnValueChanged(nameof(OnToggleSanityCheck))]
 	public bool sanityCheck = false; 

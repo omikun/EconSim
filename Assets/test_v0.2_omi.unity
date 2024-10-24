@@ -932,8 +932,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fcf52a7eecf2647fe978d330319f1f44, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  EnableDebug: 0
-  EnableLog: 1
+  EnableDebug: 1
+  EnableLog: 0
   info: {fileID: 1010474683}
   config: {fileID: 0}
   auctionTracker: {fileID: 0}
@@ -987,7 +987,7 @@ MonoBehaviour:
     auctionStats: {fileID: 0}
     taxed: 0
     gov: {fileID: 0}
-  autoNextRound: 1
+  autoNextRound: 0
   tickInterval: 0.001
   bidCom: Wood
   bidQuant: 0
@@ -1114,11 +1114,15 @@ MonoBehaviour:
   starvation: 1
   foodConsumption: 0
   foodConsumptionRate: 0.1
-  baselineAuction: 1
+  baselineAuction: 0
+  baselineSellPrice: 1
+  baselineSellPriceMinCost: 1
+  baselineBuyPrice: 1
   sanityCheck: 1
+  sanityCheckTradeVolume: 1
   sanityCheckSellQuant: 1
-  sanityCheckSellPrice: 0
   sanityCheckBuyQuant: 1
+  sanityCheckSellPrice: 0
   sanityCheckBuyPrice: 0
   useFoodConsumptionCurve: 1
   foodConsumptionCurve:
@@ -1145,7 +1149,7 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  profitMarkup: 1
+  profitMarkup: 1.05
   idleTaxRate: 0
   EnableSalesTax: 0
   SalesTaxRate: 0
