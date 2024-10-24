@@ -405,7 +405,7 @@ public class EconAgent : MonoBehaviour {
 
 			//maybe buy less if expensive?
 			float buyPrice = item.GetPrice();
-			if (config.baselineAuction)
+			if (config.baselineBuyPrice)
 			{
 				buyPrice = book[item.name].marketPrice;
 				buyPrice *= UnityEngine.Random.Range(.97f, 1.03f);
@@ -582,7 +582,7 @@ public class EconAgent : MonoBehaviour {
 			// + cost of food since last sell
 			var expense = Mathf.Max(0, foodExpense);
 			float sellPrice = inventory[commodityName].cost * config.profitMarkup + expense;
-			if (config.baselineAuction)
+			if (config.baselineSellPrice)
 			{
 				var baseSellPrice = book[commodityName].marketPrice;
 				var delta = .03f;

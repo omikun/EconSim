@@ -20,6 +20,8 @@ public class AgentConfig : MonoBehaviour{
 	public float foodConsumptionRate = 0.1f;
 	[InfoBox("Avg bid/ask price; offer price random delta around mkt price")]
 	public bool baselineAuction = false; 
+	public bool baselineSellPrice = false; 
+	public bool baselineBuyPrice = false; 
 	[OnValueChanged(nameof(OnToggleSanityCheck))]
 	public bool sanityCheck = false; 
 	public float sanityCheckTradeVolume = 1f;

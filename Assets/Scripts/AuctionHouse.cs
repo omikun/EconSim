@@ -326,6 +326,7 @@ public class AuctionHouse : MonoBehaviour {
 
 			if (ask.offerPrice > bid.offerPrice)
 				break;
+				
 			var clearingPrice = (ask.offerPrice + bid.offerPrice) / 2f;
 			var tradeQuantity = Mathf.Min(bid.remainingQuantity, ask.remainingQuantity);
 			Assert.IsTrue(tradeQuantity > 0);
@@ -358,8 +359,8 @@ public class AuctionHouse : MonoBehaviour {
 		bids.Shuffle();
 
 		asks.Sort((x, y) => x.offerPrice.CompareTo(y.offerPrice)); //inc
-		//bids.Sort((x, y) => x.offerPrice.CompareTo(y.offerPrice)); //inc
-		bids.Sort((x, y) => y.offerPrice.CompareTo(x.offerPrice)); //dec
+		bids.Sort((x, y) => x.offerPrice.CompareTo(y.offerPrice)); //inc
+		//bids.Sort((x, y) => y.offerPrice.CompareTo(x.offerPrice)); //dec
 
 		moneyExchangedThisRound = 0;
 		goodsExchangedThisRound = 0;
