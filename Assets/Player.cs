@@ -61,20 +61,20 @@ public class Player : MonoBehaviour
     }
     public void QueueOfferMinus(string com)
     {
-        selectedAgent.QueueOffer(com, -5f);
+        selectedAgent.UpdateTarget(com, -5f);
         Debug.Log("QueueOfferMinus! " + com);
         Tick(com);
     }
     public void QueueOfferPlus(string com)
     {
-        selectedAgent.QueueOffer(com, 5f);
+        selectedAgent.UpdateTarget(com, 5f);
         Debug.Log("QueueOfferPlus! " + com);
         Tick(com);
     }
     void Tick(string com)
     {
         var entry = selectedAgent.inventory[com];
-        var queuedOffer = entry.OfferQuantity;
+        var queuedOffer = entry.TargetQuantity;
         comControls[com].text.text = entry.Quantity.ToString("n0") + " (" + queuedOffer.ToString("n0") + ")";
     }
     // Update is called once per frame

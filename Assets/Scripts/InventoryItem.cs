@@ -39,8 +39,11 @@ public class InventoryItem {
 	public float cost = 1; //cost per unit
 	public float wobble = .02f;
 	public float Quantity { get; private set; }
-    public float OfferQuantity { get; private set; }
+    //gov use
+    public float TargetQuantity = 5f;// { get; private set; }
+    public float OfferQuantity;// { get; private set; }
     public float OfferPrice;// { get; private set; }
+    //end gov use
     public float quantityTradedThisRound = 0;
     public float costThisRound = 0;
 	public float maxQuantity;

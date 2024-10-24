@@ -30,7 +30,7 @@ public class Government : EconAgent {
             inputs.Add(name);
             AddToInventory(name, 0, maxstock, 1, 0);
         }
-		inventory["Food"].Increase(200);
+		inventory["Food"].Increase(5);
     }
     public override float Produce() {
         return 0;
@@ -59,33 +59,22 @@ public class Government : EconAgent {
     {
 		inventory[com].ChangePendingOffer(quant, price);
     }
-	public void QueueOffer(string com, float quant)
+	public void UpdateTarget(string com, float quant)
 	{
-		var offerPrice = book[com].marketPrice * 1.05f;
-		inventory[com].ChangePendingOffer(quant, offerPrice);
+		inventory[com].TargetQuantity += quant;
 	}
 	public override Offers Consume(AuctionBook book) 
 	{
         var bids = new Offers();
 
         //replenish depended commodities
-        foreach (var entry in inventory)
+        foreach (var (com,item) in inventory)
 		{
-			var item = entry.Value;
-			// if (item.bidQuantity <= 0)
-				// continue;
-			var minQuantity = 100f;
-
-			if (item.OfferQuantity > 0)
-			{
-				bids.Add(item.name, new Offer(item.name, item.OfferPrice, item.OfferQuantity, this));
-			// } else if (item.Quantity < minQuantity)
-			// auto refill to a certain level - maybe this is the player controllable variable
-			// {
-			// 	var offerPrice = book[item.name].marketPrice * 1.05f;
-			// 	var delta = minQuantity - item.Quantity;
-			// 	bids.Add(item.name, new Offer(item.name, offerPrice, delta, this));
-			}
+			if ((int)item.TargetQuantity <= (int)item.Quantity)
+				continue;
+			var offerQuantity = item.TargetQuantity - item.Quantity;
+			var offerPrice = book[com].marketPrice * 1.05f;
+			bids.Add(com, new Offer(com, offerPrice, offerQuantity, this));
 		}
         return bids;
 	}
@@ -93,14 +82,17 @@ public class Government : EconAgent {
 	{
 		var asks = new Offers();
 
-        foreach (var entry in inventory)
+        foreach (var (com,item) in inventory)
 		{
-			var item = entry.Value;
+			if ((int)item.TargetQuantity >= (int)item.Quantity)
+				continue;
 
+			var offerQuantity = item.TargetQuantity - item.Quantity;
+			var offerPrice = book[com].marketPrice * .95f;
 			if (item.OfferQuantity < 0)
 			{
-				asks.Add(item.name, new Offer(item.name, item.OfferPrice, -item.OfferQuantity, this));
-				Debug.Log(auctionStats.round + " gov asked " + item.OfferQuantity.ToString("n2") + " " + item.name);
+				asks.Add(com, new Offer(com, offerPrice, offerQuantity, this));
+				Debug.Log(auctionStats.round + " gov asked " + offerQuantity.ToString("n2") + " " + item.name);
 			}
 		}
 		return asks;
