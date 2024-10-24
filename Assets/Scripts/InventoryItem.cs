@@ -60,6 +60,8 @@ public class InventoryItem {
     public float bidQuantity = 0;
     public float askPrice = 0;
     public float askQuantity = 0;
+    public int askOrder = 0;
+    public int bidOrder = 0;
 
     public float Availability()
     {
@@ -106,10 +108,22 @@ public class InventoryItem {
         {
             ret += header + name + ", meanPrice, " + meanPriceThisRound + ",n/a\n";
         }
-        ret += header + name + ", bidPrice, " + bidPrice + ",n/a\n";
-        ret += header + name + ", bidQuantity, " + bidQuantity + ",n/a\n";
-        ret += header + name + ", askPrice, " + askPrice + ",n/a\n";
-        ret += header + name + ", askQuantity, " + askQuantity + ",n/a\n";
+        if (bidQuantity > 0)
+        {
+            ret += header + name + ", bidQuantity, " + bidQuantity + ",n/a\n";
+        }
+        if (bidPrice > 0)
+        {
+            ret += header + name + ", bidPrice, " + bidPrice + ", " + bidOrder +"\n";
+        }
+        if (askPrice > 0)
+        {
+            ret += header + name + ", askPrice, " + askPrice + ", " + askOrder +"\n";
+        }
+        if (askQuantity > 0)
+        {
+            ret += header + name + ", askQuantity, " + askQuantity + ",n/a\n";
+        }
 
         bidPrice = 0;
         askPrice = 0;

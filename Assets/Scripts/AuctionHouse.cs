@@ -313,6 +313,18 @@ public class AuctionHouse : MonoBehaviour {
 		asks.Sort((x, y) => x.offerPrice.CompareTo(y.offerPrice)); //inc
 		bids.Sort((x, y) => y.offerPrice.CompareTo(x.offerPrice)); //dec
 
+		int idx = 0;
+		foreach (var ask in asks)
+		{
+			ask.agent.inventory[rsc.name].askOrder = idx;
+			idx++;
+		}
+		idx = 0;
+		foreach (var bid in bids)
+		{
+			bid.agent.inventory[rsc.name].bidOrder = idx;
+			idx++;
+		}
 		moneyExchangedThisRound = 0;
 		goodsExchangedThisRound = 0;
 
