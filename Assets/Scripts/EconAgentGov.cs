@@ -113,10 +113,14 @@ public class Government : EconAgent {
 		//should not be negative in case agent has more than 2 already
 		const float refill = 1f;
 		var quant = Mathf.Min(refill, inventory["Food"].Quantity);
-		quant = Mathf.Min(quant, refill - agent.inventory["Food"].Quantity);
+		var agentFood = agent.inventory["Food"].Quantity;
+		quant = Mathf.Min(quant, refill - agentFood);
 		quant = Mathf.Max(quant, 0f);
-		inventory["Food"].Decrease(quant);
-		agent.inventory["Food"].Increase(quant);
-		Debug.Log(auctionStats.round + " Fed agent" + agent.name + " " + quant + " food");
+		Debug.Log(auctionStats.round + " Fed agent" + agent.name + " " + quant.ToString("n1") + " food, prev had " + agentFood.ToString("n1"));
+		if (quant > 0)
+		{
+			inventory["Food"].Decrease(quant);
+			agent.inventory["Food"].Increase(quant);
+		}
 	}
 }

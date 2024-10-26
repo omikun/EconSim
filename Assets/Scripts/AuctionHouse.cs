@@ -544,6 +544,7 @@ public class AuctionHouse : MonoBehaviour {
 	{
 		auctionTracker.ClearStats();
 		var book = auctionTracker.book;
+		var approval = 0f;
 		
         foreach (var agent in agents)
         {
@@ -558,16 +559,10 @@ public class AuctionHouse : MonoBehaviour {
 
 			book[profession].numAgents++;
 
-			var h = agent.EvaluateHappiness();
-			auctionTracker.approval += h;
-			auctionTracker.happiness += h;
-			book[profession].happiness += h;
+			approval += agent.EvaluateHappiness();
 
 			if (agent.cash < 0.0f)
 				book[profession].numBankrupted++;
-
-			if (agent.inventory["Food"].Quantity < 0.1f)
-				book[profession].numStarving++;
 
 			if (agent.CalcMinProduction() < 1)
 				book[profession].numNoInput++;
@@ -576,10 +571,14 @@ public class AuctionHouse : MonoBehaviour {
 				book[profession].numNegProfit++;
 
 			book[profession].profits[^1] += agent.Profit;
+			
 			var amount = agent.Tick(gov, ref changedProfession, ref bankrupted, ref starving);
 
 			if (starving)
+			{
 				book[profession].starving[^1]++;
+				book[profession].numStarving++;
+			}
 			if (bankrupted)
 				book[profession].bankrupted[^1]++;
 			if (changedProfession)
@@ -589,6 +588,7 @@ public class AuctionHouse : MonoBehaviour {
 
 			agent.ClearRoundStats();
 		}
+
 		foreach (var rsc in book.Values)
 		{
 			rsc.happiness /= rsc.numAgents;
@@ -602,8 +602,9 @@ public class AuctionHouse : MonoBehaviour {
 			rsc.numChangedProfession = (int)rsc.changedProfession[^1];
 			auctionTracker.numChangedProfession += rsc.numChangedProfession;
 		}
-		auctionTracker.happiness /= agents.Count;
-		auctionTracker.approval /= agents.Count;
+
+		auctionTracker.happiness = approval / agents.Count;
+		auctionTracker.approval = approval / agents.Count;
 		auctionTracker.gini = GetGini(GetWealthOfAgents());
 	}
 	public List<float> GetWealthOfAgents()

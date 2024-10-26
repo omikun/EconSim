@@ -152,12 +152,9 @@ public class EconAgent : MonoBehaviour {
 
 			PrintInventory("before reinit");
 			
-			if (gov != null)
-			{
-				gov.Welfare(this);
-			} else {
-				inventory["Food"].Increase(2); //spawn food only at start of game
-			}
+			Assert.IsTrue(gov != null);
+			gov.Welfare(this);
+
 			foreach (var dep in output.recipe)
 			{
 				var com = book[dep.Key];
@@ -271,18 +268,45 @@ public class EconAgent : MonoBehaviour {
 	}
 	public virtual float EvaluateHappiness()
 	{
-		//if hungry, less happy
-		var happy = 1f;
-		happy *= foodToHappy.Evaluate(inventory["Food"].Availability());
+		//if has 10 rounds of food, be happy
+		//if has enough money to buy 10 rounds of food, be happy
+		//if has enough output to sell enough to buy 10 rounds of food, be happy
+		//if has enough intputs to make enough outputs to sell enough to buy 10 rounds of food, be happy
+		var numFood = inventory["Food"].Quantity;
+		float numFoodHappy = 10f;
+		if (numFood >= numFoodHappy) //how to translate food to rounds of food?
+		{
+			return 1f;
+		} 
+
+		//TODO assumes enough supply; how to change happiness if demand is greater than supply?
+		var foodPrice = book["Food"].marketPrice;
+		var affordNumFood = cash / foodPrice;
+		numFood += affordNumFood;
+		if (numFood >= numFoodHappy)
+		{
+			return 1f;
+		}
+
+		var foodEquivalent = book[Profession].marketPrice / foodPrice;
+		var outputFoodEquivalent = inventory[Profession].Quantity * foodEquivalent;
+		numFood += outputFoodEquivalent;
+		if (numFood >= numFoodHappy)
+		{
+			return 1f;
+		}
+
+		var inputFoodEquivalent = CalculateNumProduceable(book[Profession], inventory[Profession]) * foodEquivalent;
+		numFood += inputFoodEquivalent;
+		if (numFood >= numFoodHappy)
+		{
+			return 1f;
+		}
+		var happy = foodToHappy.Evaluate(numFood / numFoodHappy);
+		Debug.Log(name + " happiness " + happy.ToString("n2"));
 		//var profitRate = profits.TakeLast(config.historySize).Average();
 		//happy *= cashToHappy.Evaluate(profitRate/config.historySize);
 		return happy;
-		//if close to bankruptcy, maybe not happy
-		//if both, really angry
-		//if hungry for n days, have chance of dying
-		//if really happy, more likely to reproduce
-		// do this at the beginning? DOTween.Init(true, true, LogBehaviour.Verbose).SetCapacity()
-
 	}
 
 	float ChangeProfession(Government gov, bool resetCash = true)
@@ -408,7 +432,10 @@ public class EconAgent : MonoBehaviour {
 			if (config.baselineBuyPrice)
 			{
 				buyPrice = book[item.name].marketPrice;
-				buyPrice *= UnityEngine.Random.Range(.97f, 1.03f);
+				var delta = config.baselineBuyPriceDelta;
+				var min = 1f - delta;
+				var max = 1f + delta;
+				buyPrice *= UnityEngine.Random.Range(min, max);
 				buyPrice = Mathf.Max(buyPrice, .01f);
 			}
 			if (config.sanityCheckBuyPrice)
@@ -506,7 +533,7 @@ public class EconAgent : MonoBehaviour {
 	}
 	//build as many as one can 
 	//TODO what if don't want to produce as much as one can? what if costs are high rn?
-	protected float CalculateNumProduced(ResourceController rsc, InventoryItem item)
+	protected float CalculateNumProduceable(ResourceController rsc, InventoryItem item)
 	{
 		float numProduced = item.Deficit(); //can't produce more than max stock
 		//find max that can be made w/ available stock
@@ -519,6 +546,11 @@ public class EconAgent : MonoBehaviour {
 				+ "can produce " + numProduced 
 				+ " w/" + numAvail + "/" + numNeeded + " " + dep.Key);
 		}
+		return numProduced;
+	}
+	protected float CalculateNumProduced(ResourceController rsc, InventoryItem item)
+	{
+		var numProduced = CalculateNumProduceable(rsc, item);
 		//can only build fixed rate at a time
 		numProduced = Mathf.Clamp(numProduced, 0, item.GetProductionRate());
 		numProduced = Mathf.Floor(numProduced);
@@ -585,7 +617,7 @@ public class EconAgent : MonoBehaviour {
 			if (config.baselineSellPrice)
 			{
 				var baseSellPrice = book[commodityName].marketPrice;
-				var delta = .03f;
+				var delta = config.baselineSellPriceDelta;
 				var min = 1f - delta;
 				var max = 1f + delta;
 				baseSellPrice *= UnityEngine.Random.Range(min, max);

@@ -984,7 +984,7 @@ MonoBehaviour:
     auctionStats: {fileID: 0}
     taxed: 0
     gov: {fileID: 0}
-  autoNextRound: 0
+  autoNextRound: 1
   tickInterval: 0.001
   bidCom: Wood
   bidQuant: 0
@@ -1105,16 +1105,19 @@ MonoBehaviour:
   seed: 42
   initCash: 40
   randomInitStock: 0
-  initStock: 300
+  initStock: 30
   maxStock: 1000
   clearInventory: 0
   starvation: 1
+  starvationThreshold: 0.1
   foodConsumption: 0
   foodConsumptionRate: 0.1
   baselineAuction: 1
   baselineSellPrice: 1
-  baselineSellPriceMinCost: 0
+  baselineSellPriceMinCost: 1
   baselineBuyPrice: 1
+  baselineSellPriceDelta: 0.05
+  baselineBuyPriceDelta: 0.05
   sanityCheck: 1
   sanityCheckTradeVolume: 1
   sanityCheckSellQuant: 1
@@ -1146,7 +1149,7 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  profitMarkup: 1.05
+  profitMarkup: 1.01
   idleTaxRate: 0
   EnableSalesTax: 0
   SalesTaxRate: 0
