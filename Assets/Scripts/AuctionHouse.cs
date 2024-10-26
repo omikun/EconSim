@@ -441,7 +441,10 @@ public class AuctionHouse : MonoBehaviour {
 		Assert.IsTrue(averagePrice >= 0f);
 		rsc.avgClearingPrice.Add(averagePrice);
 		rsc.trades.Add(goodsExchangedThisRound);
-		rsc.Update(averagePrice, agentDemandRatio);
+		var marketPrice = averagePrice;
+		if (goodsExchangedThisRound == 0)
+			marketPrice = rsc.marketPrice;
+		rsc.Update(marketPrice, agentDemandRatio);
 
 		//update price beliefs if still a thing
 		asks.Clear();

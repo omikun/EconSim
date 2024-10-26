@@ -40,7 +40,7 @@ public class InventoryItem {
 	public float wobble = .02f;
 	public float Quantity { get; private set; }
     //gov use
-    public float TargetQuantity = 5f;// { get; private set; }
+    public float TargetQuantity = 0f;// { get; private set; }
     public float OfferQuantity;// { get; private set; }
     public float OfferPrice;// { get; private set; }
     //end gov use

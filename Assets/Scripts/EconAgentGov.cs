@@ -9,6 +9,7 @@ using Sirenix.Reflection.Editor;
 using DG.Tweening;
 
 public class Government : EconAgent {
+	public float FoodTarget = 50;
 	public override void Init(AgentConfig cfg, AuctionStats at, float _initCash, List<string> b, float _initStock, float maxstock) {
 		config = cfg;
 		uid = uid_idx++;
@@ -30,7 +31,9 @@ public class Government : EconAgent {
             inputs.Add(name);
             AddToInventory(name, 0, maxstock, 1, 0);
         }
-		inventory["Food"].Increase(5);
+		
+		inventory["Food"].Increase(FoodTarget);
+		inventory["Food"].TargetQuantity = FoodTarget;
     }
     public override float Produce() {
         return 0;
