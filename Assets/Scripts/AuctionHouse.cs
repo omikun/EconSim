@@ -185,6 +185,7 @@ public class AuctionHouse : MonoBehaviour {
 	void InitGovernment(Government agent)
 	{
         List<string> buildables = new ();
+        buildables.Add("Government");
 		float initStock = 10f;
 		float initCash = 1000f;
 
@@ -269,9 +270,13 @@ public class AuctionHouse : MonoBehaviour {
 		}
 
 		PrintAuctionStats();
-		logAgentsStats();
 
 		progressivePolicy.Tax(book, agents);
+		foreach (var agent in agents) //including gov
+		{
+			agent.CalculateProfit();
+		}
+		logAgentsStats();
 		TickAgent();
 		QuitIf();
 	}
@@ -461,13 +466,16 @@ public class AuctionHouse : MonoBehaviour {
 		var boughtQuantity = bid.agent.Buy(rsc.name, tradeQuantity, clearingPrice);
 		Assert.IsTrue(boughtQuantity == tradeQuantity);
 		ask.agent.Sell(rsc.name, boughtQuantity, clearingPrice);
+		progressivePolicy.AddSalesTax(tradeQuantity, clearingPrice, bid.agent);
 
-		Debug.Log(auctionTracker.round + ": " + ask.agent.name 
-			+ " ask " + ask.remainingQuantity.ToString("n2") + "x" + ask.offerPrice.ToString("c2")
-			+ " | " + bid.agent.name 
-			+ " bid: " + bid.remainingQuantity.ToString("n2") + "x" + bid.offerPrice.ToString("c2")
-			+ " -- " + rsc.name + " offer quantity: " + tradeQuantity.ToString("n2") 
-			+ " bought quantity: " + boughtQuantity.ToString("n2"));
+		Debug.Log("Trade(), " + auctionTracker.round + ", " + ask.agent.name + ", " + bid.agent.name + ", " + 
+			rsc.name + ", " + boughtQuantity.ToString("n2") + ", " + clearingPrice.ToString("n2") + ", " + ask.offerPrice.ToString("n2") + ", " + bid.offerPrice.ToString("n2"));
+		// Debug.Log(auctionTracker.round + ": " + ask.agent.name 
+		// 	+ " ask " + ask.remainingQuantity.ToString("n2") + "x" + ask.offerPrice.ToString("c2")
+		// 	+ " | " + bid.agent.name 
+		// 	+ " bid: " + bid.remainingQuantity.ToString("n2") + "x" + bid.offerPrice.ToString("c2")
+		// 	+ " -- " + rsc.name + " offer quantity: " + tradeQuantity.ToString("n2") 
+		// 	+ " bought quantity: " + boughtQuantity.ToString("n2"));
 		return boughtQuantity;
 	}
 
@@ -555,7 +563,6 @@ public class AuctionHouse : MonoBehaviour {
 			bool starving = false;
 			string profession = agent.Profession;
 
-			agent.CalculateProfit();
 
 			book[profession].numAgents++;
 

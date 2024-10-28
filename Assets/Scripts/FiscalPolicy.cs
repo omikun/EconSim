@@ -157,12 +157,13 @@ Reduction of social welfare spending: Cutting back on social programs, which all
             + agent.Cash.ToString("c2") + " produced " + numProduced
             + " goods and idle taxed " + idleTax.ToString("c2"));
     }
-    public float AddSalesTax(float quant, float price)
+    public float AddSalesTax(float quant, float price, EconAgent buyer)
     {
         if (!config.EnableSalesTax)
             return 0;
         var salesTax = config.SalesTaxRate * quant * price;
-        Assert.IsTrue(salesTax > 0);
+        float taxesPaid = buyer.Pay(salesTax);
+        Assert.IsTrue(salesTax == taxesPaid);
         gov.Pay(-salesTax);
         taxed += salesTax;
         return salesTax;

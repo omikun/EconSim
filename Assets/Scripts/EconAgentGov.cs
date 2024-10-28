@@ -44,12 +44,13 @@ public class Government : EconAgent {
     }
 	public override String Stats(String header)
 	{
-		header += uid.ToString() + ", " + "none" + ", "; //profession
+		header += uid.ToString() + ", " + "government" + ", "; //profession
 		foreach (var stock in inventory)
 		{
 			log += stock.Value.Stats(header);
 		}
 		log += header + "cash, stock, " + Cash + ", n/a\n";
+		log += header + "profit, stock, " + Profit + ", n/a\n";
 		foreach (var (good, quantity) in producedThisRound)
 		{
 			log += header + good + ", produced, " + quantity + ", n/a\n";
