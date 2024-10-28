@@ -241,7 +241,7 @@ public class AuctionHouse : MonoBehaviour {
 	void Tick()
 	{
 		//check total cash held by agents and government
-		var totalCash = agents.Sum(x => x.cash);
+		var totalCash = agents.Sum(x => x.Cash);
 		Debug.Log("Total cash: " + totalCash);
 		Debug.Log("auction house ticking");
 
@@ -269,7 +269,7 @@ public class AuctionHouse : MonoBehaviour {
 		}
 
 		PrintAuctionStats();
-		AgentsStats();
+		logAgentsStats();
 
 		progressivePolicy.Tax(book, agents);
 		TickAgent();
@@ -280,7 +280,7 @@ public class AuctionHouse : MonoBehaviour {
 		if (!EnableLog)
 			return;
 		var header = auctionTracker.round + ", auction, none, none, ";
-		var msg = header + "irs, " + gov.cash + ", n/a\n";
+		var msg = header + "irs, " + gov.Cash + ", n/a\n";
 		msg += header + "taxed, " + taxed + ", n/a\n";
 		msg += auctionTracker.GetLog();
 		msg += info.GetLog(header);
@@ -508,7 +508,7 @@ public class AuctionHouse : MonoBehaviour {
 		sw.Close();
 	}
 
-	protected void AgentsStats() {
+	protected void logAgentsStats() {
 		if (!EnableLog)
 			return;
 		string header = auctionTracker.round + ", ";
@@ -561,7 +561,7 @@ public class AuctionHouse : MonoBehaviour {
 
 			approval += agent.EvaluateHappiness();
 
-			if (agent.cash < 0.0f)
+			if (agent.Cash < 0.0f)
 				book[profession].numBankrupted++;
 
 			if (agent.CalcMinProduction() < 1)
@@ -589,6 +589,7 @@ public class AuctionHouse : MonoBehaviour {
 			agent.ClearRoundStats();
 		}
 
+		float inflation = 0;
 		foreach (var rsc in book.Values)
 		{
 			rsc.happiness /= rsc.numAgents;
@@ -601,15 +602,20 @@ public class AuctionHouse : MonoBehaviour {
 			auctionTracker.numNegProfit += rsc.numNegProfit;
 			rsc.numChangedProfession = (int)rsc.changedProfession[^1];
 			auctionTracker.numChangedProfession += rsc.numChangedProfession;
+
+			var prevPrice = rsc.avgClearingPrice[^2];
+			var currPrice = rsc.avgClearingPrice[^1];
+			inflation += (currPrice - prevPrice) / prevPrice;
 		}
 
+		auctionTracker.inflation = inflation / (float)book.Count;
 		auctionTracker.happiness = approval / agents.Count;
 		auctionTracker.approval = approval / agents.Count;
 		auctionTracker.gini = GetGini(GetWealthOfAgents());
 	}
 	public List<float> GetWealthOfAgents()
 	{
-		return agents.Where(x => x is not Government).Select(x => x.cash).ToList();
+		return agents.Where(x => x is not Government).Select(x => x.Cash).ToList();
 	}
     float GetGini(List<float> values)
     {

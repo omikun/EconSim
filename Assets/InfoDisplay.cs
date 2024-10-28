@@ -28,6 +28,7 @@ public class InfoDisplay : MonoBehaviour
         {
             return;
         }
+        UpdateValue<float>(ref inflation, district.inflation);
         UpdateValue<float>(ref happiness, district.happiness);
         UpdateValue<int>(ref numLowStock, district.numNoInput);
         UpdateValue<int>(ref numNegProfit, district.numNegProfit);
@@ -36,7 +37,7 @@ public class InfoDisplay : MonoBehaviour
 
         UpdateValue<int>(ref numStarving, district.numStarving);
         UpdateValue<int>(ref numBankrupt, district.numBankrupted);
-        UpdateValue<float>(ref govDebt, auctionHouse.gov.cash);
+        UpdateValue<float>(ref govDebt, auctionHouse.gov.Cash);
         //Update
         lastRound = district.round;
         UpdateText();
@@ -47,6 +48,7 @@ public class InfoDisplay : MonoBehaviour
         old = newNum;
     }
 
+    public float inflation = 0;
     public float happiness = 0;
     public int numStarving = 0;
     int numBankrupt = 0;
@@ -58,6 +60,7 @@ public class InfoDisplay : MonoBehaviour
     public string GetLog(string header)
     {
 		string msg = header + "approval, " + happiness.ToString("n2") + ", n/a\n";
+		msg += header + "inflation, " + inflation.ToString("n2") + ", n/a\n";
 		msg += header + "starving, " + numStarving.ToString("n0") + ", n/a\n";
 		msg += header + "unproductive, " + numLowStock.ToString("F0") + ", n/a\n";
 		msg += header + "-profit, " + numNegProfit.ToString("n0") + ", n/a\n";
@@ -72,6 +75,7 @@ public class InfoDisplay : MonoBehaviour
         {
             updateInfo = false;
             text.text = "Approval: " + happiness.ToString("P2");
+            text.text += "\nInflation: " + inflation.ToString("P2");
             text.text += "\nStarving: " + numStarving.ToString("n0");
             text.text += "\nUnproductive: " + numLowStock.ToString("n0");
             text.text += "\n-Profit: " + numNegProfit.ToString("n0");

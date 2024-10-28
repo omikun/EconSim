@@ -13,7 +13,7 @@ public class EconAgent : MonoBehaviour {
 	protected AgentConfig config;
 	public static int uid_idx = 0;
 	protected int uid;
-	public float cash { get; protected set; }
+	public float Cash { get; protected set; }
 	protected float prevCash;
 	protected float foodExpense = 0;
 	protected float initCash = 100f;
@@ -55,7 +55,7 @@ public class EconAgent : MonoBehaviour {
 		{
 			log += stock.Value.Stats(header);
 		}
-		log += header + "cash, stock, " + cash + ", n/a\n";
+		log += header + "cash, stock, " + Cash + ", n/a\n";
 		log += header + "profit, stock, " + Profit + ", n/a\n";
 		log += header + "taxes, idle, " + taxesPaidThisRound + ", n/a\n";
 		foreach (var (good, quantity) in producedThisRound)
@@ -80,17 +80,17 @@ public class EconAgent : MonoBehaviour {
 	}
 	public float PayWealthTax(float amountExempt, float taxRate)
 	{
-		var taxableAmount = cash - amountExempt;
+		var taxableAmount = Cash - amountExempt;
 		if (taxableAmount <= 0)
 			return 0f;
 		var tax = taxableAmount * taxRate;
-		cash -= tax;
+		Cash -= tax;
 		taxesPaidThisRound = tax;
 		return tax;
 	}
 	public void Pay(float amount)
 	{
-		cash -= amount;
+		Cash -= amount;
 	}
 	public virtual void Init(AgentConfig cfg, AuctionStats at, float _initCash, List<string> b, float _initStock, float maxstock) {
 		config = cfg;
@@ -104,8 +104,8 @@ public class EconAgent : MonoBehaviour {
 		//list of commodities self can produce
 		//get initial stockpiles
 		outputNames = b;
-		cash = initCash;
-		prevCash = cash;
+		Cash = initCash;
+		prevCash = Cash;
 		inputs.Clear();
 		foreach (var buildable in outputNames)
 		{
@@ -135,9 +135,9 @@ public class EconAgent : MonoBehaviour {
 		outputNames = buildables;
 		if (initCash != -1f)
 		{
-			cash = initCash;
+			Cash = initCash;
 		}
-		prevCash = cash;
+		prevCash = Cash;
 		foodExpense = 0;
 		inputs.Clear();
 		foreach (var outputName in outputNames)
@@ -182,15 +182,15 @@ public class EconAgent : MonoBehaviour {
 		if (TaxableProfit <= 0)
 			return 0;
 		var taxAmt = TaxableProfit * taxRate;
-		cash -= taxAmt;
+		Cash -= taxAmt;
 		return TaxableProfit - taxAmt;
 	}
 	//want to control when profit gets calculated in round
 	public void CalculateProfit()
 	{
 		var prevProfit = Profit;
-		Profit = cash - prevCash;
-		prevCash = cash;
+		Profit = Cash - prevCash;
+		prevCash = Cash;
 		if (prevProfit < 0)
 		{
 			Profit += prevProfit;
@@ -199,7 +199,7 @@ public class EconAgent : MonoBehaviour {
 	const float bankruptcyThreshold = 0;
 	public bool IsBankrupt()
 	{
-		return cash < bankruptcyThreshold;
+		return Cash < bankruptcyThreshold;
 	}
     public virtual float Tick(Government gov, ref bool changedProfession, ref bool bankrupted, ref bool starving)
 	{
@@ -236,7 +236,7 @@ public class EconAgent : MonoBehaviour {
 		bankrupted = IsBankrupt();
         if (config.changeProfession && (changedProfession || changeProfessionAfterNRounds))
 		{
-			Debug.Log(auctionStats.round + " " + name + " producing " + outputNames[0] + " is bankrupt: " + cash.ToString("c2") 
+			Debug.Log(auctionStats.round + " " + name + " producing " + outputNames[0] + " is bankrupt: " + Cash.ToString("c2") 
 				+ " or starving where food=" + inventory["Food"].Quantity
 				+ " or " + config.changeProfessionAfterNDays + " days no sell");
 			bool resetCash = changedProfession;
@@ -281,7 +281,7 @@ public class EconAgent : MonoBehaviour {
 
 		//TODO assumes enough supply; how to change happiness if demand is greater than supply?
 		var foodPrice = book["Food"].marketPrice;
-		var affordNumFood = cash / foodPrice;
+		var affordNumFood = Cash / foodPrice;
 		numFood += affordNumFood;
 		if (numFood >= numFoodHappy)
 		{
@@ -332,7 +332,7 @@ public class EconAgent : MonoBehaviour {
 		{
 			inventory.Clear();
 		}
-		var existingCash = cash;
+		var existingCash = Cash;
 		var rc = (resetCash) ? initCash : 0;
 		Reinit(rc, b, gov);
 		//return amount of money taken from gov
@@ -342,7 +342,7 @@ public class EconAgent : MonoBehaviour {
 	/*********** Trading ************/
 	public void modify_cash(float quant)
 	{
-		cash += quant;
+		Cash += quant;
 	}
 	public void ClearRoundStats()
 	{
@@ -363,10 +363,10 @@ public class EconAgent : MonoBehaviour {
 		}
 		Assert.IsFalse(outputNames.Contains(commodity)); //agents shouldn't buy what they produce
 		var boughtQuantity = inventory[commodity].Buy(quantity, price);
-		Debug.Log(name + " has " + cash.ToString("c2") 
+		Debug.Log(name + " has " + Cash.ToString("c2") 
 			+ " want to buy " + quantity.ToString("n2") + " " + commodity 
 			+ " for " + price.ToString("c2") + " bought " + boughtQuantity.ToString("n2"));
-		cash -= price * boughtQuantity;
+		Cash -= price * boughtQuantity;
 		boughtThisRound = true;
 		return boughtQuantity;
 	}
@@ -384,7 +384,7 @@ public class EconAgent : MonoBehaviour {
 		// 	+ " for " + price.ToString("c2"));
 		//reset food consumption count?
 		soldThisRound = true;
-		 cash += price * quantity;
+		 Cash += price * quantity;
 	}
 	public void UpdateSellerPriceBelief(in Offer trade, in ResourceController rsc) 
 	{
@@ -411,7 +411,7 @@ public class EconAgent : MonoBehaviour {
 	public virtual Offers Consume(AuctionBook book) {
         var bids = new Offers();
 
-		if (cash <= 0)
+		if (Cash <= 0)
 			return bids;
 
 		//replenish depended commodities
@@ -457,7 +457,7 @@ public class EconAgent : MonoBehaviour {
 			Debug.Log(auctionStats.round + " " + name + " bidding " + buyPrice.ToString("c2") + " for " + numBids.ToString("n2") + " " + item.name);
 			if (config.onlyBuyWhatsAffordable)	//TODO this only accounts for 1 com, what about others?
 				//buyPrice = Mathf.Min(cash / numBids, buyPrice);
-				numBids = (float)(int)Mathf.Min(cash/buyPrice, numBids);
+				numBids = (float)(int)Mathf.Min(Cash/buyPrice, numBids);
 			Assert.IsTrue(buyPrice > 0);
 			Assert.IsTrue(numBids > 0);
 
@@ -519,7 +519,7 @@ public class EconAgent : MonoBehaviour {
 			stock.Produced(numProduced * multiplier, numProduced * GetCostOf(com)); 
 
 			Debug.Log(auctionStats.round + " " + name 
-				+ " has " + cash.ToString("c2") 
+				+ " has " + Cash.ToString("c2") 
 				+ " made " + numProduced.ToString("n2") + " " + outputName 
 				+ " total: " + stock.Quantity 
 				+ " cost: " + stock.cost.ToString("c2") 

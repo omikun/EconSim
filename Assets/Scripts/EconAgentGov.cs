@@ -22,8 +22,8 @@ public class Government : EconAgent {
 		//list of commodities self can produce
 		//get initial stockpiles
 		outputNames = b;
-		cash = initCash;
-		prevCash = cash;
+		Cash = initCash;
+		prevCash = Cash;
 		inputs.Clear();
         foreach(var good in book)
         {
@@ -49,7 +49,7 @@ public class Government : EconAgent {
 		{
 			log += stock.Value.Stats(header);
 		}
-		log += header + "cash, stock, " + cash + ", n/a\n";
+		log += header + "cash, stock, " + Cash + ", n/a\n";
 		foreach (var (good, quantity) in producedThisRound)
 		{
 			log += header + good + ", produced, " + quantity + ", n/a\n";

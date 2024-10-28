@@ -141,7 +141,7 @@ Reduction of social welfare spending: Cutting back on social programs, which all
         taxed += wealthTax;
         //Utilities.TransferQuantity(idleTax, agent, irs);
         Debug.Log(auctionStats.round + " " + agent.name + " has "
-            + agent.cash.ToString("c2") + "wealth taxed " + wealthTax.ToString("c2"));
+            + agent.Cash.ToString("c2") + "wealth taxed " + wealthTax.ToString("c2"));
     }
     void applyIdleWealthTax(AuctionBook book, EconAgent agent)
     {
@@ -154,7 +154,7 @@ Reduction of social welfare spending: Cutting back on social programs, which all
         taxed += idleTax;
         //Utilities.TransferQuantity(idleTax, agent, irs);
         Debug.Log(auctionStats.round + " " + agent.name + " has "
-            + agent.cash.ToString("c2") + " produced " + numProduced
+            + agent.Cash.ToString("c2") + " produced " + numProduced
             + " goods and idle taxed " + idleTax.ToString("c2"));
     }
     public float AddSalesTax(float quant, float price)
@@ -195,7 +195,7 @@ Reduction of social welfare spending: Cutting back on social programs, which all
         gov.Pay(-tax);
         taxed += tax;
         Debug.Log(auctionStats.round + " " + agent.name + " has "
-            + agent.cash.ToString("c2") + " income " + income.ToString("c2")
+            + agent.Cash.ToString("c2") + " income " + income.ToString("c2")
             + " taxed " + tax.ToString("c2") + " at rate of " + finalTaxRate.ToString("P2"));
     }
 

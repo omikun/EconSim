@@ -20,6 +20,7 @@ public class AuctionStats : MonoBehaviour
 
 	public AuctionBook book { get; private set; }
 	public int round { get; private set; }
+	public float inflation;
 	public float happiness;
 	public float approval;
 	public int numBankrupted;
