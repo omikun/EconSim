@@ -183,17 +183,18 @@ public class EconAgent : MonoBehaviour {
 			return 0;
 		var taxAmt = TaxableProfit * taxRate;
 		Cash -= taxAmt;
-		return TaxableProfit - taxAmt;
+		return taxAmt;
 	}
 	//want to control when profit gets calculated in round
 	public void CalculateProfit()
 	{
 		var prevProfit = Profit;
+		var prevTaxableProfit = TaxableProfit;
 		Profit = Cash - prevCash;
 		prevCash = Cash;
-		if (prevProfit < 0)
+		if (prevTaxableProfit < 0)
 		{
-			Profit += prevProfit;
+			TaxableProfit = Profit + prevProfit;
 		}
 	}
 	const float bankruptcyThreshold = 0;
@@ -570,6 +571,7 @@ public class EconAgent : MonoBehaviour {
 		{
 			var stock = inventory[dep.Key].Quantity;
 			var numUsed = dep.Value * numProduced;
+			Debug.Log(auctionStats.round + " " + name + " has " + stock + " used " + numUsed);
 			Assert.IsTrue(stock >= numUsed);
 			inventory[dep.Key].Decrease(numUsed);
 			msg += dep.Key + ": " + inventory[dep.Key].meanCost.ToString("c2");

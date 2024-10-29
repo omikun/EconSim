@@ -18,7 +18,14 @@ public class Control
 {
     [Required]
     public GameObject go;
+    public GameObject tax;
+    public GameObject subsidy;
+    [HideInInspector]
     public TextMeshProUGUI text;
+    [HideInInspector]
+    public TextMeshProUGUI taxText;
+    [HideInInspector]
+    public TextMeshProUGUI subsidyText;
 }
 public class Player : MonoBehaviour
 {
@@ -29,6 +36,9 @@ public class Player : MonoBehaviour
     [ShowInInspector, DictionaryDrawerSettings(DisplayMode = DictionaryDisplayOptions.OneLine, KeyLabel = "Comm", ValueLabel = "Control")]
     [SerializedDictionary("Comm", "Control")]
     public SerializedDictionary<string, Control> comControls = new();
+    [ShowInInspector, DictionaryDrawerSettings(DisplayMode = DictionaryDisplayOptions.OneLine, KeyLabel = "Comm", ValueLabel = "Tax")]
+    [SerializedDictionary("Comm", "Tax")]
+    public SerializedDictionary<string, Control> taxControls = new();
     // Start is called before the first frame update
     void Start()
     {
@@ -50,32 +60,53 @@ public class Player : MonoBehaviour
         //get prev, inject QueueOfferMinus into it
         var onClick = control.go.transform.Find("Prev").GetComponent<ButtonManager>().onClick;
         onClick.RemoveAllListeners();
-        onClick.AddListener(delegate{QueueOfferMinus(com);});
+        onClick.AddListener(delegate{QueueOffer(com, -5f);});
 
         onClick = control.go.transform.Find("Next").GetComponent<ButtonManager>().onClick;
         onClick.RemoveAllListeners();
-        onClick.AddListener(delegate{QueueOfferPlus(com);});
+        onClick.AddListener(delegate{QueueOffer(com, 5f);});
 
+        onClick = control.tax.transform.Find("Prev").GetComponent<ButtonManager>().onClick;
+        onClick.RemoveAllListeners();
+        onClick.AddListener(delegate{SetSalesTax(com, -0.01f);});
+
+        onClick = control.tax.transform.Find("Next").GetComponent<ButtonManager>().onClick;
+        onClick.RemoveAllListeners();
+        onClick.AddListener(delegate{SetSalesTax(com, 0.01f);});
+
+        onClick = control.subsidy.transform.Find("Prev").GetComponent<ButtonManager>().onClick;
+        onClick.RemoveAllListeners();
+        onClick.AddListener(delegate{SetSubsidy(com, -1f);});
+
+        onClick = control.subsidy.transform.Find("Next").GetComponent<ButtonManager>().onClick;
+        onClick.RemoveAllListeners();
+        onClick.AddListener(delegate{SetSubsidy(com, 1f);});
 
         control.text = control.go.transform.Find("Main Content").transform.Find("Text").GetComponent<TextMeshProUGUI>();
+        control.taxText = control.tax.transform.Find("Main Content").transform.Find("Text").GetComponent<TextMeshProUGUI>();
+        control.subsidyText = control.subsidy.transform.Find("Main Content").transform.Find("Text").GetComponent<TextMeshProUGUI>();
     }
-    public void QueueOfferMinus(string com)
+    public void QueueOffer(string com, float delta)
     {
-        selectedAgent.UpdateTarget(com, -5f);
-        Debug.Log("QueueOfferMinus! " + com);
+        selectedAgent.UpdateTarget(com, delta);
+        Debug.Log("QueueOffer! " + com + " " + delta);
         Tick(com);
     }
-    public void QueueOfferPlus(string com)
+    public void SetSalesTax(string com, float delta)
     {
-        selectedAgent.UpdateTarget(com, 5f);
-        Debug.Log("QueueOfferPlus! " + com);
-        Tick(com);
+        selectedDistrict.config.SalesTaxRate[com] += delta;
+    }
+    public void SetSubsidy(string com, float delta)
+    {
+        selectedDistrict.config.Subsidy[com] += delta;
     }
     void Tick(string com)
     {
         var entry = selectedAgent.inventory[com];
         var queuedOffer = entry.TargetQuantity;
         comControls[com].text.text = entry.Quantity.ToString("n0") + " (" + queuedOffer.ToString("n0") + ")";
+        comControls[com].taxText.text = ((selectedDistrict.config.SalesTaxRate[com])).ToString("P0");
+        comControls[com].subsidyText.text = selectedDistrict.config.Subsidy[com].ToString("n0");
     }
     // Update is called once per frame
     void Update()

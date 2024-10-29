@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -359,6 +360,8 @@ public class AuctionHouse : MonoBehaviour {
 			ask.Accepted(clearingPrice, boughtQuantity);
 			bid.Accepted(clearingPrice, boughtQuantity);
 
+			Assert.IsTrue(ask.remainingQuantity >= 0);
+			Assert.IsTrue(bid.remainingQuantity >= 0);
 			//go to next ask/bid if fullfilled
 			if (ask.remainingQuantity == 0)
 				askIdx++;
@@ -466,7 +469,7 @@ public class AuctionHouse : MonoBehaviour {
 		var boughtQuantity = bid.agent.Buy(rsc.name, tradeQuantity, clearingPrice);
 		Assert.IsTrue(boughtQuantity == tradeQuantity);
 		ask.agent.Sell(rsc.name, boughtQuantity, clearingPrice);
-		progressivePolicy.AddSalesTax(tradeQuantity, clearingPrice, bid.agent);
+		progressivePolicy.AddSalesTax(rsc.name, tradeQuantity, clearingPrice, bid.agent);
 
 		Debug.Log("Trade(), " + auctionTracker.round + ", " + ask.agent.name + ", " + bid.agent.name + ", " + 
 			rsc.name + ", " + boughtQuantity.ToString("n2") + ", " + clearingPrice.ToString("n2") + ", " + ask.offerPrice.ToString("n2") + ", " + bid.offerPrice.ToString("n2"));
@@ -615,7 +618,8 @@ public class AuctionHouse : MonoBehaviour {
 			inflation += (currPrice - prevPrice) / prevPrice;
 		}
 
-		auctionTracker.inflation = inflation / (float)book.Count;
+		inflation /= (float)book.Count;
+		auctionTracker.inflation = (!float.IsNaN(inflation) && !float.IsInfinity(inflation)) ? inflation : 0;
 		auctionTracker.happiness = approval / agents.Count;
 		auctionTracker.approval = approval / agents.Count;
 		auctionTracker.gini = GetGini(GetWealthOfAgents());
