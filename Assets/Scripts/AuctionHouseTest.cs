@@ -8,17 +8,17 @@ using AYellowpaper.SerializedCollections;
 
 public class AuctionHouseTest : AuctionHouse {
 	void Start() {
-		Debug.unityLogger.logEnabled=EnableDebug;
+		Debug.unityLogger.logEnabled=config.EnableDebug;
 		base.OpenFileForWrite();
 
-		UnityEngine.Random.InitState(seed);
+		UnityEngine.Random.InitState(config.seed);
 		lastTick = 0;
 		var com = auctionTracker.book;
 	
-		config = GetComponent<AgentConfig>();
+		config = GetComponent<SimulationConfig>();
 		var prefab = Resources.Load("Agent");
 
-		for (int i = transform.childCount; i < numAgents.Values.Sum(); i++)
+		for (int i = transform.childCount; i < config.numAgents.Values.Sum(); i++)
 		{
 		    GameObject go = Instantiate(prefab) as GameObject;
 			go.transform.parent = transform;
@@ -26,10 +26,10 @@ public class AuctionHouseTest : AuctionHouse {
 		}
 		
 		int agentIndex = 0;
-		var professions = numAgents.Keys;
+		var professions = config.numAgents.Keys;
 		foreach (string profession in professions)
 		{
-			for (int i = 0; i < numAgents[profession]; ++i)
+			for (int i = 0; i < config.numAgents[profession]; ++i)
 			{
 				GameObject child = transform.GetChild(agentIndex).gameObject;
 				var agent = child.GetComponent<EconAgent>();
@@ -67,6 +67,6 @@ public class AuctionHouseTest : AuctionHouse {
 		// TODO: This may cause uneven maxStock between agents
 		var maxStock = Mathf.Max(initStock, config.maxStock);
 
-        agent.Init(config, auctionTracker, initCash, buildables, initStock, maxStock);
+        agent.Init(config, auctionTracker, buildables, initStock, maxStock);
 	}
 }

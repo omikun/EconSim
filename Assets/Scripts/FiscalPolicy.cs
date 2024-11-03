@@ -16,11 +16,11 @@ using UnityEngine.Assertions;
 
 public class FiscalPolicy 
 {
-    public AgentConfig config;
+    public SimulationConfig config;
     public AuctionStats auctionStats;
     public float taxed = 0;
     public Government gov;
-    public FiscalPolicy(AgentConfig cfg, AuctionStats at, Government g)
+    public FiscalPolicy(SimulationConfig cfg, AuctionStats at, Government g)
     {
         config = cfg;
         auctionStats = at;
@@ -73,7 +73,7 @@ public class Range
 [Serializable]
 public class FlatTaxPolicy : FiscalPolicy
 {
-    public FlatTaxPolicy(AgentConfig cfg, AuctionStats at, Government g) : base(cfg, at, g) {}
+    public FlatTaxPolicy(SimulationConfig cfg, AuctionStats at, Government g) : base(cfg, at, g) {}
 }
 
 [Serializable]
@@ -114,7 +114,7 @@ Reduction of social welfare spending: Cutting back on social programs, which all
     [ShowInInspector, DictionaryDrawerSettings(DisplayMode = DictionaryDisplayOptions.OneLine, KeyLabel = "Income Bracket", ValueLabel = "Marginal Tax Rate")]
     [SerializedDictionary("Income Bracket", "Marginal Tax Rate")]
     public SerializedDictionary<Range, float> taxBracket = new();
-    public ProgressivePolicy(AgentConfig cfg, AuctionStats at, Government g) : base(cfg, at, g)
+    public ProgressivePolicy(SimulationConfig cfg, AuctionStats at, Government g) : base(cfg, at, g)
     {
     }
     public override void Tax(AuctionBook book, List<EconAgent> agents)
@@ -159,7 +159,7 @@ Reduction of social welfare spending: Cutting back on social programs, which all
     }
     public float AddSalesTax(string com, float quant, float price, EconAgent buyer)
     {
-        if (!config.EnableSalesTax)
+        if (false == config.EnableSalesTax)
             return 0;
         var salesTax = config.SalesTaxRate[com] * quant * price;
         buyer.Pay(salesTax);

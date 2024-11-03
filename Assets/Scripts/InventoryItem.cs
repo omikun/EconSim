@@ -245,10 +245,10 @@ public class InventoryItem {
 	}
     public float FindSellCount(ResourceController rsc, int historySize, bool enablePriceFavorability)
 	{
-		if (Surplus() < 1)
+		if (Quantity < 1)
 			return 0;
 
-		float numAsks = Mathf.Floor(Surplus());
+		float numAsks = Mathf.Floor(Quantity);
 
 		if (enablePriceFavorability) {
 			var avgPrice = rsc.avgBidPrice.LastAverage(historySize);
@@ -260,7 +260,7 @@ public class InventoryItem {
 				favorability = Mathf.InverseLerp(lowestPrice, highestPrice, avgPrice);
 			}
 			//sell at least 1
-			numAsks = Mathf.Max(1, favorability * Surplus());
+			numAsks = Mathf.Max(1, favorability * Quantity);
 			numAsks = Mathf.Floor(numAsks);
 
 			Assert.IsTrue(numAsks <= Quantity);
@@ -438,5 +438,9 @@ public void UpdateSellerPriceBelief(String agentName, in Offer trade, in Resourc
 		var shortage = maxQuantity - Quantity;
 		return Mathf.Max(0, shortage);
     }
-	public float Surplus() { return Quantity; }
+
+	public float NumProduceable(ResourceController rsc)
+	{
+		return Quantity / rsc.recipe[name];
+	}
 }

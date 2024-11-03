@@ -8,6 +8,7 @@ using System;
 using AYellowpaper.SerializedCollections;
 using System.Security.Cryptography.X509Certificates;
 using System.Net.WebSockets;
+using Sirenix.OdinInspector;
 using Sirenix.Serialization;
 
 public class AuctionBook : Dictionary<string, ResourceController>{}
@@ -19,18 +20,32 @@ public class AuctionStats : MonoBehaviour
     //public static AuctionStats Instance { get; private set; }
 
 	public AuctionBook book { get; private set; }
+	public SimulationConfig config;
 	public int round { get; private set; }
+	[DisableInEditorMode]
 	public float inflation;
+	[DisableInEditorMode]
 	public float happiness;
+	[DisableInEditorMode]
 	public float approval;
+	[DisableInEditorMode]
 	public int numBankrupted;
+	[DisableInEditorMode]
 	public int numStarving;
+	[DisableInEditorMode]
 	public int numChangedProfession;
+	[DisableInEditorMode]
 	public int numNegProfit;
+	[DisableInEditorMode]
 	public int numNoInput;
+	[DisableInEditorMode]
 	public float gdp;// { get { return book.Values.Sum(x => x.gdp);}}
+	[DisableInEditorMode]
 	public float gini;
 
+	void Start()
+	{
+	}
 	public void ClearStats()
 	{
 		happiness = 0;
@@ -62,9 +77,6 @@ public class AuctionStats : MonoBehaviour
 			entry.gini = 0;
 		}
 	}
-	[SerializedDictionary("ID", "Recipe")]
-	//[OdinSerialize]
-	public SerializedDictionary<string, SerializedDictionary<string, float>> initialization = new();
 	string log_msg = "";
 	public string GetLog()
 	{
@@ -194,29 +206,29 @@ public class AuctionStats : MonoBehaviour
 	}
 	void InitInitialization() 
 	{
-		initialization["Food"] = new() { 
+		config.initialization["Food"] = new() { 
 			{ "Wood", .1f}, 
 			{ "Prod_multiplier", 1f}, 
 			{ "Tool", .1f}, 
 			{ "Prod_rate", 5f}, 
 			};
-		initialization["Wood"] = new() { 
+		config.initialization["Wood"] = new() { 
 			{ "Food", 1f}, 
 			{ "Prod_multiplier", 1f}, 
 			{ "Prod_rate", 1f}, 
 			};
-		initialization["Ore"] = new() { 
+		config.initialization["Ore"] = new() { 
 			{ "Food", 1f}, 
 			{ "Prod_multiplier", 1f}, 
 			{ "Prod_rate", 5f}, 
 			};
-		initialization["Metal"] = new() { 
+		config.initialization["Metal"] = new() { 
 			{ "Food", 1f}, 
 			{ "Ore", 2f}, 
 			{ "Prod_multiplier", 1f}, 
 			{ "Prod_rate", 3f}, 
 			};
-		initialization["Tool"] = new() { 
+		config.initialization["Tool"] = new() { 
 			{ "Food", 1f}, 
 			{ "Metal", 2f}, 
 			{ "Prod_multiplier", 1f}, 
@@ -229,7 +241,7 @@ public class AuctionStats : MonoBehaviour
 		book = new AuctionBook();
 		round = 0;
 		//InitInitialization();
-		foreach( var item in initialization)
+		foreach( var item in config.initialization)
 		{
 			Recipe dep = new Recipe();
 			float prod_rate = 0;

@@ -528,28 +528,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fcf52a7eecf2647fe978d330319f1f44, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  EnableDebug: 1
-  EnableLog: 0
   info: {fileID: 1010474683}
   config: {fileID: 0}
   auctionTracker: {fileID: 0}
-  seed: 49
-  appendTimeToLog: 1
-  maxRounds: 300
-  exitAfterNoTrade: 1
-  numRoundsNoTrade: 100
-  numAgents:
-    _serializedList:
-    - Key: Food
-      Value: 20
-    - Key: Wood
-      Value: 20
-    - Key: Ore
-      Value: 10
-    - Key: Metal
-      Value: 5
-    - Key: Tool
-      Value: 5
   progressivePolicy:
     config: {fileID: 0}
     auctionStats: {fileID: 0}
@@ -583,8 +564,6 @@ MonoBehaviour:
     auctionStats: {fileID: 0}
     taxed: 0
     gov: {fileID: 0}
-  autoNextRound: 0
-  tickInterval: 0.08
   bidCom: Wood
   bidQuant: 0
 --- !u!114 &194909947
@@ -602,6 +581,7 @@ MonoBehaviour:
   historySize: 10
   changeToHighestBidPrice: 0
   probabilisticHottestGood: 1
+  config: {fileID: 0}
   inflation: 0
   happiness: 0
   approval: 0
@@ -612,6 +592,136 @@ MonoBehaviour:
   numNoInput: 0
   gdp: 0
   gini: 0
+--- !u!4 &194909951
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 194909945}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -11.9, y: 0.91, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &194909953
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 194909945}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5340b96b9e4f7420e865bd103e760776, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  autoNextRound: 0
+  tickInterval: 0.001
+  EnableDebug: 0
+  EnableLog: 0
+  appendTimeToLog: 1
+  exitAfterNoTrade: 1
+  seed: 42
+  maxRounds: 300
+  numRoundsNoTrade: 100
+  starvationThreshold: 0.1
+  foodConsumption: 0
+  foodConsumptionRate: 0.1
+  useFoodConsumptionCurve: 1
+  foodConsumptionCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0.06503296
+      inSlope: 4.4399576
+      outSlope: 4.4399576
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0.040531415
+    - serializedVersion: 3
+      time: 1.0379586
+      value: 3.4476013
+      inSlope: 10.906322
+      outSlope: 10.906322
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.05866221
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  numFoodHappy: 10
+  baselineAuction: 0
+  baselineSellPrice: 0
+  baselineSellPriceMinCost: 0
+  baselineBuyPrice: 0
+  baselineSellPriceDelta: 0.05
+  baselineBuyPriceDelta: 0.05
+  profitMarkup: 1
+  sanityCheck: 1
+  sanityCheckTradeVolume: 1
+  sanityCheckSellQuant: 1
+  sanityCheckBuyQuant: 1
+  sanityCheckSellPrice: 1
+  sanityCheckBuyPrice: 1
+  enablePriceFavorability: 0
+  onlyBuyWhatsAffordable: 0
+  idleTaxRate: 0
+  EnableSalesTax: 0
+  SalesTaxRate:
+    _serializedList:
+    - Key: Food
+      Value: 0
+    - Key: Wood
+      Value: 0
+    - Key: Ore
+      Value: 0
+    - Key: Metal
+      Value: 0
+    - Key: Tool
+      Value: 0
+  Subsidy:
+    _serializedList:
+    - Key: Food
+      Value: 0
+    - Key: Wood
+      Value: 0
+    - Key: Ore
+      Value: 0
+    - Key: Metal
+      Value: 0
+    - Key: Tool
+      Value: 0
+  starvation: 1
+  clearInventory: 0
+  changeProfession: 1
+  earlyProfessionChange: 0
+  changeProfessionAfterNDays: 10
+  declareBankruptcy: 1
+  historySize: 10
+  initCash: 50
+  initGovCash: 1000
+  randomInitStock: 0
+  initStock: 60
+  maxStock: 4000
+  numAgents:
+    _serializedList:
+    - Key: Food
+      Value: 20
+    - Key: Wood
+      Value: 20
+    - Key: Ore
+      Value: 10
+    - Key: Metal
+      Value: 5
+    - Key: Tool
+      Value: 5
   initialization:
     _serializedList:
     - Key: Food
@@ -675,114 +785,6 @@ MonoBehaviour:
           Value: 4
         - Key: Set_price
           Value: 7
---- !u!4 &194909951
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 194909945}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -11.9, y: 0.91, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &194909953
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 194909945}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5340b96b9e4f7420e865bd103e760776, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  seed: 42
-  initCash: 50
-  randomInitStock: 0
-  initStock: 60
-  maxStock: 4000
-  starvationThreshold: 0.1
-  foodConsumption: 0
-  foodConsumptionRate: 0.1
-  useFoodConsumptionCurve: 1
-  foodConsumptionCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 0.06503296
-      inSlope: 0.088992134
-      outSlope: 0.088992134
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0.054255318
-    - serializedVersion: 3
-      time: 1
-      value: 0.27168453
-      inSlope: 0.39939827
-      outSlope: 0.39939827
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.053191483
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  baselineAuction: 0
-  baselineSellPrice: 0
-  baselineSellPriceMinCost: 0
-  baselineBuyPrice: 0
-  baselineSellPriceDelta: 0.05
-  baselineBuyPriceDelta: 0.05
-  profitMarkup: 1
-  sanityCheck: 1
-  sanityCheckTradeVolume: 1
-  sanityCheckSellQuant: 1
-  sanityCheckBuyQuant: 1
-  sanityCheckSellPrice: 1
-  sanityCheckBuyPrice: 1
-  enablePriceFavorability: 0
-  onlyBuyWhatsAffordable: 0
-  idleTaxRate: 0
-  EnableSalesTax: 0
-  SalesTaxRate:
-    _serializedList:
-    - Key: Food
-      Value: 0
-    - Key: Wood
-      Value: 0
-    - Key: Ore
-      Value: 0
-    - Key: Metal
-      Value: 0
-    - Key: Tool
-      Value: 0
-  Subsidy:
-    _serializedList:
-    - Key: Food
-      Value: 0
-    - Key: Wood
-      Value: 0
-    - Key: Ore
-      Value: 0
-    - Key: Metal
-      Value: 0
-    - Key: Tool
-      Value: 0
-  starvation: 1
-  clearInventory: 0
-  changeProfession: 1
-  earlyProfessionChange: 0
-  changeProfessionAfterNDays: 10
-  declareBankruptcy: 1
-  historySize: 10
 --- !u!114 &194909954
 MonoBehaviour:
   m_ObjectHideFlags: 0

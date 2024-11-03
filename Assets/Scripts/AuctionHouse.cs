@@ -12,32 +12,10 @@ using Sirenix.Serialization;
 using Sirenix.OdinInspector.Editor.ValueResolvers;
 
 public class AuctionHouse : MonoBehaviour {
-	[OnValueChanged(nameof(OnToggleEnableDebug))]
-	public bool EnableDebug = false;
-	private void OnToggleEnableDebug()
-	{
-		Debug.unityLogger.logEnabled=EnableDebug;
-	}
-	public bool EnableLog = false;
 	[Required]
 	public InfoDisplay info;
-	public AgentConfig config;
+	public SimulationConfig config;
 	public AuctionStats auctionTracker;
-	public int seed = 42;
-	public bool appendTimeToLog = false;
-	public int maxRounds = 10;
-	public bool exitAfterNoTrade = true;
-	public int numRoundsNoTrade = 100;
-	
-	[SerializedDictionary("Comm", "numAgents")]
-	public SerializedDictionary<string, int> numAgents = new()
-	{
-		{ "Food", 3 },
-		{ "Wood", 3 },
-		{ "Ore", 3 },
-		{ "Metal", 4 },
-		{ "Tool", 4 }
-	};
 
 	[ShowInInspector]
 	public ProgressivePolicy progressivePolicy;
@@ -45,10 +23,6 @@ public class AuctionHouse : MonoBehaviour {
 	// [ValueDropdown("FiscalPolicies")]
 	// public FiscalPolicy fiscalPolicy;
 
-	public bool autoNextRound = false;
-	//[CustomValueDrawer("TickIntervalDrawer")]
-	[Range(.001f, 5f)]
-    public float tickInterval = .001f;
 
 	protected List<EconAgent> agents = new();
 	protected float taxed;
@@ -63,17 +37,18 @@ public class AuctionHouse : MonoBehaviour {
 	void Awake()
 	{
 		auctionTracker = GetComponent<AuctionStats>();
+		config = GetComponent<SimulationConfig>();
+		auctionTracker.config = config;
 		auctionTracker.Init();
 	}
 	void Start()
 	{
-		Debug.unityLogger.logEnabled=EnableDebug;
+		Debug.unityLogger.logEnabled=config.EnableDebug;
 		OpenFileForWrite();
 
-		UnityEngine.Random.InitState(seed);
+		UnityEngine.Random.InitState(config.seed);
 		lastTick = 0;
 
-		config = GetComponent<AgentConfig>();
 		meanPriceGraph = GetComponent<ESStreamingGraph>();
 		Assert.IsFalse(meanPriceGraph == null);
 
@@ -81,7 +56,7 @@ public class AuctionHouse : MonoBehaviour {
 		taxed = 0;
 		var prefab = Resources.Load("Agent");
 
-		for (int i = transform.childCount; i < numAgents.Values.Sum(); i++)
+		for (int i = transform.childCount; i < config.numAgents.Values.Sum(); i++)
 		{
 		    GameObject go = Instantiate(prefab) as GameObject;
 			go.transform.parent = transform;
@@ -103,10 +78,10 @@ public class AuctionHouse : MonoBehaviour {
 		//progressivePolicy = new ProgressivePolicy(config, auctionTracker, gov);
 		
 		int agentIndex = 0;
-		var professions = numAgents.Keys;
+		var professions = config.numAgents.Keys;
 		foreach (string profession in professions)
 		{
-			for (int i = 0; i < numAgents[profession]; ++i)
+			for (int i = 0; i < config.numAgents[profession]; ++i)
 			{
 				GameObject child = transform.GetChild(agentIndex).gameObject;
 				var agent = child.GetComponent<EconAgent>();
@@ -188,21 +163,19 @@ public class AuctionHouse : MonoBehaviour {
         List<string> buildables = new ();
         buildables.Add("Government");
 		float initStock = 10f;
-		float initCash = 1000f;
 
 		// TODO: This may cause uneven maxStock between agents
 		var maxStock = Mathf.Max(initStock, 200);
 
 		Assert.IsTrue(config != null);
 		//Assert.IsTrue(auctionTracker != null);
-        agent.Init(config, auctionTracker, initCash, buildables, initStock, maxStock);
+        agent.Init(config, auctionTracker, buildables, initStock, maxStock);
 	}
 	void InitAgent(EconAgent agent, string type)
 	{
         List<string> buildables = new List<string>();
 		buildables.Add(type);
 		float initStock = config.initStock;
-		float initCash = config.initCash;
 		if (config.randomInitStock)
 		{
 			initStock = UnityEngine.Random.Range(config.initStock/2, config.initStock*2);
@@ -212,11 +185,11 @@ public class AuctionHouse : MonoBehaviour {
 		// TODO: This may cause uneven maxStock between agents
 		var maxStock = Mathf.Max(initStock, config.maxStock);
 
-        agent.Init(config, auctionTracker, initCash, buildables, initStock, maxStock);
+        agent.Init(config, auctionTracker, buildables, initStock, maxStock);
 	}
 	
 	void Update () {
-		if (auctionTracker.round > maxRounds || timeToQuit)
+		if (auctionTracker.round > config.maxRounds || timeToQuit)
 		{
 			CloseWriteFile();
 #if UNITY_EDITOR
@@ -229,7 +202,7 @@ public class AuctionHouse : MonoBehaviour {
 			return;
 		}
 
-		if (autoNextRound && Time.time - lastTick > tickInterval)
+		if (config.autoNextRound && Time.time - lastTick > config.tickInterval)
 		{
 			Debug.Log("v1.4 Round: " + auctionTracker.round);
 			// if (auctionTracker.round == 100)
@@ -283,7 +256,7 @@ public class AuctionHouse : MonoBehaviour {
 	}
 	void PrintAuctionStats()
 	{
-		if (!EnableLog)
+		if (!config.EnableLog)
 			return;
 		var header = auctionTracker.round + ", auction, none, none, ";
 		var msg = header + "irs, " + gov.Cash + ", n/a\n";
@@ -296,7 +269,7 @@ public class AuctionHouse : MonoBehaviour {
 
 	protected void PrintAuctionStats(string c, float buy, float sell)
 	{
-		if (!EnableLog)
+		if (!config.EnableLog)
 			return;
 		string header = auctionTracker.round + ", auction, none, " + c + ", ";
 		string msg = header + "bid, " + buy + ", n/a\n";
@@ -495,10 +468,10 @@ public class AuctionHouse : MonoBehaviour {
 	}
 
 	protected void OpenFileForWrite() {
-		if (!EnableLog)
+		if (!config.EnableLog)
 			return;
 		var datepostfix = System.DateTime.Now.ToString(@"yyyy-MM-dd-h_mm_tt");
-		if (appendTimeToLog)
+		if (config.appendTimeToLog)
 		{
 			sw = new StreamWriter("log_" + datepostfix + ".csv");
 		} else {
@@ -508,19 +481,19 @@ public class AuctionHouse : MonoBehaviour {
 		PrintToFile(header_row);
 	}
 	protected void PrintToFile(string msg) {
-		if (!EnableLog)
+		if (!config.EnableLog)
 			return;
 		sw.Write(msg);
 	}
 
 	protected void CloseWriteFile() {
-		if (!EnableLog)
+		if (!config.EnableLog)
 			return;
 		sw.Close();
 	}
 
 	protected void logAgentsStats() {
-		if (!EnableLog)
+		if (!config.EnableLog)
 			return;
 		string header = auctionTracker.round + ", ";
 		string msg = "";
@@ -532,21 +505,21 @@ public class AuctionHouse : MonoBehaviour {
 	}
 	protected void QuitIf()
 	{
-		if (!exitAfterNoTrade)
+		if (!config.exitAfterNoTrade)
 		{
 			return;
 		}
 		foreach (var entry in auctionTracker.book)
 		{
 			var commodity = entry.Key;
-			var tradeVolume = entry.Value.trades.LastSum(numRoundsNoTrade);
-			if (auctionTracker.round > numRoundsNoTrade && tradeVolume == 0)
+			var tradeVolume = entry.Value.trades.LastSum(config.numRoundsNoTrade);
+			if (auctionTracker.round > config.numRoundsNoTrade && tradeVolume == 0)
 			{
-				Debug.Log("quitting!! last " + numRoundsNoTrade + " round average " + commodity + " was : " + tradeVolume);
+				Debug.Log("quitting!! last " + config.numRoundsNoTrade + " round average " + commodity + " was : " + tradeVolume);
 				timeToQuit = true;
 				//TODO should be no trades in n rounds
 			} else {
-				Debug.Log("last " + numRoundsNoTrade + " round trade average for " + commodity + " was : " + tradeVolume);
+				Debug.Log("last " + config.numRoundsNoTrade + " round trade average for " + commodity + " was : " + tradeVolume);
 			}
 		}
 	}

@@ -10,13 +10,17 @@ using DG.Tweening;
 using UnityEngine.UIElements;
 
 public class EconAgent : MonoBehaviour {
-	protected AgentConfig config;
+	protected SimulationConfig config;
 	public static int uid_idx = 0;
 	protected int uid;
 	public float Cash { get; protected set; }
+
+	public void ResetCash()
+	{
+		Cash = 0;
+	}
 	protected float prevCash;
 	protected float foodExpense = 0;
-	protected float initCash = 100f;
 	protected float initStock = 1;
 	protected float maxStock = 1;
 	public float Profit { get; protected set; }
@@ -92,11 +96,10 @@ public class EconAgent : MonoBehaviour {
 	{
 		Cash -= amount;
 	}
-	public virtual void Init(AgentConfig cfg, AuctionStats at, float _initCash, List<string> b, float _initStock, float maxstock) {
+	public virtual void Init(SimulationConfig cfg, AuctionStats at, List<string> b, float _initStock, float maxstock) {
 		config = cfg;
 		uid = uid_idx++;
 		initStock = _initStock;
-		initCash = _initCash;
 		maxStock = maxstock;
 
 		book = at.book;
@@ -104,7 +107,7 @@ public class EconAgent : MonoBehaviour {
 		//list of commodities self can produce
 		//get initial stockpiles
 		outputNames = b;
-		Cash = initCash;
+		Cash = config.initCash;
 		prevCash = Cash;
 		inputs.Clear();
 		foreach (var buildable in outputNames)
@@ -127,22 +130,15 @@ public class EconAgent : MonoBehaviour {
 			Debug.Log("New " + gameObject.name + " has " + inventory[buildable].Quantity + " " + buildable);
 		}
     }
-	public void Reinit(float initCash, List<string> buildables, Government gov = null)
+	public void Respawn(bool bankrupted, List<string> buildables, Government gov = null)
 	{
-		//TODO reinit book and auctionStats? 
-		//list of commodities self can produce
-		//get initial stockpiles
 		outputNames = buildables;
-		if (initCash != -1f)
-		{
-			Cash = initCash;
-		}
+		gov.Welfare(this);
 		prevCash = Cash;
 		foodExpense = 0;
 		inputs.Clear();
 		foreach (var outputName in outputNames)
 		{
-
 			if (!book.ContainsKey(outputName))
 				Debug.Log("commodity not recognized: " + outputName);
 
@@ -153,7 +149,6 @@ public class EconAgent : MonoBehaviour {
 			PrintInventory("before reinit");
 			
 			Assert.IsTrue(gov != null);
-			gov.Welfare(this);
 
 			foreach (var dep in output.recipe)
 			{
@@ -185,17 +180,18 @@ public class EconAgent : MonoBehaviour {
 		Cash -= taxAmt;
 		return taxAmt;
 	}
+
+	private float losses = 0;
 	//want to control when profit gets calculated in round
 	public void CalculateProfit()
 	{
-		var prevProfit = Profit;
-		var prevTaxableProfit = TaxableProfit;
-		Profit = Cash - prevCash;
+		var prevLosses = losses;
+		var delta = Cash - prevCash;
 		prevCash = Cash;
-		if (prevTaxableProfit < 0)
-		{
-			TaxableProfit = Profit + prevProfit;
-		}
+		Profit = delta;
+		var cumDelta = delta + prevLosses;
+		losses = Mathf.Min(0, cumDelta);
+		TaxableProfit = Mathf.Max(0, cumDelta);
 	}
 	const float bankruptcyThreshold = 0;
 	public bool IsBankrupt()
@@ -233,14 +229,13 @@ public class EconAgent : MonoBehaviour {
 		//ClearRoundStats();
 
 		bool changeProfessionAfterNRounds =  (config.earlyProfessionChange && (noSaleIn.Count() >= config.changeProfessionAfterNDays));
-		changedProfession = (config.declareBankruptcy && IsBankrupt()) || (config.starvation && starving);
 		bankrupted = IsBankrupt();
+		changedProfession = (config.declareBankruptcy && bankrupted) || (config.starvation && starving);
         if (config.changeProfession && (changedProfession || changeProfessionAfterNRounds))
 		{
 			Debug.Log(auctionStats.round + " " + name + " producing " + outputNames[0] + " is bankrupt: " + Cash.ToString("c2") 
 				+ " or starving where food=" + inventory["Food"].Quantity
 				+ " or " + config.changeProfessionAfterNDays + " days no sell");
-			bool resetCash = changedProfession;
 			//gov absorbs debt or cash on change profession
 			//probably should be more complex than this
 			//like agent takes out a loan, if after a certain point can declare bankruptcy and get out of debt
@@ -249,7 +244,7 @@ public class EconAgent : MonoBehaviour {
 			//gov can hand out food if starving
 			//change jobs when not profitable, 
 			//these 3 things can be separate events instead of rolled into one
-			taxConsumed += ChangeProfession(gov, resetCash); 
+			ChangeProfession(gov, bankrupted); 
 			noSaleIn.Reset();
 			noPurchaseIn.Reset();
 		}
@@ -269,48 +264,11 @@ public class EconAgent : MonoBehaviour {
 	}
 	public virtual float EvaluateHappiness()
 	{
-		//if has 10 rounds of food, be happy
-		//if has enough money to buy 10 rounds of food, be happy
-		//if has enough output to sell enough to buy 10 rounds of food, be happy
-		//if has enough intputs to make enough outputs to sell enough to buy 10 rounds of food, be happy
-		var numFood = inventory["Food"].Quantity;
-		float numFoodHappy = 10f;
-		if (numFood >= numFoodHappy) //how to translate food to rounds of food?
-		{
-			return 1f;
-		} 
-
-		//TODO assumes enough supply; how to change happiness if demand is greater than supply?
-		var foodPrice = book["Food"].marketPrice;
-		var affordNumFood = Cash / foodPrice;
-		numFood += affordNumFood;
-		if (numFood >= numFoodHappy)
-		{
-			return 1f;
-		}
-
-		var foodEquivalent = book[Profession].marketPrice / foodPrice;
-		var outputFoodEquivalent = inventory[Profession].Quantity * foodEquivalent;
-		numFood += outputFoodEquivalent;
-		if (numFood >= numFoodHappy)
-		{
-			return 1f;
-		}
-
-		var inputFoodEquivalent = CalculateNumProduceable(book[Profession], inventory[Profession]) * foodEquivalent;
-		numFood += inputFoodEquivalent;
-		if (numFood >= numFoodHappy)
-		{
-			return 1f;
-		}
-		var happy = foodToHappy.Evaluate(numFood / numFoodHappy);
-		Debug.Log(name + " happiness " + happy.ToString("n2"));
-		//var profitRate = profits.TakeLast(config.historySize).Average();
-		//happy *= cashToHappy.Evaluate(profitRate/config.historySize);
-		return happy;
+		var numFoodEq = FoodEquivalent.GetNumFoodEquivalent(book, this, config.numFoodHappy);
+		return Mathf.Log10(numFoodEq);
 	}
 
-	float ChangeProfession(Government gov, bool resetCash = true)
+	void ChangeProfession(Government gov, bool bankrupted = true)
 	{
 		string bestGood = auctionStats.GetHottestGood();
 		float profit = 0f;
@@ -329,15 +287,11 @@ public class EconAgent : MonoBehaviour {
 		else
 			b.Add(Profession);
 
-		if (config.clearInventory) 
+		if (config.clearInventory)
 		{
 			inventory.Clear();
 		}
-		var existingCash = Cash;
-		var rc = (resetCash) ? initCash : 0;
-		Reinit(rc, b, gov);
-		//return amount of money taken from gov
-		return rc - existingCash;
+		Respawn(bankrupted, b, gov);
 	}
 
 	/*********** Trading ************/
@@ -404,7 +358,7 @@ public class EconAgent : MonoBehaviour {
 		//leave some to eat if food
 		if (c == "Food" && config.foodConsumption)
 		{
-			numAsks = Mathf.Min(numAsks, Mathf.Max(0,inventory[c].Surplus() - 1));
+			numAsks = Mathf.Min(numAsks, Mathf.Max(0,inventory[c].Quantity - 1));
 		}
 
 		return numAsks;
@@ -534,18 +488,16 @@ public class EconAgent : MonoBehaviour {
 	}
 	//build as many as one can 
 	//TODO what if don't want to produce as much as one can? what if costs are high rn?
-	protected float CalculateNumProduceable(ResourceController rsc, InventoryItem item)
+	public float CalculateNumProduceable(ResourceController rsc, InventoryItem item)
 	{
 		float numProduced = item.Deficit(); //can't produce more than max stock
 		//find max that can be made w/ available stock
-		foreach (var dep in rsc.recipe)
+		foreach (var com in rsc.recipe.Keys)
 		{
-			var numNeeded = dep.Value;
-			var numAvail = inventory[dep.Key].Quantity;
-			numProduced = Mathf.Min(numProduced, numAvail / numNeeded);
+			numProduced = Mathf.Min(numProduced, inventory[com].NumProduceable(rsc));
 			Debug.Log(auctionStats.round + " " + name 
 				+ "can produce " + numProduced 
-				+ " w/" + numAvail + "/" + numNeeded + " " + dep.Key);
+				+ " w/" + inventory[com].Quantity + "/" + rsc.recipe[com] + " " + com);
 		}
 		return numProduced;
 	}
@@ -636,7 +588,7 @@ public class EconAgent : MonoBehaviour {
 			if (config.sanityCheckSellQuant)
 			{
 				sellQuantity = item.Value.GetProductionRate() * config.sanityCheckTradeVolume;
-				sellQuantity = Mathf.Min(sellQuantity, inventory[commodityName].Surplus());
+				sellQuantity = Mathf.Min(sellQuantity, inventory[commodityName].Quantity);
 			}
 
 			if (sellQuantity > 0 && sellPrice > 0)
@@ -644,7 +596,7 @@ public class EconAgent : MonoBehaviour {
 				Debug.Log(auctionStats.round + ": " + name 
 					+ " wants to sell " + sellQuantity + " " + commodityName 
 					+ " for " + sellPrice.ToString("c2") 
-					+ ", has in stock" + inventory[commodityName].Surplus());
+					+ ", has in stock" + inventory[commodityName].Quantity);
 				Assert.IsTrue(sellQuantity <= inventory[commodityName].Quantity);
 				asks.Add(commodityName, new Offer(commodityName, sellPrice, sellQuantity, this));
 				stock.askPrice = sellPrice;

@@ -10,11 +10,10 @@ using DG.Tweening;
 
 public class Government : EconAgent {
 	public float FoodTarget = 50;
-	public override void Init(AgentConfig cfg, AuctionStats at, float _initCash, List<string> b, float _initStock, float maxstock) {
+	public override void Init(SimulationConfig cfg, AuctionStats at, List<string> b, float _initStock, float maxstock) {
 		config = cfg;
 		uid = uid_idx++;
 		initStock = _initStock;
-		initCash = _initCash;
 		maxStock = maxstock;
 
 		book = at.book;
@@ -22,7 +21,7 @@ public class Government : EconAgent {
 		//list of commodities self can produce
 		//get initial stockpiles
 		outputNames = b;
-		Cash = initCash;
+		Cash = config.initGovCash;
 		prevCash = Cash;
 		inputs.Clear();
         foreach(var good in book)
@@ -35,6 +34,7 @@ public class Government : EconAgent {
 		inventory["Food"].Increase(FoodTarget);
 		inventory["Food"].TargetQuantity = FoodTarget;
     }
+
     public override float Produce() {
         return 0;
     }
@@ -109,6 +109,13 @@ public class Government : EconAgent {
 
 	public void Welfare(EconAgent agent)
 	{
+		if (agent.IsBankrupt())
+		{
+			Cash += agent.Cash;
+			Cash -= config.initCash;
+			agent.ResetCash();
+			agent.modify_cash(config.initCash);
+		}
 		//quant should be no more than what gov's inventory holds
 		//only enough to refill agent's inv back to 2
 		//should not be negative in case agent has more than 2 already
