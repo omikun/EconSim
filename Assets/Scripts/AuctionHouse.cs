@@ -18,6 +18,7 @@ public class AuctionHouse : MonoBehaviour {
 	public AuctionStats auctionTracker;
 
 	[ShowInInspector]
+	FiscalPolicy fiscalPolicy;
 	public ProgressivePolicy progressivePolicy;
 	public FlatTaxPolicy FlatTaxPolicy;
 	// [ValueDropdown("FiscalPolicies")]
@@ -25,14 +26,15 @@ public class AuctionHouse : MonoBehaviour {
 
 
 	protected List<EconAgent> agents = new();
-	protected float taxed;
 	protected bool timeToQuit = false;
     protected OfferTable askTable, bidTable;
-	protected StreamWriter sw;
-	protected Dictionary<string, Dictionary<string, float>> trackBids = new();
 	protected float lastTick;
 	ESStreamingGraph meanPriceGraph;
 	public Government gov { get; protected set; }
+	float moneyExchangedThisRound = 0;
+	float goodsExchangedThisRound = 0;
+	protected Logger logger;
+	private TradeResolution tradeResolver;
 
 	void Awake()
 	{
@@ -44,7 +46,10 @@ public class AuctionHouse : MonoBehaviour {
 	void Start()
 	{
 		Debug.unityLogger.logEnabled=config.EnableDebug;
-		OpenFileForWrite();
+		logger = new Logger(config);
+		logger.OpenFileForWrite();
+		string header_row = "round, agent, produces, inventory_items, type, amount, reason\n";
+		logger.PrintToFile(header_row);
 
 		UnityEngine.Random.InitState(config.seed);
 		lastTick = 0;
@@ -52,57 +57,74 @@ public class AuctionHouse : MonoBehaviour {
 		meanPriceGraph = GetComponent<ESStreamingGraph>();
 		Assert.IsFalse(meanPriceGraph == null);
 
-		var com = auctionTracker.book;
-		taxed = 0;
-		var prefab = Resources.Load("Agent");
-
-		for (int i = transform.childCount; i < config.numAgents.Values.Sum(); i++)
-		{
-		    GameObject go = Instantiate(prefab) as GameObject;
-			go.transform.parent = transform;
-			go.name = "agent" + i.ToString();
-		}
-
-		//instiantiate gov
-		{
-			GameObject go = new GameObject();
-			go.transform.parent = transform;
-			go.name = "gov";
-			gov = go.AddComponent<Government>();
-			InitGovernment((Government)gov);
-			agents.Add(gov);
-		}
+		InitGovernment();
+		InitAgents();
+		
 		progressivePolicy.gov = gov;
 		progressivePolicy.config = config;
 		progressivePolicy.auctionStats = auctionTracker;
-		//progressivePolicy = new ProgressivePolicy(config, auctionTracker, gov);
-		
-		int agentIndex = 0;
-		var professions = config.numAgents.Keys;
-		foreach (string profession in professions)
-		{
-			for (int i = 0; i < config.numAgents[profession]; ++i)
-			{
-				GameObject child = transform.GetChild(agentIndex).gameObject;
-				var agent = child.GetComponent<EconAgent>();
-				InitAgent(agent, profession);
-				agents.Add(agent);
-				++agentIndex;
-			}
-		}
+		fiscalPolicy = progressivePolicy;
+
+		var com = auctionTracker.book;
 		askTable = new OfferTable(com);
         bidTable = new OfferTable(com);
 
-		foreach (var entry in com)
+        if (config.baselineAuction)
+	        tradeResolver = new XEvenResolution(auctionTracker, fiscalPolicy, askTable, bidTable);
+        else
+	        tradeResolver = new OmisTradeResolution(auctionTracker, fiscalPolicy, askTable, bidTable);
+	}
+	void InitGovernment()
+	{
+		GameObject go = new GameObject();
+		go.transform.parent = transform;
+		go.name = "gov";
+		gov = go.AddComponent<Government>();
+		Debug.Log(gov.name + " 1outputs: " + string.Join(", ", gov.outputName));
+        string buildable = "Government";
+		float initStock = 10f;
+
+		var maxStock = Mathf.Max(initStock, 200);
+        gov.Init(config, auctionTracker, buildable, initStock, maxStock);
+        
+		agents.Add(gov);
+	}
+	void InitAgents()
+	{
+		var prefab = Resources.Load("Agent");
+		var professions = config.numAgents.Keys;
+		foreach (string profession in professions)
 		{
-			trackBids.Add(entry.Key, new Dictionary<string, float>());
-            foreach (var item in com)
+			Debug.Log(gov.name + " 2outputs: " + string.Join(", ", gov.outputName));
+			for (int i = 0; i < config.numAgents[profession]; ++i)
 			{
-				//allow tracking farmers buying food...
-				trackBids[entry.Key].Add(item.Key, 0);
+				GameObject go = Instantiate(prefab) as GameObject;
+				go.transform.parent = transform;
+				go.name = "agent" + i.ToString();
+			
+				var agent = go.GetComponent<EconAgent>();
+				InitAgent(agent, profession);
+				agents.Add(agent);
 			}
+			Debug.Log(gov.name + " 3outputs: " + string.Join(", ", gov.outputName));
 		}
 	}
+	void InitAgent(EconAgent agent, string type)
+	{
+        string buildable = type;
+		float initStock = config.initStock;
+		if (config.randomInitStock)
+		{
+			initStock = UnityEngine.Random.Range(config.initStock/2, config.initStock*2);
+			initStock = Mathf.Floor(initStock);
+		}
+
+		// This may cause uneven maxStock between agents
+		var maxStock = Mathf.Max(initStock, config.maxStock);
+
+        agent.Init(config, auctionTracker, buildable, initStock, maxStock);
+	}
+
 	void OnApplicationQuit() 
 	{
 		//CloseWriteFile();
@@ -158,42 +180,14 @@ public class AuctionHouse : MonoBehaviour {
 		((Government)gov).InsertBid(bidCom, bidQuant, 0f);
 	}
 	bool forestFire = false;
-	void InitGovernment(Government agent)
-	{
-        List<string> buildables = new ();
-        buildables.Add("Government");
-		float initStock = 10f;
-
-		// TODO: This may cause uneven maxStock between agents
-		var maxStock = Mathf.Max(initStock, 200);
-
-		Assert.IsTrue(config != null);
-		//Assert.IsTrue(auctionTracker != null);
-        agent.Init(config, auctionTracker, buildables, initStock, maxStock);
-	}
-	void InitAgent(EconAgent agent, string type)
-	{
-        List<string> buildables = new List<string>();
-		buildables.Add(type);
-		float initStock = config.initStock;
-		if (config.randomInitStock)
-		{
-			initStock = UnityEngine.Random.Range(config.initStock/2, config.initStock*2);
-			initStock = Mathf.Floor(initStock);
-		}
-
-		// TODO: This may cause uneven maxStock between agents
-		var maxStock = Mathf.Max(initStock, config.maxStock);
-
-        agent.Init(config, auctionTracker, buildables, initStock, maxStock);
-	}
 	
 	void Update () {
 		if (auctionTracker.round > config.maxRounds || timeToQuit)
 		{
-			CloseWriteFile();
+			logger.CloseWriteFile();
 #if UNITY_EDITOR
-			UnityEditor.EditorApplication.isPlaying = false;
+			return;
+			//UnityEditor.EditorApplication.isPlaying = false;
 #elif UNITY_WEBPLAYER
         Application.OpenURL("127.0.0.1");
 #else
@@ -217,8 +211,7 @@ public class AuctionHouse : MonoBehaviour {
 	{
 		//check total cash held by agents and government
 		var totalCash = agents.Sum(x => x.Cash);
-		Debug.Log("Total cash: " + totalCash);
-		Debug.Log("auction house ticking");
+		Debug.Log("Auction House tick: Total cash: " + totalCash);
 
 		var book = auctionTracker.book;
 		foreach (var agent in agents)
@@ -234,10 +227,7 @@ public class AuctionHouse : MonoBehaviour {
 		//resolve prices
 		foreach (var entry in book)
 		{
-			if (config.baselineAuction)
-				ResolveOffersBaseline(entry.Value);
-			else
-				ResolveOffers(entry.Value);
+			tradeResolver.ResolveOffers(entry.Value, ref moneyExchangedThisRound, ref goodsExchangedThisRound);
 			RecordStats(entry.Value);
 			Debug.Log(entry.Key + ": have " + entry.Value.trades[^1] 
 				+ " at price: " + entry.Value.marketPrice);
@@ -251,285 +241,16 @@ public class AuctionHouse : MonoBehaviour {
 			agent.CalculateProfit();
 		}
 		logAgentsStats();
+		auctionTracker.ClearStats();
 		TickAgent();
 		QuitIf();
 	}
-	void PrintAuctionStats()
-	{
-		if (!config.EnableLog)
-			return;
-		var header = auctionTracker.round + ", auction, none, none, ";
-		var msg = header + "irs, " + gov.Cash + ", n/a\n";
-		msg += header + "taxed, " + taxed + ", n/a\n";
-		msg += auctionTracker.GetLog();
-		msg += info.GetLog(header);
-
-		PrintToFile(msg);
-	}
-
-	protected void PrintAuctionStats(string c, float buy, float sell)
-	{
-		if (!config.EnableLog)
-			return;
-		string header = auctionTracker.round + ", auction, none, " + c + ", ";
-		string msg = header + "bid, " + buy + ", n/a\n";
-		msg += header + "ask, " + sell + ", n/a\n";
-		msg += header + "avgAskPrice, " + auctionTracker.book[c].avgAskPrice[^1] + ", n/a\n";
-		msg += header + "avgBidPrice, " + auctionTracker.book[c].avgBidPrice[^1] + ", n/a\n";
-
-		PrintToFile(msg);
-	}
-	float moneyExchangedThisRound = 0;
-	float goodsExchangedThisRound = 0;
-	protected void ResolveOffersBaseline(ResourceController rsc)
-	{
-		var asks = askTable[rsc.name];
-		var bids = bidTable[rsc.name];
-
-		asks.Shuffle();
-		bids.Shuffle();
-
-		asks.Sort((x, y) => x.offerPrice.CompareTo(y.offerPrice)); //inc
-		bids.Sort((x, y) => y.offerPrice.CompareTo(x.offerPrice)); //dec
-
-		int idx = 0;
-		foreach (var ask in asks)
-		{
-			ask.agent.inventory[rsc.name].askOrder = idx;
-			idx++;
-		}
-		idx = 0;
-		foreach (var bid in bids)
-		{
-			bid.agent.inventory[rsc.name].bidOrder = idx;
-			idx++;
-		}
-		moneyExchangedThisRound = 0;
-		goodsExchangedThisRound = 0;
-
-		int askIdx = 0;
-		int bidIdx = 0;
-
-		while (askIdx < asks.Count && bidIdx < bids.Count)
-		{
-			var ask = asks[askIdx];
-			var bid = bids[bidIdx];
-
-			if (ask.offerPrice > bid.offerPrice)
-				break;
-
-			var clearingPrice = (ask.offerPrice + bid.offerPrice) / 2f;
-			var tradeQuantity = Mathf.Min(bid.remainingQuantity, ask.remainingQuantity);
-			Assert.IsTrue(tradeQuantity > 0);
-			Assert.IsTrue(clearingPrice > 0);
-
-			// =========== trade ============== 
-			var boughtQuantity = Trade(rsc, clearingPrice, tradeQuantity, bid, ask);
-
-			moneyExchangedThisRound += clearingPrice * boughtQuantity;
-			goodsExchangedThisRound += boughtQuantity;
-
-			//this is necessary for price belief updates after the big loop
-			ask.Accepted(clearingPrice, boughtQuantity);
-			bid.Accepted(clearingPrice, boughtQuantity);
-
-			Assert.IsTrue(ask.remainingQuantity >= 0);
-			Assert.IsTrue(bid.remainingQuantity >= 0);
-			//go to next ask/bid if fullfilled
-			if (ask.remainingQuantity == 0)
-				askIdx++;
-			if (bid.remainingQuantity == 0)
-				bidIdx++;
-		}
-		Assert.IsFalse(goodsExchangedThisRound < 0);
-	}
-	protected void ResolveOffers(ResourceController rsc)
-	{
-		var asks = askTable[rsc.name];
-		var bids = bidTable[rsc.name];
-
-		asks.Shuffle();
-		bids.Shuffle();
-
-		asks.Sort((x, y) => x.offerPrice.CompareTo(y.offerPrice)); //inc
-		bids.Sort((x, y) => x.offerPrice.CompareTo(y.offerPrice)); //inc
-		//bids.Sort((x, y) => y.offerPrice.CompareTo(x.offerPrice)); //dec
-
-		moneyExchangedThisRound = 0;
-		goodsExchangedThisRound = 0;
-
-		int askIdx = 0;
-		int bidIdx = 0;
-
-		while (askIdx < asks.Count && bidIdx < bids.Count)
-		{
-			var ask = asks[askIdx];
-			var bid = bids[bidIdx];
-
-			//buyer should not pay more than bid price
-			if (ask.offerPrice > bid.offerPrice)
-			{
-				bidIdx++;
-				continue;
-			}
-
-			var clearingPrice = ask.offerPrice;
-			var tradeQuantity = Mathf.Min(bid.remainingQuantity, ask.remainingQuantity);
-			Assert.IsTrue(tradeQuantity > 0);
-			Assert.IsTrue(clearingPrice > 0);
-
-			// =========== trade ============== 
-			var boughtQuantity = Trade(rsc, clearingPrice, tradeQuantity, bid, ask);
-
-			moneyExchangedThisRound += clearingPrice * boughtQuantity;
-			goodsExchangedThisRound += boughtQuantity;
-
-			//this is necessary for price belief updates after the big loop
-			ask.Accepted(clearingPrice, boughtQuantity);
-			bid.Accepted(clearingPrice, boughtQuantity);
-
-			//go to next ask/bid if fullfilled
-			if (ask.remainingQuantity == 0)
-				askIdx++;
-			if (bid.remainingQuantity == 0)
-				bidIdx++;
-		}
-		Assert.IsFalse(goodsExchangedThisRound < 0);
-	}
-	protected void RecordStats(ResourceController rsc)
-	{
-		var asks = askTable[rsc.name];
-		var bids = bidTable[rsc.name];
-
-		var agentDemandRatio = bids.Count / Mathf.Max(.01f, (float)asks.Count); //demand by num agents bid/
-		var quantityToBuy = bids.Sum(item => item.offerQuantity);
-		var quantityToSell = asks.Sum(item => item.offerQuantity);
-
-		rsc.bids.Add(quantityToBuy);
-		rsc.asks.Add(quantityToSell);
-		rsc.buyers.Add(bids.Count);
-		rsc.sellers.Add(asks.Count);
-
-		var avgAskPrice = (quantityToSell == 0) ? 0 : asks.Sum((x) => x.offerPrice * x.offerQuantity) / quantityToSell;
-		rsc.avgAskPrice.Add(avgAskPrice);
-
-		var avgBidPrice = (quantityToBuy == 0) ? 0 : bids.Sum((x) => x.offerPrice * x.offerQuantity) / quantityToBuy;
-		rsc.avgBidPrice.Add(avgBidPrice);
-
-		var averagePrice = (goodsExchangedThisRound == 0) ? 0 : moneyExchangedThisRound / goodsExchangedThisRound;
-
-		Debug.Log(auctionTracker.round + " " + rsc.name + " avgprice: " + averagePrice.ToString("c2") + " goods exchanged: " + goodsExchangedThisRound.ToString("n2") + " money exchanged: " + moneyExchangedThisRound.ToString("c2"));
-		Assert.IsTrue(averagePrice >= 0f);
-		rsc.avgClearingPrice.Add(averagePrice);
-		rsc.trades.Add(goodsExchangedThisRound);
-		var marketPrice = averagePrice;
-		if (goodsExchangedThisRound == 0)
-			marketPrice = rsc.marketPrice;
-		rsc.Update(marketPrice, agentDemandRatio);
-
-		//update price beliefs if still a thing
-		asks.Clear();
-		bids.Clear();
-
-		PrintAuctionStats(rsc.name, quantityToBuy, quantityToSell);
-		Debug.Log(auctionTracker.round + ": " + rsc.name + ": " + goodsExchangedThisRound + " traded at average price of " + averagePrice);
-	}
-
-	// TODO decouple transfer of commodity with transfer of money
-	// TODO convert cash into another commodity
-	protected float Trade(ResourceController rsc, float clearingPrice, float tradeQuantity, Offer bid, Offer ask)
-	{
-		var boughtQuantity = bid.agent.Buy(rsc.name, tradeQuantity, clearingPrice);
-		Assert.IsTrue(boughtQuantity == tradeQuantity);
-		ask.agent.Sell(rsc.name, boughtQuantity, clearingPrice);
-		progressivePolicy.AddSalesTax(rsc.name, tradeQuantity, clearingPrice, bid.agent);
-
-		Debug.Log("Trade(), " + auctionTracker.round + ", " + ask.agent.name + ", " + bid.agent.name + ", " + 
-			rsc.name + ", " + boughtQuantity.ToString("n2") + ", " + clearingPrice.ToString("n2") + ", " + ask.offerPrice.ToString("n2") + ", " + bid.offerPrice.ToString("n2"));
-		// Debug.Log(auctionTracker.round + ": " + ask.agent.name 
-		// 	+ " ask " + ask.remainingQuantity.ToString("n2") + "x" + ask.offerPrice.ToString("c2")
-		// 	+ " | " + bid.agent.name 
-		// 	+ " bid: " + bid.remainingQuantity.ToString("n2") + "x" + bid.offerPrice.ToString("c2")
-		// 	+ " -- " + rsc.name + " offer quantity: " + tradeQuantity.ToString("n2") 
-		// 	+ " bought quantity: " + boughtQuantity.ToString("n2"));
-		return boughtQuantity;
-	}
-
-	protected bool Transfer(EconAgent source, EconAgent destination, string commodity, float quant)
-	{
-		if (source.inventory[commodity].Quantity >= quant)
-		{
-			source.inventory[commodity].Decrease(quant);
-			destination.inventory[commodity].Increase(quant);
-			return true;
-		} else {
-			return false;
-		}
-	}
-
-	protected void OpenFileForWrite() {
-		if (!config.EnableLog)
-			return;
-		var datepostfix = System.DateTime.Now.ToString(@"yyyy-MM-dd-h_mm_tt");
-		if (config.appendTimeToLog)
-		{
-			sw = new StreamWriter("log_" + datepostfix + ".csv");
-		} else {
-			sw = new StreamWriter("log.csv");
-		}
-		string header_row = "round, agent, produces, inventory_items, type, amount, reason\n";
-		PrintToFile(header_row);
-	}
-	protected void PrintToFile(string msg) {
-		if (!config.EnableLog)
-			return;
-		sw.Write(msg);
-	}
-
-	protected void CloseWriteFile() {
-		if (!config.EnableLog)
-			return;
-		sw.Close();
-	}
-
-	protected void logAgentsStats() {
-		if (!config.EnableLog)
-			return;
-		string header = auctionTracker.round + ", ";
-		string msg = "";
-		foreach (var agent in agents)
-		{
-			msg += agent.Stats(header);
-		}
-		PrintToFile(msg);
-	}
-	protected void QuitIf()
-	{
-		if (!config.exitAfterNoTrade)
-		{
-			return;
-		}
-		foreach (var entry in auctionTracker.book)
-		{
-			var commodity = entry.Key;
-			var tradeVolume = entry.Value.trades.LastSum(config.numRoundsNoTrade);
-			if (auctionTracker.round > config.numRoundsNoTrade && tradeVolume == 0)
-			{
-				Debug.Log("quitting!! last " + config.numRoundsNoTrade + " round average " + commodity + " was : " + tradeVolume);
-				timeToQuit = true;
-				//TODO should be no trades in n rounds
-			} else {
-				Debug.Log("last " + config.numRoundsNoTrade + " round trade average for " + commodity + " was : " + tradeVolume);
-			}
-		}
-	}
-
 	protected void TickAgent()
 	{
-		auctionTracker.ClearStats();
 		var book = auctionTracker.book;
 		var approval = 0f;
 		
+		Debug.Log(auctionTracker.round + " gov outputs: " + gov.outputName);
         foreach (var agent in agents)
         {
 			if (agent is Government)
@@ -597,6 +318,117 @@ public class AuctionHouse : MonoBehaviour {
 		auctionTracker.approval = approval / agents.Count;
 		auctionTracker.gini = GetGini(GetWealthOfAgents());
 	}
+	void PrintAuctionStats()
+	{
+		if (!config.EnableLog)
+			return;
+		var header = auctionTracker.round + ", auction, none, none, ";
+		var msg = header + "irs, " + gov.Cash + ", n/a\n";
+		msg += header + "taxed, " + fiscalPolicy.taxed + ", n/a\n";
+		msg += auctionTracker.GetLog();
+		msg += info.GetLog(header);
+
+		logger.PrintToFile(msg);
+	}
+
+	protected void PrintAuctionStats(string c, float buy, float sell)
+	{
+		if (!config.EnableLog)
+			return;
+		string header = auctionTracker.round + ", auction, none, " + c + ", ";
+		string msg = header + "bid, " + buy + ", n/a\n";
+		msg += header + "ask, " + sell + ", n/a\n";
+		msg += header + "avgAskPrice, " + auctionTracker.book[c].avgAskPrice[^1] + ", n/a\n";
+		msg += header + "avgBidPrice, " + auctionTracker.book[c].avgBidPrice[^1] + ", n/a\n";
+
+		logger.PrintToFile(msg);
+	}
+	protected void RecordStats(ResourceController rsc)
+	{
+		var asks = askTable[rsc.name];
+		var bids = bidTable[rsc.name];
+
+		var agentDemandRatio = bids.Count / Mathf.Max(.01f, (float)asks.Count); //demand by num agents bid/
+		var quantityToBuy = bids.Sum(item => item.offerQuantity);
+		var quantityToSell = asks.Sum(item => item.offerQuantity);
+
+		rsc.bids.Add(quantityToBuy);
+		rsc.asks.Add(quantityToSell);
+		rsc.buyers.Add(bids.Count);
+		rsc.sellers.Add(asks.Count);
+
+		var avgAskPrice = (quantityToSell == 0) ? 0 : asks.Sum((x) => x.offerPrice * x.offerQuantity) / quantityToSell;
+		rsc.avgAskPrice.Add(avgAskPrice);
+
+		var avgBidPrice = (quantityToBuy == 0) ? 0 : bids.Sum((x) => x.offerPrice * x.offerQuantity) / quantityToBuy;
+		rsc.avgBidPrice.Add(avgBidPrice);
+
+		var averagePrice = (goodsExchangedThisRound == 0) ? 0 : moneyExchangedThisRound / goodsExchangedThisRound;
+
+		Debug.Log(auctionTracker.round + " " + rsc.name + " avgprice: " + averagePrice.ToString("c2") + " goods exchanged: " + goodsExchangedThisRound.ToString("n2") + " money exchanged: " + moneyExchangedThisRound.ToString("c2"));
+		Assert.IsTrue(averagePrice >= 0f);
+		rsc.avgClearingPrice.Add(averagePrice);
+		rsc.trades.Add(goodsExchangedThisRound);
+		var marketPrice = averagePrice;
+		if (goodsExchangedThisRound == 0)
+			marketPrice = rsc.marketPrice;
+		rsc.Update(marketPrice, agentDemandRatio);
+
+		//update price beliefs if still a thing
+		asks.Clear();
+		bids.Clear();
+
+		PrintAuctionStats(rsc.name, quantityToBuy, quantityToSell);
+		Debug.Log(auctionTracker.round + ": " + rsc.name + ": " + goodsExchangedThisRound + " traded at average price of " + averagePrice);
+	}
+
+	// TODO decouple transfer of commodity with transfer of money
+	// TODO convert cash into another commodity
+
+	protected bool Transfer(EconAgent source, EconAgent destination, string commodity, float quant)
+	{
+		if (source.inventory[commodity].Quantity >= quant)
+		{
+			source.inventory[commodity].Decrease(quant);
+			destination.inventory[commodity].Increase(quant);
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	protected void logAgentsStats() {
+		if (!config.EnableLog)
+			return;
+		string header = auctionTracker.round + ", ";
+		string msg = "";
+		foreach (var agent in agents)
+		{
+			msg += agent.Stats(header);
+		}
+		logger.PrintToFile(msg);
+	}
+	protected void QuitIf()
+	{
+		if (!config.exitAfterNoTrade)
+		{
+			return;
+		}
+		foreach (var entry in auctionTracker.book)
+		{
+			var commodity = entry.Key;
+			var tradeVolume = entry.Value.trades.LastSum(config.numRoundsNoTrade);
+			if (auctionTracker.round > config.numRoundsNoTrade && tradeVolume == 0)
+			{
+				Debug.Log("quitting!! last " + config.numRoundsNoTrade + " round average " + commodity + " was : " + tradeVolume);
+				timeToQuit = true;
+				//TODO should be no trades in n rounds
+			} else {
+				Debug.Log("last " + config.numRoundsNoTrade + " round trade average for " + commodity + " was : " + tradeVolume);
+			}
+		}
+	}
+
 	public List<float> GetWealthOfAgents()
 	{
 		return agents.Where(x => x is not Government).Select(x => x.Cash).ToList();

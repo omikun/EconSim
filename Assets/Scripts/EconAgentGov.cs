@@ -10,7 +10,7 @@ using DG.Tweening;
 
 public class Government : EconAgent {
 	public float FoodTarget = 50;
-	public override void Init(SimulationConfig cfg, AuctionStats at, List<string> b, float _initStock, float maxstock) {
+	public override void Init(SimulationConfig cfg, AuctionStats at, string b, float _initStock, float maxstock) {
 		config = cfg;
 		uid = uid_idx++;
 		initStock = _initStock;
@@ -20,7 +20,7 @@ public class Government : EconAgent {
 		auctionStats = at;
 		//list of commodities self can produce
 		//get initial stockpiles
-		outputNames = b;
+		outputName = b;
 		Cash = config.initGovCash;
 		prevCash = Cash;
 		inputs.Clear();
@@ -104,6 +104,7 @@ public class Government : EconAgent {
 
     public override float Tick(Government gov, ref bool changedProfession, ref bool bankrupted, ref bool starving)
     {
+	    Debug.Log(name + " outputs: " + outputName);
         return 0f;
     }
 

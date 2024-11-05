@@ -10,7 +10,7 @@ using DG.Tweening;
 using UnityEngine.UIElements;
 
 public class EconAgent : MonoBehaviour {
-	protected SimulationConfig config;
+	protected internal SimulationConfig config;
 	public static int uid_idx = 0;
 	protected int uid;
 	public float Cash { get; protected set; }
@@ -20,7 +20,7 @@ public class EconAgent : MonoBehaviour {
 		Cash = 0;
 	}
 	protected float prevCash;
-	protected float foodExpense = 0;
+	protected internal float foodExpense = 0;
 	protected float initStock = 1;
 	protected float maxStock = 1;
 	public float Profit { get; protected set; }
@@ -32,12 +32,14 @@ public class EconAgent : MonoBehaviour {
 	bool soldThisRound = false;
 	WaitNumRoundsNotTriggered noSaleIn = new();
 	WaitNumRoundsNotTriggered noPurchaseIn = new();
+	private Consumer consumer;
+	private Producer producer;
 
 	public string Profession {
-		get { return outputNames[0]; }
+		get { return outputName; }
 	}
-	public List<string> outputNames { get; protected set; } //can produce commodities
-	protected HashSet<string> inputs = new();
+	public string outputName { get; protected set; } //can produce commodities
+	protected internal HashSet<string> inputs = new();
 	//production has dependencies on commodities->populates stock
 	//production rate is limited by assembly lines (queues/event lists)
 	
@@ -46,15 +48,15 @@ public class EconAgent : MonoBehaviour {
 
 	//from the paper (base implementation)
 	// Use this for initialization
-	protected AuctionBook book {get; set;}
-	protected AuctionStats auctionStats;
-	protected Dictionary<string, float> producedThisRound = new();
+	protected internal AuctionBook book {get; set;}
+	protected internal AuctionStats auctionStats;
+	protected internal Dictionary<string, float> producedThisRound = new();
 	public float numProducedThisRound = 0;
 	protected string log = "";
 
 	public virtual String Stats(String header)
 	{
-		header += uid.ToString() + ", " + outputNames[0] + ", "; //profession
+		header += uid.ToString() + ", " + outputName + ", "; //profession
 		foreach (var stock in inventory)
 		{
 			log += stock.Value.Stats(header);
@@ -96,21 +98,24 @@ public class EconAgent : MonoBehaviour {
 	{
 		Cash -= amount;
 	}
-	public virtual void Init(SimulationConfig cfg, AuctionStats at, List<string> b, float _initStock, float maxstock) {
+	public virtual void Init(SimulationConfig cfg, AuctionStats at, string b, float _initStock, float maxstock) {
 		config = cfg;
 		uid = uid_idx++;
 		initStock = _initStock;
 		maxStock = maxstock;
 
+		Configure();
+		
 		book = at.book;
 		auctionStats = at;
 		//list of commodities self can produce
 		//get initial stockpiles
-		outputNames = b;
+		outputName = b;
 		Cash = config.initCash;
 		prevCash = Cash;
 		inputs.Clear();
-		foreach (var buildable in outputNames)
+		//foreach (var buildable in outputName)
+		var buildable = outputName;
 		{
 
 			if (!book.ContainsKey(buildable))
@@ -130,14 +135,24 @@ public class EconAgent : MonoBehaviour {
 			Debug.Log("New " + gameObject.name + " has " + inventory[buildable].Quantity + " " + buildable);
 		}
     }
-	public void Respawn(bool bankrupted, List<string> buildables, Government gov = null)
+
+	void Configure()
 	{
-		outputNames = buildables;
+		if (config.sanityCheck)
+			consumer = new SanityCheckConsumer(this);
+		else
+			consumer = new Consumer(this);
+		producer = new Producer(this);
+	}
+	public void Respawn(bool bankrupted, string buildable, Government gov = null)
+	{
+		Assert.IsTrue(this is not Government);
+		outputName = buildable;
 		gov.Welfare(this);
 		prevCash = Cash;
 		foodExpense = 0;
 		inputs.Clear();
-		foreach (var outputName in outputNames)
+		//foreach (var outputName in outputName)
 		{
 			if (!book.ContainsKey(outputName))
 				Debug.Log("commodity not recognized: " + outputName);
@@ -200,6 +215,7 @@ public class EconAgent : MonoBehaviour {
 	}
     public virtual float Tick(Government gov, ref bool changedProfession, ref bool bankrupted, ref bool starving)
 	{
+		Assert.IsTrue(this is not Government);
 		Debug.Log("agents ticking!");
 		float taxConsumed = 0;
 
@@ -225,7 +241,6 @@ public class EconAgent : MonoBehaviour {
 			entry.Value.Tick();
         }
 
-
 		//ClearRoundStats();
 
 		bool changeProfessionAfterNRounds =  (config.earlyProfessionChange && (noSaleIn.Count() >= config.changeProfessionAfterNDays));
@@ -233,7 +248,7 @@ public class EconAgent : MonoBehaviour {
 		changedProfession = (config.declareBankruptcy && bankrupted) || (config.starvation && starving);
         if (config.changeProfession && (changedProfession || changeProfessionAfterNRounds))
 		{
-			Debug.Log(auctionStats.round + " " + name + " producing " + outputNames[0] + " is bankrupt: " + Cash.ToString("c2") 
+			Debug.Log(auctionStats.round + " " + name + " producing " + outputName[0] + " is bankrupt: " + Cash.ToString("c2") 
 				+ " or starving where food=" + inventory["Food"].Quantity
 				+ " or " + config.changeProfessionAfterNDays + " days no sell");
 			//gov absorbs debt or cash on change profession
@@ -274,18 +289,17 @@ public class EconAgent : MonoBehaviour {
 		float profit = 0f;
 		string mostDemand = auctionStats.GetMostProfitableProfession(ref profit, Profession);
 
-		Assert.AreEqual(outputNames.Count, 1);
 		if (bestGood != "invalid")
         {
             mostDemand = bestGood;
 		}
 		Debug.Log(auctionStats.round + " " + name + " changing from " + Profession + " to " + mostDemand + " --  bestGood: " + bestGood + " bestProfession: " + mostDemand);
-		
-		List<string> b = new List<string>();
+
+		string b = "";
 		if (mostDemand != "invalid")
-			b.Add(mostDemand);
+			b = mostDemand;
 		else
-			b.Add(Profession);
+			b = Profession;
 
 		if (config.clearInventory)
 		{
@@ -316,11 +330,15 @@ public class EconAgent : MonoBehaviour {
 		{
 			Debug.Log(auctionStats.round + " gov buying " + quantity.ToString("n0") + " " + commodity);
 		}
-		Assert.IsFalse(outputNames.Contains(commodity)); //agents shouldn't buy what they produce
 		var boughtQuantity = inventory[commodity].Buy(quantity, price);
 		Debug.Log(name + " has " + Cash.ToString("c2") 
 			+ " want to buy " + quantity.ToString("n2") + " " + commodity 
 			+ " for " + price.ToString("c2") + " bought " + boughtQuantity.ToString("n2"));
+		if (outputName.Contains(commodity))
+		{
+			Debug.Log(name + " outputs: " + outputName);
+		}
+		Assert.IsFalse(outputName.Contains(commodity)); //agents shouldn't buy what they produce
 		Cash -= price * boughtQuantity;
 		boughtThisRound = true;
 		return boughtQuantity;
@@ -334,12 +352,8 @@ public class EconAgent : MonoBehaviour {
 		Assert.IsTrue(inventory[commodity].Quantity >= 0);
 		inventory[commodity].Sell(quantity, price);
 		Assert.IsTrue(inventory[commodity].Quantity >= 0);
-		// Debug.Log(name + " has " + cash.ToString("c2") 
-		// 	+ " selling " + quantity.ToString("n2") +" " +  commodity 
-		// 	+ " for " + price.ToString("c2"));
-		//reset food consumption count?
 		soldThisRound = true;
-		 Cash += price * quantity;
+		Cash += price * quantity;
 	}
 	public void UpdateSellerPriceBelief(in Offer trade, in ResourceController rsc) 
 	{
@@ -351,96 +365,18 @@ public class EconAgent : MonoBehaviour {
 	}
 
     /*********** Produce and consume; enter asks and bids to auction house *****/
-    protected virtual float FindSellCount(string c)
+	public virtual Offers Consume(AuctionBook book)
 	{
-		var numAsks = inventory[c].FindSellCount(book[c], config.historySize, config.enablePriceFavorability);
-
-		//leave some to eat if food
-		if (c == "Food" && config.foodConsumption)
-		{
-			numAsks = Mathf.Min(numAsks, Mathf.Max(0,inventory[c].Quantity - 1));
-		}
-
-		return numAsks;
+		return consumer.Consume(book);
 	}
-	public virtual Offers Consume(AuctionBook book) {
-        var bids = new Offers();
-
-		if (Cash <= 0)
-			return bids;
-
-		//replenish depended commodities
-		foreach (var entry in inventory)
-		{
-			var item = entry.Value;
-			if (!inputs.Contains(item.name) || outputNames.Contains(item.name)) 
-				continue;
-
-			var numBids = item.FindBuyCount(book[item.name], 
-												config.historySize, 
-												config.enablePriceFavorability);
-			if (numBids <= 0)
-				continue;
-
-			//maybe buy less if expensive?
-			float buyPrice = item.GetPrice();
-			if (config.baselineBuyPrice)
-			{
-				buyPrice = book[item.name].marketPrice;
-				var delta = config.baselineBuyPriceDelta;
-				var min = 1f - delta;
-				var max = 1f + delta;
-				buyPrice *= UnityEngine.Random.Range(min, max);
-				buyPrice = Mathf.Max(buyPrice, .01f);
-			}
-			if (config.sanityCheckBuyPrice)
-			{
-				buyPrice = book[item.name].setPrice;
-			}
-			if (config.sanityCheckBuyQuant)
-			{
-				foreach (var dep in book[Profession].recipe)
-				{
-					if (dep.Key == item.name)
-					{
-						var numNeeded = dep.Value;
-						numBids = numNeeded * inventory[Profession].GetProductionRate() * config.sanityCheckTradeVolume ;
-						break;
-					}
-				}
-			}
-			Debug.Log(auctionStats.round + " " + name + " bidding " + buyPrice.ToString("c2") + " for " + numBids.ToString("n2") + " " + item.name);
-			if (config.onlyBuyWhatsAffordable)	//TODO this only accounts for 1 com, what about others?
-				//buyPrice = Mathf.Min(cash / numBids, buyPrice);
-				numBids = (float)(int)Mathf.Min(Cash/buyPrice, numBids);
-			Assert.IsTrue(buyPrice > 0);
-			Assert.IsTrue(numBids > 0);
-
-			bids.Add(item.name, new Offer(item.name, buyPrice, numBids, this));
-			item.bidPrice = buyPrice;
-			item.bidQuantity += numBids;
-
-			//debug and sanity check
-			if (buyPrice > 1000)
-			{
-				Debug.Log(item.name + "buyPrice: " + buyPrice.ToString("c2") 
-					+ " : " + item.minPriceBelief.ToString("n2") 
-					+ "<" + item.maxPriceBelief.ToString("n2"));
-				//Assert.IsFalse(buyPrice > 1000);
-			}
-			Debug.Log(auctionStats.round + ": " + this.name 
-				+ " wants to buy " + numBids.ToString("n2") + item.name 
-				+ " for " + buyPrice.ToString("c2") 
-				+ " each min/maxPriceBeliefs " + item.minPriceBelief.ToString("c2") 
-				+ "/" + item.maxPriceBelief.ToString("c2"));
-			Assert.IsFalse(numBids < 0);
-		}
-        return bids;
+	public virtual float Produce() {
+		numProducedThisRound = producer.Produce();
+		return numProducedThisRound;
 	}
 	public float CalcMinProduction()
 	{
 		float minTotalProduced = float.MaxValue; 
-		foreach (var outputName in outputNames)
+		//foreach (var outputName in outputName)
 		{
 			Assert.IsTrue(book.ContainsKey(outputName));
 			var com = book[outputName];
@@ -450,41 +386,6 @@ public class EconAgent : MonoBehaviour {
 
 		}
 		return minTotalProduced;
-	}
-	public virtual float Produce() {
-		foreach (var outputName in outputNames)
-		{
-			if (!book.ContainsKey(outputName))
-			{
-				Debug.Log(auctionStats.round + " " + name + " not valid output " + outputName);
-			}
-			Assert.IsTrue(book.ContainsKey(outputName));
-			var com = book[outputName];
-			var stock = inventory[outputName];
-			var numProduced = CalculateNumProduced(com, stock);
-
-			var inputCosts = "";
-			ConsumeInput(com, numProduced, ref inputCosts);
-
-			//auction wide multiplier (e.g. richer ore vien or forest fire)
-			var multiplier = com.productionMultiplier;
-			if (numProduced == 0f || multiplier == 0f)
-				continue;
-
-			stock.Produced(numProduced * multiplier, numProduced * GetCostOf(com)); 
-
-			Debug.Log(auctionStats.round + " " + name 
-				+ " has " + Cash.ToString("c2") 
-				+ " made " + numProduced.ToString("n2") + " " + outputName 
-				+ " total: " + stock.Quantity 
-				+ " cost: " + stock.cost.ToString("c2") 
-				+ inputCosts);
-			Assert.IsFalse(float.IsNaN(numProduced));
-
-			this.producedThisRound[outputName] = numProduced;
-		}
-		numProducedThisRound = this.producedThisRound.Sum(x => x.Value);
-		return numProducedThisRound;
 	}
 	//build as many as one can 
 	//TODO what if don't want to produce as much as one can? what if costs are high rn?
@@ -501,7 +402,7 @@ public class EconAgent : MonoBehaviour {
 		}
 		return numProduced;
 	}
-	protected float CalculateNumProduced(ResourceController rsc, InventoryItem item)
+	protected internal float CalculateNumProduced(ResourceController rsc, InventoryItem item)
 	{
 		var numProduced = CalculateNumProduceable(rsc, item);
 		//can only build fixed rate at a time
@@ -517,20 +418,20 @@ public class EconAgent : MonoBehaviour {
 		Assert.IsTrue(numProduced >= 0);
 		return numProduced;
 	}
-	void ConsumeInput(ResourceController rsc, float numProduced, ref string msg)
+	protected internal void ConsumeInput(ResourceController rsc, float numProduced, ref string msg)
 	{
 		foreach (var dep in rsc.recipe)
 		{
 			var stock = inventory[dep.Key].Quantity;
 			var numUsed = dep.Value * numProduced;
-			Debug.Log(auctionStats.round + " " + name + " has " + stock + " used " + numUsed);
+			Debug.Log(auctionStats.round + " " + name + " has " + stock + " " + dep.Key + " used " + numUsed);
 			Assert.IsTrue(stock >= numUsed);
 			inventory[dep.Key].Decrease(numUsed);
 			msg += dep.Key + ": " + inventory[dep.Key].meanCost.ToString("c2");
 		}
 	}
 	
-    protected float GetCostOf(ResourceController rsc)
+    protected internal float GetCostOf(ResourceController rsc)
 	{
 		float cost = 0;
 		foreach (var dep in rsc.recipe)
@@ -552,60 +453,8 @@ public class EconAgent : MonoBehaviour {
 
 	public virtual Offers CreateAsks()
 	{
-		//sell everything not needed by output
-        var asks = new Offers();
-
-		foreach (var item in inventory)
-		{
-			var commodityName = item.Key;
-			if (inputs.Contains(commodityName))
-			{
-				continue;
-			}
-			var stock = inventory[commodityName];
-			float sellQuantity = FindSellCount(commodityName);
-			//float sellPrice = sellStock.GetPrice();
-			// + cost of food since last sell
-			var expense = Mathf.Max(0, foodExpense);
-			float sellPrice = inventory[commodityName].cost * config.profitMarkup + expense;
-			if (config.baselineSellPrice)
-			{
-				var baseSellPrice = book[commodityName].marketPrice;
-				var delta = config.baselineSellPriceDelta;
-				var min = 1f - delta;
-				var max = 1f + delta;
-				baseSellPrice *= UnityEngine.Random.Range(min, max);
-				// sellPrice = baseSellPrice;
-				if (config.baselineSellPriceMinCost)
-					sellPrice = Mathf.Max(sellPrice, baseSellPrice);
-				else
-					sellPrice = baseSellPrice;
-			}
-			if (config.sanityCheckSellPrice)
-			{
-				sellPrice = book[commodityName].setPrice;
-			}
-			if (config.sanityCheckSellQuant)
-			{
-				sellQuantity = item.Value.GetProductionRate() * config.sanityCheckTradeVolume;
-				sellQuantity = Mathf.Min(sellQuantity, inventory[commodityName].Quantity);
-			}
-
-			if (sellQuantity > 0 && sellPrice > 0)
-			{
-				Debug.Log(auctionStats.round + ": " + name 
-					+ " wants to sell " + sellQuantity + " " + commodityName 
-					+ " for " + sellPrice.ToString("c2") 
-					+ ", has in stock" + inventory[commodityName].Quantity);
-				Assert.IsTrue(sellQuantity <= inventory[commodityName].Quantity);
-				asks.Add(commodityName, new Offer(commodityName, sellPrice, sellQuantity, this));
-				stock.askPrice = sellPrice;
-				stock.askQuantity = sellQuantity;
-			}
-		}
-		return asks;
+		return producer.CreateAsks();
 	}
-
 	void Update () {
 	}
 }

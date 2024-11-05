@@ -43,6 +43,16 @@ public class FiscalPolicy
     {
         //do nothing
     }
+    public virtual float AddSalesTax(string com, float quant, float price, EconAgent buyer)
+    {
+        if (false == config.EnableSalesTax)
+            return 0;
+        var salesTax = config.SalesTaxRate[com] * quant * price;
+        buyer.Pay(salesTax);
+        gov.Pay(-salesTax);
+        taxed += salesTax;
+        return salesTax;
+    }
 }
 [Serializable]
 [HideLabel]
@@ -74,6 +84,17 @@ public class Range
 public class FlatTaxPolicy : FiscalPolicy
 {
     public FlatTaxPolicy(SimulationConfig cfg, AuctionStats at, Government g) : base(cfg, at, g) {}
+
+    public override float AddSalesTax(string com, float quant, float price, EconAgent buyer)
+    {
+        if (false == config.EnableSalesTax)
+            return 0;
+        var salesTax = config.SalesTaxRate[com] * quant * price;
+        buyer.Pay(salesTax);
+        gov.Pay(-salesTax);
+        taxed += salesTax;
+        return salesTax;
+    }
 }
 
 [Serializable]
@@ -157,7 +178,7 @@ Reduction of social welfare spending: Cutting back on social programs, which all
             + agent.Cash.ToString("c2") + " produced " + numProduced
             + " goods and idle taxed " + idleTax.ToString("c2"));
     }
-    public float AddSalesTax(string com, float quant, float price, EconAgent buyer)
+    public override float AddSalesTax(string com, float quant, float price, EconAgent buyer)
     {
         if (false == config.EnableSalesTax)
             return 0;

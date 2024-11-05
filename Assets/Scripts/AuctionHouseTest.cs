@@ -7,9 +7,17 @@ using UnityEngine.Assertions;
 using AYellowpaper.SerializedCollections;
 
 public class AuctionHouseTest : AuctionHouse {
+	void Awake()
+	{
+		auctionTracker = GetComponent<AuctionStats>();
+		config = GetComponent<SimulationConfig>();
+		auctionTracker.config = config;
+		auctionTracker.Init();
+	}
 	void Start() {
 		Debug.unityLogger.logEnabled=config.EnableDebug;
-		base.OpenFileForWrite();
+		logger = new Logger(config);
+		logger.OpenFileForWrite();
 
 		UnityEngine.Random.InitState(config.seed);
 		lastTick = 0;
@@ -41,21 +49,11 @@ public class AuctionHouseTest : AuctionHouse {
 		askTable = new OfferTable(com);
         bidTable = new OfferTable(com);
 
-		foreach (var entry in com)
-		{
-			trackBids.Add(entry.Key, new Dictionary<string, float>());
-            foreach (var item in com)
-			{
-				//allow tracking farmers buying food...
-				trackBids[entry.Key].Add(item.Key, 0);
-			}
-		}
 	}
 
 	void InitAgent(EconAgent agent, string type)
 	{
-        List<string> buildables = new List<string>();
-		buildables.Add(type);
+		string buildable = type;
 		float initStock = config.initStock;
 		float initCash = config.initCash;
 		if (config.randomInitStock)
@@ -67,6 +65,6 @@ public class AuctionHouseTest : AuctionHouse {
 		// TODO: This may cause uneven maxStock between agents
 		var maxStock = Mathf.Max(initStock, config.maxStock);
 
-        agent.Init(config, auctionTracker, buildables, initStock, maxStock);
+        agent.Init(config, auctionTracker, buildable, initStock, maxStock);
 	}
 }
