@@ -6,6 +6,8 @@ using UnityEngine;
 using UnityEngine.Assertions;
 using AYellowpaper.SerializedCollections;
 using Sirenix.OdinInspector;
+using EconSim;
+using UnityEngine.Serialization;
 
 public class SimulationConfig : MonoBehaviour{
 	
@@ -45,8 +47,22 @@ public class SimulationConfig : MonoBehaviour{
 	public int numRoundsNoTrade = 100;
 	
 	//init conditions
+	[FormerlySerializedAs("bidSortType")]
 	[TabGroup("Auction Trade")]
+	[EnumToggleButtons]
+	public OfferSortOrder bidSortOrder = OfferSortOrder.Ascending;
+	[TabGroup("Auction Trade")]
+	[EnumToggleButtons]
+	public OfferSortBy bidSortBy = OfferSortBy.OfferPrice;
+	[FormerlySerializedAs("askSortType")]
+	[TabGroup("Auction Trade")]
+	[EnumToggleButtons]
+	public OfferSortOrder askSortOrder = OfferSortOrder.Ascending;
+	[TabGroup("Auction Trade")]
+	[EnumToggleButtons]
+	public OfferSortBy askSortBy = OfferSortBy.OfferPrice;
 	[InfoBox("Avg bid/ask price; offer price random delta around mkt price")]
+	[TabGroup("Auction Trade")]
 	public bool baselineAuction = false; 
 	[TabGroup("Auction Trade")]
 	public bool baselineSellPrice = false; 

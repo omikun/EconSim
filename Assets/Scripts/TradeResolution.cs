@@ -3,11 +3,32 @@ using System.IO;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Assertions;
+using EconSim;
+public abstract class OfferSorter
+{
+	public abstract void SortOffer(ref OfferList offers);
+}
+class SortOfferByPriceAscend : OfferSorter
+{
+	public override void SortOffer(ref OfferList offers)
+	{
+		offers.Sort((x, y) => x.offerPrice.CompareTo(y.offerPrice)); //inc
+	}
+}
+class SortOfferByPriceDescend : OfferSorter
+{
+	public override void SortOffer(ref OfferList offers)
+	{
+		offers.Sort((x, y) => y.offerPrice.CompareTo(y.offerPrice)); //dec
+	}
+}
 class TradeResolution
 {
     protected OfferTable askTable, bidTable;
     private AuctionStats auctionTracker;
-    FiscalPolicy fiscalPolicy;
+    protected FiscalPolicy fiscalPolicy;
+    protected OfferSorter askSorter;
+    protected OfferSorter bidSorter;
     protected enum LoopState { None, ContinueBids, ContinueAsks, Break }
 
     public TradeResolution(AuctionStats aStats, FiscalPolicy fp, OfferTable at, OfferTable bt)
@@ -16,20 +37,12 @@ class TradeResolution
 	    fiscalPolicy = fp;
 	    askTable = at;
 	    bidTable = bt;
-    }
 
-    protected void SortOffer(ref OfferList offers, bool ascending)
-    {
-	    if (ascending)
-		    offers.Sort((x, y) => x.offerPrice.CompareTo(y.offerPrice)); //inc
-	    else
-		    offers.Sort((x, y) => y.offerPrice.CompareTo(y.offerPrice)); //inc
-    }
+	    var cfg = auctionTracker.config;
 
-    protected virtual void SortOffers(ref OfferList asks, ref OfferList bids)
-    {
-		SortOffer(ref asks, true);
-		SortOffer(ref bids, false);
+	    askSorter = (cfg.askSortOrder == OfferSortOrder.Ascending) ? new SortOfferByPriceAscend() : new SortOfferByPriceDescend();
+	    bidSorter = (cfg.bidSortOrder == OfferSortOrder.Ascending) ? new SortOfferByPriceAscend() : new SortOfferByPriceDescend();
+	    //what about random?
     }
     protected virtual LoopState EndTrades(Offer ask, Offer bid)
     {
@@ -50,7 +63,8 @@ class TradeResolution
 		asks.Shuffle();
 		bids.Shuffle();
 
-		SortOffers(ref asks, ref bids);
+	    askSorter.SortOffer(ref asks);
+	    bidSorter.SortOffer(ref bids);
     
 		int idx = 0;
 		foreach (var ask in asks)
@@ -137,13 +151,9 @@ class XEvenResolution : TradeResolution
 {
 	public XEvenResolution(AuctionStats aStats, FiscalPolicy fp, OfferTable at, OfferTable bt) : base(aStats, fp, at, bt) {}
 
-	protected override void SortOffers(ref OfferList asks, ref OfferList bids)
-	{
-		SortOffer(ref asks, true);
-		SortOffer(ref bids, false);
-	}
     protected override LoopState EndTrades(Offer ask, Offer bid)
     {
+	    //auction is over once ask price is greater than bid price
 	    if (ask.offerPrice > bid.offerPrice)
 		    return LoopState.Break;
 	    else
@@ -159,13 +169,9 @@ class XEvenResolution : TradeResolution
 class OmisTradeResolution : TradeResolution
 {
 	public OmisTradeResolution(AuctionStats aStats, FiscalPolicy fp, OfferTable at, OfferTable bt) : base(aStats, fp, at, bt) {}
-	protected override void SortOffers(ref OfferList asks, ref OfferList bids)
-	{
-		SortOffer(ref asks, true);
-		SortOffer(ref bids, true);
-	}
     protected override LoopState EndTrades(Offer ask, Offer bid)
     {
+	    //skip bids until bid price is higher than ask price
 	    if (ask.offerPrice > bid.offerPrice)
 		    return LoopState.ContinueBids;
 	    else
