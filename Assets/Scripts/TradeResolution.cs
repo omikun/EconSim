@@ -22,6 +22,33 @@ class SortOfferByPriceDescend : OfferSorter
 		offers.Sort((x, y) => y.offerPrice.CompareTo(y.offerPrice)); //dec
 	}
 }
+
+public abstract class TradePriceResolver
+{
+	public abstract float ResolvePrice(Offer ask, Offer bid);
+}
+
+class TakeAskPrice : TradePriceResolver
+{
+	public override float ResolvePrice(Offer ask, Offer bid)
+	{
+		return ask.offerPrice;
+	}
+}
+class TakeBidPrice : TradePriceResolver
+{
+	public override float ResolvePrice(Offer ask, Offer bid)
+	{
+		return bid.offerPrice;
+	}
+}
+class TakeAverage : TradePriceResolver
+{
+	public override float ResolvePrice(Offer ask, Offer bid)
+	{
+		return (ask.offerPrice + bid.offerPrice) / 2f;
+	}
+}
 class TradeResolution
 {
     protected OfferTable askTable, bidTable;
@@ -29,6 +56,7 @@ class TradeResolution
     protected FiscalPolicy fiscalPolicy;
     protected OfferSorter askSorter;
     protected OfferSorter bidSorter;
+    protected TradePriceResolver tradePriceResolver;
     protected enum LoopState { None, ContinueBids, ContinueAsks, Break }
 
     public TradeResolution(AuctionStats aStats, FiscalPolicy fp, OfferTable at, OfferTable bt)
@@ -40,9 +68,33 @@ class TradeResolution
 
 	    var cfg = auctionTracker.config;
 
-	    askSorter = (cfg.askSortOrder == OfferSortOrder.Ascending) ? new SortOfferByPriceAscend() : new SortOfferByPriceDescend();
-	    bidSorter = (cfg.bidSortOrder == OfferSortOrder.Ascending) ? new SortOfferByPriceAscend() : new SortOfferByPriceDescend();
+	    askSorter = (cfg.askSortOrder == OfferSortOrder.Ascending)
+		    ? new SortOfferByPriceAscend()
+		    : new SortOfferByPriceDescend();
+	    bidSorter = (cfg.bidSortOrder == OfferSortOrder.Ascending)
+		    ? new SortOfferByPriceAscend()
+		    : new SortOfferByPriceDescend();
 	    //what about random?
+	    ConfigureTradePriceResolution();
+    }
+    public void ConfigureTradePriceResolution()
+    {
+	    var cfg = auctionTracker.config;
+	    switch (cfg.resolveTradePrice)
+	    {
+		    case ResolveTradePrice.TakeAskPrice:
+			    tradePriceResolver = new TakeAskPrice();
+			    break;
+		    case ResolveTradePrice.TakeBidPrice:
+			    tradePriceResolver = new TakeBidPrice();
+			    break;
+		    case ResolveTradePrice.TakeAveragePrice:
+			    tradePriceResolver = new TakeAverage();
+			    break;
+		    default:
+			    Assert.IsTrue(false, "Unknown trade price type");
+			    break;
+	    }
     }
     protected virtual LoopState EndTrades(Offer ask, Offer bid)
     {
@@ -50,10 +102,6 @@ class TradeResolution
 		    return LoopState.Break;
 	    else
 		    return LoopState.None;
-    }
-    protected virtual float ResolveClearingPrice(Offer ask, Offer bid)
-    {
-	    return (ask.offerPrice + bid.offerPrice) / 2f;
     }
     public virtual void ResolveOffers(ResourceController rsc, ref float moneyExchangedThisRound, ref float goodsExchangedThisRound)
 	{
@@ -72,6 +120,7 @@ class TradeResolution
 			ask.agent.inventory[rsc.name].askOrder = idx;
 			idx++;
 		}
+		
 		idx = 0;
 		foreach (var bid in bids)
 		{
@@ -88,21 +137,23 @@ class TradeResolution
 		{
 			var ask = asks[askIdx];
 			var bid = bids[bidIdx];
-    
-			if (EndTrades(ask, bid) == LoopState.Break)
+
+			var cond = EndTrades(ask, bid);
+			if (cond == LoopState.Break)
 				break;
-			else if (EndTrades(ask, bid) == LoopState.ContinueAsks)
+			else if (cond == LoopState.ContinueAsks)
 			{
 				askIdx++;
 				continue;
 			}
-			else if (EndTrades(ask, bid) == LoopState.ContinueBids)
+			else if (cond == LoopState.ContinueBids)
 			{
 				bidIdx++;
 				continue;
 			}
     
-			var clearingPrice = ResolveClearingPrice(ask, bid);
+			//var clearingPrice = ResolveClearingPrice(ask, bid);
+			var clearingPrice = tradePriceResolver.ResolvePrice(ask, bid);
 			var tradeQuantity = Mathf.Min(bid.remainingQuantity, ask.remainingQuantity);
 			Assert.IsTrue(tradeQuantity > 0);
 			Assert.IsTrue(clearingPrice > 0);
@@ -159,10 +210,6 @@ class XEvenResolution : TradeResolution
 	    else
 		    return LoopState.None;
     }
-    protected override float ResolveClearingPrice(Offer ask, Offer bid)
-    {
-	    return (ask.offerPrice + bid.offerPrice) / 2f;
-    }
 }
 
 // the idea was match bids and asks by price, where bid price always above ask price
@@ -176,10 +223,6 @@ class OmisTradeResolution : TradeResolution
 		    return LoopState.ContinueBids;
 	    else
 		    return LoopState.None;
-    }
-    protected override float ResolveClearingPrice(Offer ask, Offer bid)
-    {
-	    return ask.offerPrice;
     }
 }
 // from https://thomassimon.dev/ps/4

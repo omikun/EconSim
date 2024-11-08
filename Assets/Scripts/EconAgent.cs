@@ -7,6 +7,7 @@ using UnityEngine.XR;
 using System;
 using Sirenix.Reflection.Editor;
 using DG.Tweening;
+using EconSim;
 using UnityEngine.UIElements;
 
 public class EconAgent : MonoBehaviour {
@@ -32,8 +33,13 @@ public class EconAgent : MonoBehaviour {
 	bool soldThisRound = false;
 	WaitNumRoundsNotTriggered noSaleIn = new();
 	WaitNumRoundsNotTriggered noPurchaseIn = new();
-	private Consumer consumer;
-	private Producer producer;
+	protected internal FoodEquivalent foodEquivalent;
+	protected internal Consumer consumer;
+	protected internal ProductionStrategy productionStrategy;
+	protected internal AskPriceStrategy askPriceStrategy;
+	//private AskQuantityStrategy askQuantityStrategy;
+	//private bidQuantityStrategy bidQuantityStrategy;
+	//private BidPriceStrategy bidPriceStrategy;
 
 	public string Profession {
 		get { return outputName; }
@@ -142,7 +148,15 @@ public class EconAgent : MonoBehaviour {
 			consumer = new SanityCheckConsumer(this);
 		else
 			consumer = new Consumer(this);
-		producer = new Producer(this);
+		switch (config.productionRate)
+		{
+			case AgentProduction.FixedRate:
+				productionStrategy = new FixedProduction(this);
+				break;
+			default:
+				Assert.IsTrue(false, "unsupported production strategy");
+				break;
+		}
 	}
 	public void Respawn(bool bankrupted, string buildable, Government gov = null)
 	{
@@ -279,7 +293,7 @@ public class EconAgent : MonoBehaviour {
 	}
 	public virtual float EvaluateHappiness()
 	{
-		var numFoodEq = FoodEquivalent.GetNumFoodEquivalent(book, this, config.numFoodHappy);
+		var numFoodEq = foodEquivalent.GetNumFoodEquivalent(this, book, config.numFoodHappy);
 		return Mathf.Log10(numFoodEq);
 	}
 
@@ -370,53 +384,15 @@ public class EconAgent : MonoBehaviour {
 		return consumer.Consume(book);
 	}
 	public virtual float Produce() {
-		numProducedThisRound = producer.Produce();
+		numProducedThisRound = productionStrategy.Produce();
 		return numProducedThisRound;
 	}
 	public float CalcMinProduction()
 	{
-		float minTotalProduced = float.MaxValue; 
-		//foreach (var outputName in outputName)
-		{
-			Assert.IsTrue(book.ContainsKey(outputName));
-			var com = book[outputName];
-			var stock = inventory[outputName];
-			var numProduced = CalculateNumProduced(com, stock);
-			minTotalProduced = Mathf.Min(minTotalProduced, numProduced);
-
-		}
-		return minTotalProduced;
-	}
-	//build as many as one can 
-	//TODO what if don't want to produce as much as one can? what if costs are high rn?
-	public float CalculateNumProduceable(ResourceController rsc, InventoryItem item)
-	{
-		float numProduced = item.Deficit(); //can't produce more than max stock
-		//find max that can be made w/ available stock
-		foreach (var com in rsc.recipe.Keys)
-		{
-			numProduced = Mathf.Min(numProduced, inventory[com].NumProduceable(rsc));
-			Debug.Log(auctionStats.round + " " + name 
-				+ "can produce " + numProduced 
-				+ " w/" + inventory[com].Quantity + "/" + rsc.recipe[com] + " " + com);
-		}
-		return numProduced;
-	}
-	protected internal float CalculateNumProduced(ResourceController rsc, InventoryItem item)
-	{
-		var numProduced = CalculateNumProduceable(rsc, item);
-		//can only build fixed rate at a time
-		numProduced = Mathf.Clamp(numProduced, 0, item.GetProductionRate());
-		numProduced = Mathf.Floor(numProduced);
-
-		Debug.Log(auctionStats.round + " " + name 
-			+ " producing " + rsc.name 
-			+ " currently in stock " + item.Quantity 
-			+ " production rate: " + item.GetProductionRate() 
-			+ " produced: " + numProduced
-			+ " room: " + item.Deficit());
-		Assert.IsTrue(numProduced >= 0);
-		return numProduced;
+		Assert.IsTrue(book.ContainsKey(outputName));
+		var rsc = book[outputName];
+		var item = inventory[rsc.name];
+		return productionStrategy.CalculateNumProduceable(rsc, item);
 	}
 	protected internal void ConsumeInput(ResourceController rsc, float numProduced, ref string msg)
 	{
@@ -453,7 +429,7 @@ public class EconAgent : MonoBehaviour {
 
 	public virtual Offers CreateAsks()
 	{
-		return producer.CreateAsks();
+		return askPriceStrategy.CreateAsks();
 	}
 	void Update () {
 	}

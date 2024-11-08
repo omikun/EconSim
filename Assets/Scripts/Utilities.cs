@@ -16,11 +16,50 @@ namespace EconSim
         Descending,
         Random
     }
-
     public enum OfferSortBy
     {
         OfferPrice
         //, QualityOfLife
+    }
+    public enum ResolveTradePrice
+    {
+        TakeAskPrice,
+        TakeBidPrice,
+        TakeAveragePrice,
+    }
+    public enum AgentProduction
+    {
+        FixedRate,
+        DemandDriven,
+        MaxedOut,
+    }
+    public enum AgentSellRate
+    {
+        FixedRate,
+        DemandDriven,
+        MaxedOut,
+    }
+    public enum AgentSellPrice
+    {
+        AtCost,
+        MarketAverage,
+        FixedProfit,
+        DemandBased,
+    }
+
+    public enum AgentConsumption
+    {
+        FixedRate,
+        Gluttonous,
+        MinimumSurvival,
+        Opportunistic,
+    }
+
+    public enum AgentBuyPrice
+    {
+        MarketPrice,
+        SupplyBased,
+        QoLBased,
     }
 }
 public class Utilities 

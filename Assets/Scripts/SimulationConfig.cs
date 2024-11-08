@@ -61,6 +61,10 @@ public class SimulationConfig : MonoBehaviour{
 	[TabGroup("Auction Trade")]
 	[EnumToggleButtons]
 	public OfferSortBy askSortBy = OfferSortBy.OfferPrice;
+	[TabGroup("Auction Trade")] 
+	[EnumToggleButtons]
+	public ResolveTradePrice resolveTradePrice = ResolveTradePrice.TakeAveragePrice;
+	
 	[InfoBox("Avg bid/ask price; offer price random delta around mkt price")]
 	[TabGroup("Auction Trade")]
 	public bool baselineAuction = false; 
@@ -167,6 +171,23 @@ public class SimulationConfig : MonoBehaviour{
 	public AnimationCurve foodConsumptionCurve;
 	[TabGroup("tab2", "Agent FoodConsumption")]
 	public float numFoodHappy = 10f;
+
+	[TabGroup("tab2", "Agent Trade")] 
+	[EnumToggleButtons]
+	public AgentProduction productionRate = AgentProduction.FixedRate;
+	[TabGroup("tab2", "Agent Trade")] 
+	[EnumToggleButtons]
+	public AgentSellRate sellRate = AgentSellRate.FixedRate;
+	[TabGroup("tab2", "Agent Trade")] 
+	[EnumToggleButtons]
+	public AgentSellPrice sellPrice = AgentSellPrice.AtCost;
+	[TabGroup("tab2", "Agent Trade")] 
+	[EnumToggleButtons]
+	public AgentConsumption consumeRate = AgentConsumption.FixedRate;
+	[TabGroup("tab2", "Agent Trade")] 
+	[EnumToggleButtons]
+	public AgentBuyPrice buyPrice = AgentBuyPrice.MarketPrice;
+	
 	
 	private void OnToggleBaselineAuction()
 	{
