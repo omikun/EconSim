@@ -86,7 +86,7 @@ public class EconAgent : MonoBehaviour {
 		if (inventory.ContainsKey(name))
 			return;
 
-        inventory.Add(name, new InventoryItem(auctionStats, name, num, max, price, production));
+        inventory.Add(name, new InventoryItem(this, auctionStats, name, num, max, price, production));
 
 		perItemCost[name] = book[name].marketPrice * num;
 	}
@@ -135,19 +135,31 @@ public class EconAgent : MonoBehaviour {
 				var commodity = dep.Key;
 				inputs.Add(commodity);
                 //Debug.Log("::" + commodity);
-				AddToInventory(commodity, initStock, maxStock, book[commodity].marketPrice, book[commodity].production);
+				AddToInventory(commodity, initStock, maxStock, book[commodity].marketPrice, book[commodity].productionPerBatch);
 			}
-			AddToInventory(buildable, 0, maxStock, book[buildable].marketPrice, book[buildable].production);
+			AddToInventory(buildable, 0, maxStock, book[buildable].marketPrice, book[buildable].productionPerBatch);
 			Debug.Log("New " + gameObject.name + " has " + inventory[buildable].Quantity + " " + buildable);
 		}
     }
 
 	void Configure()
 	{
-		if (config.sanityCheck)
-			consumer = new SanityCheckConsumer(this);
-		else
-			consumer = new Consumer(this);
+		foodEquivalent = new(this);
+		switch (config.consumerType)
+		{
+			case ConsumerType.Default:
+				consumer = new SanityCheckConsumer(this);
+				break;
+			case ConsumerType.SanityCheck:
+				consumer = new SanityCheckConsumer(this);
+				break;
+			case ConsumerType.QoLBased:
+				consumer = new QoLConsumer(this);
+				break;
+			default:
+				Assert.IsTrue(false, "Unknown consumer type: " + config.consumerType);
+				break;
+		}
 		switch (config.productionRate)
 		{
 			case AgentProduction.FixedRate:
@@ -155,6 +167,28 @@ public class EconAgent : MonoBehaviour {
 				break;
 			default:
 				Assert.IsTrue(false, "unsupported production strategy");
+				break;
+		}
+
+		switch (config.sellPrice)
+		{
+			case AgentSellPrice.FixedPrice:
+				askPriceStrategy = new FixedAskPriceStrategy(this);
+				break;
+			case AgentSellPrice.AtCost:
+				askPriceStrategy = new AtCostAskStrategy(this);
+				break;
+			case AgentSellPrice.MarketAverage:
+				askPriceStrategy = new MarketAskStrategy(this);
+				break;
+			case AgentSellPrice.FixedProfit:
+				askPriceStrategy = new FixedProfitAskStrategy(this);
+				break;
+			case AgentSellPrice.DemandBased:
+				askPriceStrategy = new DynamicAskPriceStrategy(this);
+				break;
+			default:
+				Assert.IsTrue(false, "unsupported agent sell price strategy");
 				break;
 		}
 	}
@@ -183,9 +217,9 @@ public class EconAgent : MonoBehaviour {
 			{
 				var com = book[dep.Key];
 				inputs.Add(com.name);
-				AddToInventory(com.name, 0, maxStock, com.marketPrice, com.production);
+				AddToInventory(com.name, 0, maxStock, com.marketPrice, com.productionPerBatch);
 			}
-			AddToInventory(outputName, 0, maxStock, output.marketPrice, output.production);
+			AddToInventory(outputName, 0, maxStock, output.marketPrice, output.productionPerBatch);
 			
 			PrintInventory("post reinit");
 		}
@@ -293,7 +327,7 @@ public class EconAgent : MonoBehaviour {
 	}
 	public virtual float EvaluateHappiness()
 	{
-		var numFoodEq = foodEquivalent.GetNumFoodEquivalent(this, book, config.numFoodHappy);
+		var numFoodEq = foodEquivalent.GetNumFoodEquivalent(book, config.numFoodHappy);
 		return Mathf.Log10(numFoodEq);
 	}
 
@@ -344,15 +378,18 @@ public class EconAgent : MonoBehaviour {
 		{
 			Debug.Log(auctionStats.round + " gov buying " + quantity.ToString("n0") + " " + commodity);
 		}
+
+        Assert.IsTrue(quantity > 0);
+
+		if (config.onlyBuyWhatsAffordable)
+		{
+			quantity = Mathf.Clamp((float)(int)(Cash/price), 0, quantity);
+		}
 		var boughtQuantity = inventory[commodity].Buy(quantity, price);
 		Debug.Log(name + " has " + Cash.ToString("c2") 
 			+ " want to buy " + quantity.ToString("n2") + " " + commodity 
 			+ " for " + price.ToString("c2") + " bought " + boughtQuantity.ToString("n2"));
-		if (outputName.Contains(commodity))
-		{
-			Debug.Log(name + " outputs: " + outputName);
-		}
-		Assert.IsFalse(outputName.Contains(commodity)); //agents shouldn't buy what they produce
+		Assert.IsFalse(outputName.Contains(commodity), name + " buying own output: " + outputName); 
 		Cash -= price * boughtQuantity;
 		boughtThisRound = true;
 		return boughtQuantity;
@@ -381,6 +418,7 @@ public class EconAgent : MonoBehaviour {
     /*********** Produce and consume; enter asks and bids to auction house *****/
 	public virtual Offers Consume(AuctionBook book)
 	{
+		Debug.Log(name + " consuming");
 		return consumer.Consume(book);
 	}
 	public virtual float Produce() {
@@ -396,10 +434,11 @@ public class EconAgent : MonoBehaviour {
 	}
 	protected internal void ConsumeInput(ResourceController rsc, float numProduced, ref string msg)
 	{
+		float numBatches = numProduced / rsc.productionPerBatch;
 		foreach (var dep in rsc.recipe)
 		{
 			var stock = inventory[dep.Key].Quantity;
-			var numUsed = dep.Value * numProduced;
+			var numUsed = dep.Value * numBatches;
 			Debug.Log(auctionStats.round + " " + name + " has " + stock + " " + dep.Key + " used " + numUsed);
 			Assert.IsTrue(stock >= numUsed);
 			inventory[dep.Key].Decrease(numUsed);

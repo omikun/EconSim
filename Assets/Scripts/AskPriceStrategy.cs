@@ -24,6 +24,8 @@ public abstract class AskPriceStrategy
 
 		return numAsks;
 	}
+	
+	public abstract float GetSellPrice(string commodityName);
 
 	public virtual Offers CreateAsks()
 	{
@@ -42,33 +44,13 @@ public abstract class AskPriceStrategy
 			float sellQuantity = FindSellCount(commodityName);
 			//float sellPrice = sellStock.GetPrice();
 			// + cost of food since last sell
-			var expense = Mathf.Max(0, agent.foodExpense);
-			float sellPrice = agent.inventory[commodityName].cost * agent.config.profitMarkup + expense;
-			if (agent.config.baselineSellPrice)
-			{
-				var baseSellPrice = agent.book[commodityName].marketPrice;
-				var delta = agent.config.baselineSellPriceDelta;
-				var min = 1f - delta;
-				var max = 1f + delta;
-				baseSellPrice *= UnityEngine.Random.Range(min, max);
-				// sellPrice = baseSellPrice;
-				if (agent.config.baselineSellPriceMinCost)
-					sellPrice = Mathf.Max(sellPrice, baseSellPrice);
-				else
-					sellPrice = baseSellPrice;
-			}
-
-			if (agent.config.sanityCheckSellPrice)
-			{
-				sellPrice = agent.book[commodityName].setPrice;
-			}
+			float sellPrice = GetSellPrice(commodityName);
 
 			if (agent.config.sanityCheckSellQuant)
 			{
 				sellQuantity = item.Value.GetProductionRate() * agent.config.sanityCheckTradeVolume;
 				sellQuantity = Mathf.Min(sellQuantity, agent.inventory[commodityName].Quantity);
 			}
-
 			if (sellQuantity > 0 && sellPrice > 0)
 			{
 				Debug.Log(agent.auctionStats.round + ": " + agent.name
@@ -83,5 +65,75 @@ public abstract class AskPriceStrategy
 		}
 
 		return asks;
+	}
+	public float RandomizeSellPrice(float sellPrice, float cost)
+	{
+		if (agent.config.randomizeSellPrice)
+		{
+			var delta = agent.config.sellPriceDelta;
+			var min = 1f - delta;
+			var max = 1f + delta;
+			sellPrice *= UnityEngine.Random.Range(min, max);
+		}
+		if (agent.config.baselineSellPriceMinCost)
+			sellPrice = Mathf.Max(sellPrice, cost);
+		return sellPrice;
+	}
+}
+
+public class AtCostAskStrategy : AskPriceStrategy
+{
+	public AtCostAskStrategy(EconAgent a) : base(a) { }
+	public override float GetSellPrice(string commodityName)
+	{
+		var expense = Mathf.Max(0, agent.foodExpense);
+		var cost = agent.inventory[commodityName].cost;
+		var sellPrice = cost + expense;
+		return RandomizeSellPrice(sellPrice, sellPrice);
+	}
+}
+
+public class FixedProfitAskStrategy : AtCostAskStrategy
+{
+	public FixedProfitAskStrategy(EconAgent a) : base(a) { }
+	public override float GetSellPrice(string commodityName)
+	{
+		var expense = Mathf.Max(0, agent.foodExpense);
+		var cost = agent.inventory[commodityName].cost;
+		var sellPrice = cost * agent.config.profitMarkup + expense;
+		return RandomizeSellPrice(sellPrice, sellPrice);
+	}
+}
+public class MarketAskStrategy : AtCostAskStrategy
+{
+	public MarketAskStrategy(EconAgent a) : base(a) { }
+	public override float GetSellPrice(string commodityName)
+	{
+		var sellPrice = agent.book[commodityName].marketPrice;
+		var cost = agent.inventory[commodityName].cost;
+		return RandomizeSellPrice(sellPrice, cost);
+		
+	}
+}
+
+public class FixedAskPriceStrategy : AtCostAskStrategy
+{
+	public FixedAskPriceStrategy (EconAgent a) : base(a) { }
+	public override float GetSellPrice(string commodityName)
+	{
+		var sellPrice = agent.book[commodityName].setPrice;
+		var cost = agent.inventory[commodityName].cost;
+		return RandomizeSellPrice(sellPrice, cost);
+	}
+}
+
+public class DynamicAskPriceStrategy : AskPriceStrategy
+{
+	public DynamicAskPriceStrategy(EconAgent a) : base(a) { }
+
+	public override float GetSellPrice(string commodityName)
+	{
+		//if last round not all sold, -5% ask price
+		return agent.inventory[commodityName].priceBelief;
 	}
 }

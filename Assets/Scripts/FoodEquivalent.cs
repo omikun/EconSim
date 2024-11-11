@@ -2,9 +2,13 @@ using UnityEngine;
 public class FoodEquivalent
 {
 	protected EconAgent agent;
-	public float GetNumFoodEquivalent(EconAgent a, AuctionBook book, float numFoodHappy)
+
+	public FoodEquivalent(EconAgent a)
 	{
 		agent = a;
+	}
+	public float GetNumFoodEquivalent(AuctionBook book, float numFoodHappy)
+	{
 		var numFood = GetNumFood();
 		if (numFood >= numFoodHappy) return 1f;
 

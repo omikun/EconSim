@@ -49,7 +49,7 @@ class TakeAverage : TradePriceResolver
 		return (ask.offerPrice + bid.offerPrice) / 2f;
 	}
 }
-class TradeResolution
+public abstract class TradeResolution
 {
     protected OfferTable askTable, bidTable;
     private AuctionStats auctionTracker;
@@ -96,13 +96,8 @@ class TradeResolution
 			    break;
 	    }
     }
-    protected virtual LoopState EndTrades(Offer ask, Offer bid)
-    {
-	    if (ask.offerPrice > bid.offerPrice)
-		    return LoopState.Break;
-	    else
-		    return LoopState.None;
-    }
+
+    protected abstract LoopState EndTrades(Offer ask, Offer bid);
     public virtual void ResolveOffers(ResourceController rsc, ref float moneyExchangedThisRound, ref float goodsExchangedThisRound)
 	{
 		var asks = askTable[rsc.name];
@@ -159,6 +154,7 @@ class TradeResolution
 			Assert.IsTrue(clearingPrice > 0);
     
 			// =========== trade ============== 
+			//bought quantity may be lower than trade quantity (buyer can buy less depending on clearing price)
 			var boughtQuantity = Trade(rsc, clearingPrice, tradeQuantity, bid, ask);
     
 			moneyExchangedThisRound += clearingPrice * boughtQuantity;
@@ -172,18 +168,24 @@ class TradeResolution
 			Assert.IsTrue(bid.remainingQuantity >= 0);
 			//go to next ask/bid if fullfilled
 			if (ask.remainingQuantity == 0)
+			{
+				ask.agent.UpdateSellerPriceBelief(ask, rsc);
 				askIdx++;
+			}
+
 			if (bid.remainingQuantity == 0)
+			{
+				bid.agent.UpdateBuyerPriceBelief(bid, rsc);	
 				bidIdx++;
+			}
 		}
 		Assert.IsFalse(goodsExchangedThisRound < 0);
 	}
 	protected float Trade(ResourceController rsc, float clearingPrice, float tradeQuantity, Offer bid, Offer ask)
 	{
 		var boughtQuantity = bid.agent.Buy(rsc.name, tradeQuantity, clearingPrice);
-		Assert.IsTrue(boughtQuantity == tradeQuantity);
 		ask.agent.Sell(rsc.name, boughtQuantity, clearingPrice);
-		fiscalPolicy.AddSalesTax(rsc.name, tradeQuantity, clearingPrice, bid.agent);
+		fiscalPolicy.AddSalesTax(rsc.name, boughtQuantity, clearingPrice, bid.agent);
 
 		Debug.Log("Trade(), " + auctionTracker.round + ", " + ask.agent.name + ", " + bid.agent.name + ", " + 
 			rsc.name + ", " + boughtQuantity.ToString("n2") + ", " + clearingPrice.ToString("n2") +
@@ -204,11 +206,7 @@ class XEvenResolution : TradeResolution
 
     protected override LoopState EndTrades(Offer ask, Offer bid)
     {
-	    //auction is over once ask price is greater than bid price
-	    if (ask.offerPrice > bid.offerPrice)
-		    return LoopState.Break;
-	    else
-		    return LoopState.None;
+	    return LoopState.None;
     }
 }
 
@@ -229,4 +227,11 @@ class OmisTradeResolution : TradeResolution
 class SimonTradeResolution : TradeResolution
 {
 	public SimonTradeResolution(AuctionStats aStats, FiscalPolicy fp, OfferTable at, OfferTable bt) : base(aStats, fp, at, bt) {}
+    protected override LoopState EndTrades(Offer ask, Offer bid)
+    {
+	    if (ask.offerPrice > bid.offerPrice)
+		    return LoopState.Break;
+	    else
+		    return LoopState.None;
+    }
 }

@@ -621,57 +621,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   autoNextRound: 0
   tickInterval: 0.001
-  EnableDebug: 0
+  EnableDebug: 1
   EnableLog: 0
   appendTimeToLog: 1
   exitAfterNoTrade: 1
   seed: 42
   maxRounds: 300
   numRoundsNoTrade: 100
-  starvationThreshold: 0.1
-  foodConsumption: 0
-  foodConsumptionRate: 0.1
-  useFoodConsumptionCurve: 1
-  foodConsumptionCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 0.06503296
-      inSlope: 4.4399576
-      outSlope: 4.4399576
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0.040531415
-    - serializedVersion: 3
-      time: 1.0379586
-      value: 3.4476013
-      inSlope: 10.906322
-      outSlope: 10.906322
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.05866221
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  numFoodHappy: 10
-  baselineAuction: 0
-  baselineSellPrice: 0
-  baselineSellPriceMinCost: 0
-  baselineBuyPrice: 0
-  baselineSellPriceDelta: 0.05
-  baselineBuyPriceDelta: 0.05
-  profitMarkup: 1
-  sanityCheck: 1
-  sanityCheckTradeVolume: 1
-  sanityCheckSellQuant: 1
-  sanityCheckBuyQuant: 1
-  sanityCheckSellPrice: 1
-  sanityCheckBuyPrice: 1
-  enablePriceFavorability: 0
-  onlyBuyWhatsAffordable: 0
+  tradeResolution: 0
+  bidSortOrder: 1
+  bidSortBy: 0
+  askSortOrder: 0
+  askSortBy: 0
+  resolveTradePrice: 0
   idleTaxRate: 0
   EnableSalesTax: 0
   SalesTaxRate:
@@ -728,9 +690,9 @@ MonoBehaviour:
       Value:
         _serializedList:
         - Key: Wood
-          Value: 0.2
+          Value: 2
         - Key: Tool
-          Value: 0.1
+          Value: 1
         - Key: Prod_multiplier
           Value: 1
         - Key: Prod_rate
@@ -741,7 +703,7 @@ MonoBehaviour:
       Value:
         _serializedList:
         - Key: Food
-          Value: 1.5
+          Value: 3
         - Key: Prod_multiplier
           Value: 1
         - Key: Prod_rate
@@ -752,7 +714,7 @@ MonoBehaviour:
       Value:
         _serializedList:
         - Key: Food
-          Value: 1
+          Value: 8
         - Key: Prod_multiplier
           Value: 1
         - Key: Prod_rate
@@ -763,9 +725,9 @@ MonoBehaviour:
       Value:
         _serializedList:
         - Key: Food
-          Value: 1
+          Value: 8
         - Key: Ore
-          Value: 2
+          Value: 16
         - Key: Prod_multiplier
           Value: 1
         - Key: Prod_rate
@@ -776,15 +738,59 @@ MonoBehaviour:
       Value:
         _serializedList:
         - Key: Food
-          Value: 1
+          Value: 4
         - Key: Metal
-          Value: 2
+          Value: 8
         - Key: Prod_multiplier
           Value: 1
         - Key: Prod_rate
           Value: 4
         - Key: Set_price
           Value: 7
+  starvationThreshold: 0.1
+  foodConsumption: 0
+  foodConsumptionRate: 0.1
+  useFoodConsumptionCurve: 1
+  foodConsumptionCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0.06503296
+      inSlope: 4.4399576
+      outSlope: 4.4399576
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0.040531415
+    - serializedVersion: 3
+      time: 1.0379586
+      value: 3.4476013
+      inSlope: 10.906322
+      outSlope: 10.906322
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.05866221
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  numFoodHappy: 10
+  productionRate: 0
+  consumerType: 0
+  sellRate: 0
+  sellPrice: 4
+  consumeRate: 0
+  buyPrice: 2
+  randomizeSellPrice: 0
+  baselineSellPriceMinCost: 0
+  sellPriceDelta: 0.05
+  buyPriceDelta: 0.05
+  profitMarkup: 1
+  sanityCheckTradeVolume: 1
+  sanityCheckSellQuant: 1
+  enablePriceFavorability: 0
+  onlyBuyWhatsAffordable: 1
 --- !u!114 &194909954
 MonoBehaviour:
   m_ObjectHideFlags: 0

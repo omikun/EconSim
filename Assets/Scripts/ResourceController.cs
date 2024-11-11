@@ -45,7 +45,7 @@ public class ResourceController
 	public ResourceController(string n, float p, float pm, float sp,Recipe r)
 	{
 		name = n;
-		production = p;
+		productionPerBatch = p;
 		productionMultiplier = pm;
 		setPrice = sp; //why can't setPrice and price be the same thing?
 		marketPrice = sp;
@@ -77,7 +77,7 @@ public class ResourceController
 	public string name { get; private set; }
 	public float marketPrice { get; private set; } //market price
 	public float demand { get; private set; }
-	public float production { get; private set; }
+	public float productionPerBatch { get; private set; }
 	public float productionMultiplier { get; private set; } //forest fire or rich mineral vein
 	public float resourceAmount { get; private set; } // for fish or finite ore
 	public Recipe recipe { get; private set; }

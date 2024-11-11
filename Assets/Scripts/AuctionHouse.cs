@@ -8,6 +8,7 @@ using AYellowpaper.SerializedCollections;
 using UnityEngine.Rendering;
 using Sirenix.OdinInspector;
 using ChartAndGraph;
+using EconSim;
 using Sirenix.Serialization;
 using Sirenix.OdinInspector.Editor.ValueResolvers;
 
@@ -69,10 +70,21 @@ public class AuctionHouse : MonoBehaviour {
 		askTable = new OfferTable(com);
         bidTable = new OfferTable(com);
 
-        if (config.baselineAuction)
-	        tradeResolver = new XEvenResolution(auctionTracker, fiscalPolicy, askTable, bidTable);
-        else
-	        tradeResolver = new OmisTradeResolution(auctionTracker, fiscalPolicy, askTable, bidTable);
+        switch (config.tradeResolution)
+        {
+	        case TradeResolutionType.XEven:
+		        tradeResolver = new XEvenResolution(auctionTracker, fiscalPolicy, askTable, bidTable);
+		        break;
+	        case TradeResolutionType.OmiType:
+		        tradeResolver = new OmisTradeResolution(auctionTracker, fiscalPolicy, askTable, bidTable);
+		        break;
+	        case TradeResolutionType.SimonType:
+		        tradeResolver = new SimonTradeResolution(auctionTracker, fiscalPolicy, askTable, bidTable);
+		        break;
+	        default:
+		        Assert.IsTrue(false, "Unknown trade resolution");
+		        break;
+        }
 	}
 	void InitGovernment()
 	{

@@ -11,16 +11,18 @@ public abstract class ProductionStrategy
         agent = a;
     }
 	//build as many as one can 
-	//TODO what if don't want to produce as much as one can? what if costs are high rn?
+	//TODO what if I don't want to produce as much as one can? what if costs are high rn?
 	public float CalculateNumProduceable(ResourceController rsc, InventoryItem item)
 	{
 		float numProduced = item.Deficit(); //can't produce more than max stock
 		//find max that can be made w/ available stock
 		foreach (var com in rsc.recipe.Keys)
 		{
-			numProduced = Mathf.Min(numProduced, agent.inventory[com].NumProduceable(rsc));
+			var numBatches = Mathf.Floor(agent.inventory[com].NumBatchProduceable(rsc));
+			numProduced = Mathf.Min(numProduced, numBatches) *
+			              item.GetProductionRate();
 			Debug.Log(agent.auctionStats.round + " " + agent.name 
-				+ "can produce " + numProduced 
+				+ "can produce " + numProduced + " " + agent.outputName 
 				+ " w/" + agent.inventory[com].Quantity + "/" + rsc.recipe[com] + " " + com);
 		}
 		return numProduced;
