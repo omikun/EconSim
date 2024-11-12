@@ -28,7 +28,7 @@ public class Government : EconAgent {
         {
             var name = good.Key;
             inputs.Add(name);
-            AddToInventory(name, 0, maxstock, 1, 0);
+            AddToInventory(name, 0, maxstock, 1, 0, 0);
         }
 		
 		inventory["Food"].Increase(FoodTarget);
@@ -108,8 +108,8 @@ public class Government : EconAgent {
         return 0f;
     }
 
-	public void Welfare(EconAgent agent)
-	{
+    public void AbsorbBankruptcy(EconAgent agent)
+    {
 		if (agent.IsBankrupt())
 		{
 			Cash += agent.Cash;
@@ -117,17 +117,24 @@ public class Government : EconAgent {
 			agent.ResetCash();
 			agent.modify_cash(config.initCash);
 		}
+    }
+	public void Welfare(EconAgent agent)
+	{
+		if (!config.GovWelfare)
+		{
+			return;
+		}
 		//quant should be no more than what gov's inventory holds
 		//only enough to refill agent's inv back to 2
 		//should not be negative in case agent has more than 2 already
-		const float refill = 1f;
-		var quant = Mathf.Min(refill, inventory["Food"].Quantity);
 		var agentFood = agent.inventory["Food"].Quantity;
-		quant = Mathf.Min(quant, refill - agentFood);
-		quant = Mathf.Max(quant, 0f);
-		Debug.Log(auctionStats.round + " Fed agent" + agent.name + " " + quant.ToString("n1") + " food, prev had " + agentFood.ToString("n1"));
-		if (quant > 0)
+		var govFood = inventory["Food"].Quantity;
+		var refillThreshold = 1f;
+		if (agentFood < refillThreshold)
 		{
+			var refill = refillThreshold - agentFood;
+			var quant = Mathf.Min(refill, govFood);
+			Debug.Log(auctionStats.round + " Fed agent" + agent.name + " " + quant.ToString("n1") + " food, prev had " + agentFood.ToString("n1"));
 			inventory["Food"].Decrease(quant);
 			agent.inventory["Food"].Increase(quant);
 		}

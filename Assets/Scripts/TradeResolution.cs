@@ -150,12 +150,14 @@ public abstract class TradeResolution
 			//var clearingPrice = ResolveClearingPrice(ask, bid);
 			var clearingPrice = tradePriceResolver.ResolvePrice(ask, bid);
 			var tradeQuantity = Mathf.Min(bid.remainingQuantity, ask.remainingQuantity);
-			Assert.IsTrue(tradeQuantity > 0);
+			//var tradeQuantity = bid.UpdateOffer((ask.remainingQuantity));
+			if (tradeQuantity <= 0)
+				Assert.IsTrue(tradeQuantity > 0);
 			Assert.IsTrue(clearingPrice > 0);
     
 			// =========== trade ============== 
 			//bought quantity may be lower than trade quantity (buyer can buy less depending on clearing price)
-			var boughtQuantity = Trade(rsc, clearingPrice, tradeQuantity, bid, ask);
+			var boughtQuantity = Trade(rsc, clearingPrice, tradeQuantity, ref bid, ask);
     
 			moneyExchangedThisRound += clearingPrice * boughtQuantity;
 			goodsExchangedThisRound += boughtQuantity;
@@ -179,17 +181,48 @@ public abstract class TradeResolution
 				bidIdx++;
 			}
 		}
+
+		while (askIdx < asks.Count)
+		{
+			var ask = asks[askIdx];
+			ask.agent.UpdateSellerPriceBelief(ask, rsc);
+			askIdx++;
+		}
+
+		while (bidIdx < bids.Count)
+		{
+			var bid = bids[bidIdx];
+			bid.agent.UpdateBuyerPriceBelief(bid, rsc);
+			bidIdx++;
+		}
 		Assert.IsFalse(goodsExchangedThisRound < 0);
 	}
-	protected float Trade(ResourceController rsc, float clearingPrice, float tradeQuantity, Offer bid, Offer ask)
+
+	protected float OnlyBuyAffordable(Offer ask, ref Offer bid, float quantity, float price)
 	{
+		if (bid.agent.config.onlyBuyWhatsAffordable)
+		{
+			quantity = Mathf.Clamp((float)(int)(bid.agent.Cash/price), 0, quantity);
+			bid.UpdateOffer(quantity);
+			Debug.Log(bid.agent.name + " only buying " + quantity.ToString("n2") + " " + ask.commodityName +
+			          " new bid " + bid.offerQuantity.ToString("n2") + " remaining " +
+			          bid.remainingQuantity.ToString("n2"));
+		}
+
+		return quantity;
+	}
+	protected float Trade(ResourceController rsc, float clearingPrice, float tradeQuantity, ref Offer bid, Offer ask)
+	{
+		tradeQuantity = OnlyBuyAffordable(ask, ref bid, tradeQuantity, clearingPrice);
+		if (tradeQuantity <= 0)
+			return tradeQuantity;
 		var boughtQuantity = bid.agent.Buy(rsc.name, tradeQuantity, clearingPrice);
 		ask.agent.Sell(rsc.name, boughtQuantity, clearingPrice);
 		fiscalPolicy.AddSalesTax(rsc.name, boughtQuantity, clearingPrice, bid.agent);
 
 		Debug.Log("Trade(), " + auctionTracker.round + ", " + ask.agent.name + ", " + bid.agent.name + ", " + 
-			rsc.name + ", " + boughtQuantity.ToString("n2") + ", " + clearingPrice.ToString("n2") +
-			", " + ask.offerPrice.ToString("n2") + ", " + bid.offerPrice.ToString("n2"));
+			rsc.name + ", " + boughtQuantity.ToString("n2") + ", " + clearingPrice.ToString("c2") +
+			", " + ask.offerPrice.ToString("c2") + ", " + bid.offerPrice.ToString("c2"));
 		// Debug.Log(auctionTracker.round + ": " + ask.agent.name 
 		// 	+ " ask " + ask.remainingQuantity.ToString("n2") + "x" + ask.offerPrice.ToString("c2")
 		// 	+ " | " + bid.agent.name 

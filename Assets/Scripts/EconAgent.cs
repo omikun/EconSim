@@ -8,9 +8,11 @@ using System;
 using Sirenix.Reflection.Editor;
 using DG.Tweening;
 using EconSim;
+using UnityEditor;
 using UnityEngine.UIElements;
 
-public class EconAgent : MonoBehaviour {
+public class EconAgent : MonoBehaviour
+{
 	protected internal SimulationConfig config;
 	public static int uid_idx = 0;
 	protected int uid;
@@ -20,6 +22,7 @@ public class EconAgent : MonoBehaviour {
 	{
 		Cash = 0;
 	}
+
 	protected float prevCash;
 	protected internal float foodExpense = 0;
 	protected float initStock = 1;
@@ -27,7 +30,6 @@ public class EconAgent : MonoBehaviour {
 	public float Profit { get; protected set; }
 	public float TaxableProfit { get; protected set; }
 	public Dictionary<string, InventoryItem> inventory = new();
-	protected Dictionary<string, float> perItemCost = new();
 	float taxesPaidThisRound = 0;
 	bool boughtThisRound = false;
 	bool soldThisRound = false;
@@ -36,25 +38,29 @@ public class EconAgent : MonoBehaviour {
 	protected internal FoodEquivalent foodEquivalent;
 	protected internal Consumer consumer;
 	protected internal ProductionStrategy productionStrategy;
+
 	protected internal AskPriceStrategy askPriceStrategy;
 	//private AskQuantityStrategy askQuantityStrategy;
 	//private bidQuantityStrategy bidQuantityStrategy;
 	//private BidPriceStrategy bidPriceStrategy;
 
-	public string Profession {
+	public string Profession
+	{
 		get { return outputName; }
 	}
+
 	public string outputName { get; protected set; } //can produce commodities
+
 	protected internal HashSet<string> inputs = new();
 	//production has dependencies on commodities->populates stock
 	//production rate is limited by assembly lines (queues/event lists)
-	
+
 	//can use profit to reinvest - produce new commodities
 	//switching cost to produce new commodities - zero for now
 
 	//from the paper (base implementation)
 	// Use this for initialization
-	protected internal AuctionBook book {get; set;}
+	protected internal AuctionBook book { get; set; }
 	protected internal AuctionStats auctionStats;
 	protected internal Dictionary<string, float> producedThisRound = new();
 	public float numProducedThisRound = 0;
@@ -67,6 +73,7 @@ public class EconAgent : MonoBehaviour {
 		{
 			log += stock.Value.Stats(header);
 		}
+
 		log += header + "cash, stock, " + Cash + ", n/a\n";
 		log += header + "profit, stock, " + Profit + ", n/a\n";
 		log += header + "taxes, idle, " + taxesPaidThisRound + ", n/a\n";
@@ -74,22 +81,25 @@ public class EconAgent : MonoBehaviour {
 		{
 			log += header + good + ", produced, " + quantity + ", n/a\n";
 		}
+
 		producedThisRound.Clear();
 		var ret = log;
 		log = "";
-		return ret; 
+		return ret;
 	}
-	void Start () {
+
+	void Start()
+	{
 	}
-	protected void AddToInventory(string name, float num, float max, float price, float production)
+
+	protected void AddToInventory(string name, float num, float max, float price, float production, float batchRate)
 	{
 		if (inventory.ContainsKey(name))
 			return;
 
-        inventory.Add(name, new InventoryItem(this, auctionStats, name, num, max, price, production));
-
-		perItemCost[name] = book[name].marketPrice * num;
+		inventory.Add(name, new InventoryItem(this, auctionStats, name, num, max, price, production, batchRate));
 	}
+
 	public float PayWealthTax(float amountExempt, float taxRate)
 	{
 		var taxableAmount = Cash - amountExempt;
@@ -100,18 +110,21 @@ public class EconAgent : MonoBehaviour {
 		taxesPaidThisRound = tax;
 		return tax;
 	}
+
 	public void Pay(float amount)
 	{
 		Cash -= amount;
 	}
-	public virtual void Init(SimulationConfig cfg, AuctionStats at, string b, float _initStock, float maxstock) {
+
+	public virtual void Init(SimulationConfig cfg, AuctionStats at, string b, float _initStock, float maxstock)
+	{
 		config = cfg;
 		uid = uid_idx++;
 		initStock = _initStock;
 		maxStock = maxstock;
 
 		Configure();
-		
+
 		book = at.book;
 		auctionStats = at;
 		//list of commodities self can produce
@@ -127,20 +140,22 @@ public class EconAgent : MonoBehaviour {
 			if (!book.ContainsKey(buildable))
 				Debug.Log("commodity not recognized: " + buildable);
 
-            if (book[buildable].recipe == null)
+			if (book[buildable].recipe == null)
 				Debug.Log(buildable + ": null dep!");
 
 			foreach (var dep in book[buildable].recipe)
 			{
 				var commodity = dep.Key;
 				inputs.Add(commodity);
-                //Debug.Log("::" + commodity);
-				AddToInventory(commodity, initStock, maxStock, book[commodity].marketPrice, book[commodity].productionPerBatch);
+				//Debug.Log("::" + commodity);
+				AddToInventory(commodity, initStock, maxStock, book[commodity].marketPrice,
+					book[commodity].productionPerBatch, book[commodity].batchRate);
 			}
-			AddToInventory(buildable, 0, maxStock, book[buildable].marketPrice, book[buildable].productionPerBatch);
+
+			AddToInventory(buildable, 0, maxStock, book[buildable].marketPrice, book[buildable].productionPerBatch, book[buildable].batchRate);
 			Debug.Log("New " + gameObject.name + " has " + inventory[buildable].Quantity + " " + buildable);
 		}
-    }
+	}
 
 	void Configure()
 	{
@@ -160,6 +175,7 @@ public class EconAgent : MonoBehaviour {
 				Assert.IsTrue(false, "Unknown consumer type: " + config.consumerType);
 				break;
 		}
+
 		switch (config.productionRate)
 		{
 			case AgentProduction.FixedRate:
@@ -192,10 +208,12 @@ public class EconAgent : MonoBehaviour {
 				break;
 		}
 	}
+
 	public void Respawn(bool bankrupted, string buildable, Government gov = null)
 	{
 		Assert.IsTrue(this is not Government);
 		outputName = buildable;
+		gov.AbsorbBankruptcy(this);
 		gov.Welfare(this);
 		prevCash = Cash;
 		foodExpense = 0;
@@ -206,33 +224,35 @@ public class EconAgent : MonoBehaviour {
 				Debug.Log("commodity not recognized: " + outputName);
 
 			var output = book[outputName];
-            if (output.recipe == null)
+			if (output.recipe == null)
 				Debug.Log(outputName + ": null dep!");
 
 			PrintInventory("before reinit");
-			
+
 			Assert.IsTrue(gov != null);
 
 			foreach (var dep in output.recipe)
 			{
 				var com = book[dep.Key];
 				inputs.Add(com.name);
-				AddToInventory(com.name, 0, maxStock, com.marketPrice, com.productionPerBatch);
+				AddToInventory(com.name, 0, maxStock, com.marketPrice, com.productionPerBatch, com.batchRate);
 			}
-			AddToInventory(outputName, 0, maxStock, output.marketPrice, output.productionPerBatch);
-			
+
+			AddToInventory(outputName, 0, maxStock, output.marketPrice, output.productionPerBatch, output.batchRate);
+
 			PrintInventory("post reinit");
 		}
-    }
+	}
 
 	public void PrintInventory(string label)
 	{
-			string msg = "";
-			foreach (var entry in inventory)
-			{
-				msg += entry.Value.Quantity + " " + entry.Key + ", ";
-			}
-			Debug.Log(auctionStats.round + ": " + name + " " + label + " reinit2: " + msg );
+		string msg = "";
+		foreach (var entry in inventory)
+		{
+			msg += entry.Value.Quantity + " " + entry.Key + ", ";
+		}
+
+		Debug.Log(auctionStats.round + ": " + name + " " + label + " reinit2: " + msg);
 	}
 
 	public float TaxProfit(float taxRate)
@@ -245,6 +265,7 @@ public class EconAgent : MonoBehaviour {
 	}
 
 	private float losses = 0;
+
 	//want to control when profit gets calculated in round
 	public void CalculateProfit()
 	{
@@ -256,12 +277,15 @@ public class EconAgent : MonoBehaviour {
 		losses = Mathf.Min(0, cumDelta);
 		TaxableProfit = Mathf.Max(0, cumDelta);
 	}
+
 	const float bankruptcyThreshold = 0;
+
 	public bool IsBankrupt()
 	{
 		return Cash < bankruptcyThreshold;
 	}
-    public virtual float Tick(Government gov, ref bool changedProfession, ref bool bankrupted, ref bool starving)
+
+	public virtual float Tick(Government gov, ref bool changedProfession, ref bool bankrupted, ref bool starving)
 	{
 		Assert.IsTrue(this is not Government);
 		Debug.Log("agents ticking!");
@@ -273,41 +297,46 @@ public class EconAgent : MonoBehaviour {
 
 			var foodConsumed = config.foodConsumptionRate;
 			if (config.useFoodConsumptionCurve)
-				foodConsumed = config.foodConsumptionCurve.Evaluate(food.Quantity/food.maxQuantity);
-			if (food.Quantity >= foodConsumed)
+				foodConsumed = config.foodConsumptionCurve.Evaluate(food.Quantity / config.numFoodHappy);
+			//if (food.Quantity >= foodConsumed)
 			{
 				var foodAmount = food.Decrease(foodConsumed);
 				foodExpense += food.cost * foodConsumed;
-				Debug.Log(auctionStats.round + ": " + name + "consumed " + foodConsumed.ToString("n2") + " food expense " + foodExpense);
+				Debug.Log(auctionStats.round + ": " + name + " consumed " + foodConsumed.ToString("n2") +
+				          " food expense " + foodExpense.ToString("c2"));
 			}
+			gov.Welfare(this);
+
 			starving = food.Quantity <= 0.1f;
 			foodExpense = Mathf.Max(0, foodExpense - Mathf.Max(0, Profit));
 		}
-		
+
 		foreach (var entry in inventory)
 		{
 			entry.Value.Tick();
-        }
+		}
 
 		//ClearRoundStats();
 
-		bool changeProfessionAfterNRounds =  (config.earlyProfessionChange && (noSaleIn.Count() >= config.changeProfessionAfterNDays));
+		bool changeProfessionAfterNRounds =
+			(config.earlyProfessionChange && (noSaleIn.Count() >= config.changeProfessionAfterNDays));
 		bankrupted = IsBankrupt();
 		changedProfession = (config.declareBankruptcy && bankrupted) || (config.starvation && starving);
-        if (config.changeProfession && (changedProfession || changeProfessionAfterNRounds))
+		if (config.changeProfession && (changedProfession || changeProfessionAfterNRounds))
 		{
-			Debug.Log(auctionStats.round + " " + name + " producing " + outputName[0] + " is bankrupt: " + Cash.ToString("c2") 
-				+ " or starving where food=" + inventory["Food"].Quantity
-				+ " or " + config.changeProfessionAfterNDays + " days no sell");
+			Debug.Log(auctionStats.round + " " + name + " producing " + outputName + " is bankrupt: " +
+			          Cash.ToString("c2")
+			          + " or starving where food=" + inventory["Food"].Quantity
+			          + " or " + config.changeProfessionAfterNDays + " days no sell");
 			//gov absorbs debt or cash on change profession
 			//probably should be more complex than this
 			//like agent takes out a loan, if after a certain point can declare bankruptcy and get out of debt
-				//this only makes sense if there is high demand and supply of inputs exist
-				//if high demand but no supply, change role to supplier??
+			//this only makes sense if there is high demand and supply of inputs exist
+			//if high demand but no supply, change role to supplier??
 			//gov can hand out food if starving
 			//change jobs when not profitable, 
 			//these 3 things can be separate events instead of rolled into one
-			ChangeProfession(gov, bankrupted); 
+			ChangeProfession(gov, bankrupted);
 			noSaleIn.Reset();
 			noPurchaseIn.Reset();
 		}
@@ -319,12 +348,15 @@ public class EconAgent : MonoBehaviour {
 		// }
 		return taxConsumed;
 	}
+
 	public AnimationCurve foodToHappy;
 	public AnimationCurve cashToHappy;
+
 	public float Food()
 	{
 		return inventory["Food"].Quantity;
 	}
+
 	public virtual float EvaluateHappiness()
 	{
 		var numFoodEq = foodEquivalent.GetNumFoodEquivalent(book, config.numFoodHappy);
@@ -338,10 +370,12 @@ public class EconAgent : MonoBehaviour {
 		string mostDemand = auctionStats.GetMostProfitableProfession(ref profit, Profession);
 
 		if (bestGood != "invalid")
-        {
-            mostDemand = bestGood;
+		{
+			mostDemand = bestGood;
 		}
-		Debug.Log(auctionStats.round + " " + name + " changing from " + Profession + " to " + mostDemand + " --  bestGood: " + bestGood + " bestProfession: " + mostDemand);
+
+		Debug.Log(auctionStats.round + " " + name + " changing from " + Profession + " to " + mostDemand +
+		          " --  bestGood: " + bestGood + " bestProfession: " + mostDemand);
 
 		string b = "";
 		if (mostDemand != "invalid")
@@ -353,6 +387,7 @@ public class EconAgent : MonoBehaviour {
 		{
 			inventory.Clear();
 		}
+
 		Respawn(bankrupted, b, gov);
 	}
 
@@ -361,30 +396,33 @@ public class EconAgent : MonoBehaviour {
 	{
 		Cash += quant;
 	}
+
 	public void ClearRoundStats()
 	{
 		noSaleIn.Tick();
 		noPurchaseIn.Tick();
 
-		foreach( var item in inventory)
+		foreach (var item in inventory)
 		{
 			item.Value.ClearRoundStats();
 		}
+
 		taxesPaidThisRound = 0;
 	}
-	public float Buy(string commodity, float quantity, float price)
+
+public float Buy(string commodity, float quantity, float price)
 	{
 		if (this is Government)
 		{
 			Debug.Log(auctionStats.round + " gov buying " + quantity.ToString("n0") + " " + commodity);
 		}
 
+		if (name == "agent14")
+		{
+			Debug.Log("agent14 buying something");
+		}
         Assert.IsTrue(quantity > 0);
 
-		if (config.onlyBuyWhatsAffordable)
-		{
-			quantity = Mathf.Clamp((float)(int)(Cash/price), 0, quantity);
-		}
 		var boughtQuantity = inventory[commodity].Buy(quantity, price);
 		Debug.Log(name + " has " + Cash.ToString("c2") 
 			+ " want to buy " + quantity.ToString("n2") + " " + commodity 
@@ -440,7 +478,7 @@ public class EconAgent : MonoBehaviour {
 			var stock = inventory[dep.Key].Quantity;
 			var numUsed = dep.Value * numBatches;
 			Debug.Log(auctionStats.round + " " + name + " has " + stock + " " + dep.Key + " used " + numUsed);
-			Assert.IsTrue(stock >= numUsed);
+			Assert.IsTrue(numUsed == 0 || stock >= numUsed);
 			inventory[dep.Key].Decrease(numUsed);
 			msg += dep.Key + ": " + inventory[dep.Key].meanCost.ToString("c2");
 		}

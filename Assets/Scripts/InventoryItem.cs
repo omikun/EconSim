@@ -53,7 +53,8 @@ public class InventoryItem {
 	public float meanPriceThisRound; //total cost spent to acquire stock
     public float meanCost; 
 	//number of units produced per turn = production * productionRate
-	float productionRate = 1; //num produced per batch
+	float productionPerBatch = 1; //num produced per batch
+	float batchRate = 1; //num produced per batch
     float realProductionRate; //actual after modifiers
     float productionDeRate = 1; //if agent gets hurt/reduced productivity
     float productionChance = 1; //if agent gets into an accident?
@@ -79,7 +80,7 @@ public class InventoryItem {
             return realProductionRate;
         }
         //derate
-        float rate = productionRate * productionDeRate;
+        float rate = productionPerBatch * productionDeRate;
         //random chance derate
         var chance = productionChance;
         realProductionRate = (UnityEngine.Random.value < chance) ? rate : 0;
@@ -135,7 +136,7 @@ public class InventoryItem {
     }
 
 	public InventoryItem (EconAgent a, AuctionStats at, string _name, float _quantity=1, float _maxQuantity=10, 
-					float _meanPrice=1, float _production=1)
+					float _meanPrice=1, float _production=1, float _batchRate=1)
 	{
 		agent = a;
         auctionStats = at;
@@ -151,7 +152,8 @@ public class InventoryItem {
         meanCost = _meanPrice;
 		buyHistory.Add(new Transaction(1,_meanPrice));
 		sellHistory.Add(new Transaction(1,_meanPrice));
-		productionRate = _production;
+		productionPerBatch = _production;
+		batchRate = _batchRate;
 	}
 	public void Tick()
 	{
@@ -329,7 +331,7 @@ public class InventoryItem {
         Assert.IsTrue(historicalMeanPrice >= 0);
         string reason_msg = "none";
 
-        
+        var prevPriceBelief = priceBelief; 
         if (quantityBought < trade.offerQuantity) //didn't buy it all
         {
 	        var delta = 1 + agent.config.sellPriceDelta;
@@ -343,7 +345,8 @@ public class InventoryItem {
 	        minPriceBelief *= delta;
         }
 
-        SanePriceBeliefs();
+        Debug.Log(agent.auctionStats.round + " " + agent.name + " price belief update: " + name + " bid: " + trade.offerQuantity + " bought: " + quantityBought + " prev price " + prevPriceBelief.ToString("c2") + " current price belief " + priceBelief.ToString("c2"));
+        //SanePriceBeliefs();
         return;
 
         if ( quantityBought * 2 > trade.offerQuantity ) //at least 50% offer filled
@@ -409,7 +412,8 @@ public void UpdateSellerPriceBelief(String agentName, in Offer trade, in Resourc
         var weight = quantitySold / trade.offerQuantity; //quantitySold / quantityAsked
         var displacement = (1 - weight) * meanBeliefPrice;
 
-        if (quantitySold < trade.offerQuantity) //didn't buy it all
+        var prevPriceBelief = priceBelief;
+        if (quantitySold == trade.offerQuantity) //sold it all
         {
 	        var delta = 1 + agent.config.sellPriceDelta;
 	        priceBelief *= delta;
@@ -421,8 +425,10 @@ public void UpdateSellerPriceBelief(String agentName, in Offer trade, in Resourc
 	        priceBelief *= delta;
 	        minPriceBelief *= delta;
         }
+        priceBelief = Mathf.Max(meanCost, priceBelief);
+        Debug.Log(agent.auctionStats.round + " " + agent.name + " price belief update: " + name + " asked: " + trade.offerQuantity + " sold: " + quantitySold + " prev price " + prevPriceBelief.ToString("c2") + " current price belief " + priceBelief.ToString("c2"));
 
-        SanePriceBeliefs();
+        //SanePriceBeliefs();
         return;
         
         string reason_msg = "none";
@@ -473,7 +479,7 @@ public void UpdateSellerPriceBelief(String agentName, in Offer trade, in Resourc
 		return Mathf.Max(0, shortage);
     }
 
-	public float NumBatchProduceable(ResourceController rsc)
+	public float NumProduceable(ResourceController rsc)
 	{
 		return Quantity / rsc.recipe[name];
 	}

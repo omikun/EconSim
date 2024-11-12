@@ -139,6 +139,9 @@ public class SimulationConfig : MonoBehaviour{
     [ShowInInspector, DictionaryDrawerSettings(DisplayMode = DictionaryDisplayOptions.OneLine, KeyLabel = "Comm", ValueLabel = "TaxRate")]
     [SerializedDictionary("Comm", "TaxRate")]
     public SerializedDictionary<string, float> SalesTaxRate = new();
+
+	[TabGroup("Taxes")] 
+	public bool GovWelfare = true;
 	[TabGroup("Taxes")]
     [ShowInInspector, DictionaryDrawerSettings(DisplayMode = DictionaryDisplayOptions.OneLine, KeyLabel = "Comm", ValueLabel = "Subsidy")]
     [SerializedDictionary("Comm", "Subsidy")]

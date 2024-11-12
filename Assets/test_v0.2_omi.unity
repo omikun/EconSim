@@ -619,7 +619,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5340b96b9e4f7420e865bd103e760776, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  autoNextRound: 0
+  autoNextRound: 1
   tickInterval: 0.001
   EnableDebug: 1
   EnableLog: 0
@@ -648,6 +648,7 @@ MonoBehaviour:
       Value: 0
     - Key: Tool
       Value: 0
+  GovWelfare: 1
   Subsidy:
     _serializedList:
     - Key: Food
@@ -696,7 +697,9 @@ MonoBehaviour:
         - Key: Prod_multiplier
           Value: 1
         - Key: Prod_rate
-          Value: 10
+          Value: 12
+        - Key: Batch_rate
+          Value: 1
         - Key: Set_price
           Value: 1
     - Key: Wood
@@ -708,16 +711,20 @@ MonoBehaviour:
           Value: 1
         - Key: Prod_rate
           Value: 2
+        - Key: Batch_rate
+          Value: 1
         - Key: Set_price
           Value: 1.5
     - Key: Ore
       Value:
         _serializedList:
         - Key: Food
-          Value: 8
+          Value: 1
         - Key: Prod_multiplier
           Value: 1
         - Key: Prod_rate
+          Value: 1
+        - Key: Batch_rate
           Value: 8
         - Key: Set_price
           Value: 1
@@ -725,12 +732,14 @@ MonoBehaviour:
       Value:
         _serializedList:
         - Key: Food
-          Value: 8
+          Value: 1
         - Key: Ore
-          Value: 16
+          Value: 2
         - Key: Prod_multiplier
           Value: 1
         - Key: Prod_rate
+          Value: 1
+        - Key: Batch_rate
           Value: 8
         - Key: Set_price
           Value: 3
@@ -738,18 +747,20 @@ MonoBehaviour:
       Value:
         _serializedList:
         - Key: Food
-          Value: 4
+          Value: 1
         - Key: Metal
-          Value: 8
+          Value: 2
         - Key: Prod_multiplier
           Value: 1
         - Key: Prod_rate
+          Value: 1
+        - Key: Batch_rate
           Value: 4
         - Key: Set_price
           Value: 7
   starvationThreshold: 0.1
-  foodConsumption: 0
-  foodConsumptionRate: 0.1
+  foodConsumption: 1
+  foodConsumptionRate: 1
   useFoodConsumptionCurve: 1
   foodConsumptionCurve:
     serializedVersion: 2
@@ -764,8 +775,8 @@ MonoBehaviour:
       inWeight: 0
       outWeight: 0.040531415
     - serializedVersion: 3
-      time: 1.0379586
-      value: 3.4476013
+      time: 1.0059152
+      value: 3.4001808
       inSlope: 10.906322
       outSlope: 10.906322
       tangentMode: 0
@@ -3948,7 +3959,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 224390226033679502, guid: 3dbd4bc71acbb1145b6e80827b858127, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 55.27
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 224390226033679502, guid: 3dbd4bc71acbb1145b6e80827b858127, type: 3}
       propertyPath: m_SizeDelta.y
@@ -4084,7 +4095,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3155788890126894321, guid: 3dbd4bc71acbb1145b6e80827b858127, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 55.27
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3155788890126894321, guid: 3dbd4bc71acbb1145b6e80827b858127, type: 3}
       propertyPath: m_SizeDelta.y
@@ -4112,7 +4123,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4484771780012352589, guid: 3dbd4bc71acbb1145b6e80827b858127, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 55.27
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4484771780012352589, guid: 3dbd4bc71acbb1145b6e80827b858127, type: 3}
       propertyPath: m_SizeDelta.y
@@ -4136,7 +4147,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4866549897623903779, guid: 3dbd4bc71acbb1145b6e80827b858127, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 135.27
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4866549897623903779, guid: 3dbd4bc71acbb1145b6e80827b858127, type: 3}
       propertyPath: m_SizeDelta.y

@@ -12,20 +12,23 @@ public abstract class ProductionStrategy
     }
 	//build as many as one can 
 	//TODO what if I don't want to produce as much as one can? what if costs are high rn?
-	public float CalculateNumProduceable(ResourceController rsc, InventoryItem item)
+	public float CalculateNumProduceable(ResourceController rsc, InventoryItem outputItem)
 	{
-		float numProduced = item.Deficit(); //can't produce more than max stock
+		float numProduceable = float.MaxValue;
+		
 		//find max that can be made w/ available stock
 		foreach (var com in rsc.recipe.Keys)
 		{
-			var numBatches = Mathf.Floor(agent.inventory[com].NumBatchProduceable(rsc));
-			numProduced = Mathf.Min(numProduced, numBatches) *
-			              item.GetProductionRate();
+			var numProduceableWithCom = Mathf.Floor(agent.inventory[com].NumProduceable(rsc));
+			numProduceable = Mathf.Min(numProduceableWithCom, numProduceable);
 			Debug.Log(agent.auctionStats.round + " " + agent.name 
-				+ "can produce " + numProduced + " " + agent.outputName 
-				+ " w/" + agent.inventory[com].Quantity + "/" + rsc.recipe[com] + " " + com);
+				+ " can produce " + numProduceable + " " + outputItem.name
+				+ " with " + agent.inventory[com].Quantity + "/" + rsc.recipe[com] + " " + com);
 		}
-		return numProduced;
+		float storage = outputItem.Deficit(); //can't produce more than max stock
+		numProduceable = Mathf.Min(numProduceable, storage);
+		numProduceable = Mathf.Min(numProduceable, outputItem.GetProductionRate());
+		return numProduceable;
 	}
 
 	protected internal abstract float CalculateNumProduced(ResourceController rsc, InventoryItem item);

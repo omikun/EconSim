@@ -105,6 +105,7 @@ public class AuctionHouse : MonoBehaviour {
 	{
 		var prefab = Resources.Load("Agent");
 		var professions = config.numAgents.Keys;
+		int agentId = 0;
 		foreach (string profession in professions)
 		{
 			Debug.Log(gov.name + " 2outputs: " + string.Join(", ", gov.outputName));
@@ -112,11 +113,12 @@ public class AuctionHouse : MonoBehaviour {
 			{
 				GameObject go = Instantiate(prefab) as GameObject;
 				go.transform.parent = transform;
-				go.name = "agent" + i.ToString();
+				go.name = "agent" + agentId.ToString();
 			
 				var agent = go.GetComponent<EconAgent>();
 				InitAgent(agent, profession);
 				agents.Add(agent);
+				agentId++;
 			}
 			Debug.Log(gov.name + " 3outputs: " + string.Join(", ", gov.outputName));
 		}
@@ -265,6 +267,7 @@ public class AuctionHouse : MonoBehaviour {
 		Debug.Log(auctionTracker.round + " gov outputs: " + gov.outputName);
         foreach (var agent in agents)
         {
+	        Debug.Log("TickAgent() " + agent.name);
 			if (agent is Government)
 				continue;
 			bool changedProfession = false;
@@ -289,6 +292,7 @@ public class AuctionHouse : MonoBehaviour {
 			book[profession].profits[^1] += agent.Profit;
 			
 			var amount = agent.Tick(gov, ref changedProfession, ref bankrupted, ref starving);
+			gov.Pay(amount); //welfare?
 
 			if (starving)
 			{
@@ -299,7 +303,6 @@ public class AuctionHouse : MonoBehaviour {
 				book[profession].bankrupted[^1]++;
 			if (changedProfession)
 				book[profession].changedProfession[^1]++;
-			gov.Pay(amount);
 			// Debug.Log(agent.name + " total cash line: " + agents.Sum(x => x.cash).ToString("c2") + amount.ToString("c2"));
 
 			agent.ClearRoundStats();
