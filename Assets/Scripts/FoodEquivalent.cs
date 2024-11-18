@@ -53,4 +53,12 @@ public class FoodEquivalent
 			agent.productionStrategy.CalculateNumProduceable(book[agent.Profession], agent.inventory[agent.Profession]) * foodEquivalent;
 		return inputFoodEquivalent;
 	}
+
+	public float GetNumDaysEquivalent(float numFood)
+	{
+		if (numFood < 0)  return 0f;
+		if (numFood <= 5) return numFood;
+		if (numFood <= 10) return (float)(int)((numFood-5)/2)+5;
+		else return (float)(int)((numFood-9)/3)+7;
+	}
 }

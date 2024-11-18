@@ -216,9 +216,11 @@ public class SimulationConfig : MonoBehaviour{
 	public AgentBuyPrice buyPrice = AgentBuyPrice.MarketPrice;
 	[InfoBox("Avg bid/ask price; offer price random delta around mkt price")]
 	[TabGroup("tab2", "Agent Trade")] 
-	public bool randomizeSellPrice = false; 
-	[TabGroup("tab2", "Agent Trade")] 
-	public bool baselineSellPriceMinCost = false; 
+	public bool randomizeSellPrice = false;
+
+	[TabGroup("tab2", "Agent Trade")] public bool sellPriceMinFoodExpense = true;
+	[FormerlySerializedAs("baselineSellPriceMinCost")] [TabGroup("tab2", "Agent Trade")] 
+	public bool sellPriceMinCost = false; 
 	[FormerlySerializedAs("baselineSellPriceDelta")] [TabGroup("tab2", "Agent Trade")] 
 	public float sellPriceDelta = 0.05f;
 	[FormerlySerializedAs("baselineBuyPriceDelta")] [TabGroup("tab2", "Agent Trade")] 

@@ -37,7 +37,7 @@ public class InventoryItem {
 	const float highInventory = 2f;
 	public TransactionHistory buyHistory;
 	public TransactionHistory sellHistory;
-	public float cost = 1; //cost per unit
+	public float unitCost = 1;
 	public float wobble = .02f;
 	public float Quantity { get; private set; }
     //gov use
@@ -189,9 +189,9 @@ public class InventoryItem {
     }
     public void Produced(float quant, float costVol)
     {
-        var prevCostVol = cost * Quantity;
+        var prevCostVol = unitCost * Quantity;
         Increase(quant);
-        cost = (costVol + prevCostVol) / Quantity;
+        unitCost = (costVol + prevCostVol) / Quantity;
     }
     public void ClearRoundStats() 
     {
@@ -234,7 +234,7 @@ public class InventoryItem {
 		Quantity -= quant;
         askQuantity -= quant;
         quantityTradedThisRound += quant;
-        costThisRound += price;
+        costThisRound += price * quant;
         meanPriceThisRound = (quantityTradedThisRound == 0) ? 0 : costThisRound / quantityTradedThisRound;
         
         if (soldThisRound)
@@ -293,7 +293,7 @@ public class InventoryItem {
 			numBids = Mathf.Floor(numBids);
 			numBids = Mathf.Max(0, numBids);
 
-			//Debug.Log(auctionStats.round + " " + agent.name + " FindBuyCount " + name + ": avgPrice: " + avgPrice.ToString("c2") + " favorability: " + (1 - favorability).ToString("n2") + " numBids: " + numBids.ToString("n2") + " highestPrice: " + highestPrice.ToString("c2") + ", lowestPrice: " + lowestPrice.ToString("c2"));
+			Debug.Log(auctionStats.round + " " + agent.name + " FindBuyCount " + name + ": avgPrice: " + avgPrice.ToString("c2") + " favorability: " + (1 - favorability).ToString("n2") + " numBids: " + numBids.ToString("n2") + " highestPrice: " + highestPrice.ToString("c2") + ", lowestPrice: " + lowestPrice.ToString("c2"));
 			Assert.IsTrue(numBids <= Deficit());
 		}
 		return numBids;
@@ -331,6 +331,9 @@ public class InventoryItem {
         Assert.IsTrue(historicalMeanPrice >= 0);
         string reason_msg = "none";
 
+        if (quantityBought == 0)
+	        return;
+        
         var prevPriceBelief = priceBelief; 
         if (quantityBought < trade.offerQuantity) //didn't buy it all
         {
@@ -425,7 +428,6 @@ public void UpdateSellerPriceBelief(String agentName, in Offer trade, in Resourc
 	        priceBelief *= delta;
 	        minPriceBelief *= delta;
         }
-        priceBelief = Mathf.Max(meanCost, priceBelief);
         Debug.Log(agent.auctionStats.round + " " + agent.name + " price belief update: " + name + " asked: " + trade.offerQuantity + " sold: " + quantitySold + " prev price " + prevPriceBelief.ToString("c2") + " current price belief " + priceBelief.ToString("c2"));
 
         //SanePriceBeliefs();

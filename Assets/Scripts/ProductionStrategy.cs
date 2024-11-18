@@ -38,7 +38,7 @@ public abstract class ProductionStrategy
 		{
 			if (!agent.book.ContainsKey(outputName))
 			{
-				Debug.Log(agent.auctionStats.round + " " + agent.name + " not valid output " + outputName);
+				Assert.IsTrue(false, agent.auctionStats.round + " " + agent.name + " not valid output " + outputName);
 			}
 			Assert.IsTrue(agent.book.ContainsKey(outputName));
 			var com = agent.book[outputName];
@@ -53,17 +53,16 @@ public abstract class ProductionStrategy
 			if (numProduced == 0f || multiplier == 0f)
 				return 0;
 
-			stock.Produced(numProduced * multiplier, numProduced * agent.GetCostOf(com)); 
+			stock.Produced(numProduced * multiplier, agent.GetCostOf(com)); 
+			agent.producedThisRound[outputName] = numProduced;
 
 			Debug.Log(agent.auctionStats.round + " " + agent.name 
 				+ " has " + agent.Cash.ToString("c2") 
 				+ " made " + numProduced.ToString("n2") + " " + outputName 
 				+ " total: " + stock.Quantity 
-				+ " cost: " + stock.cost.ToString("c2") 
+				+ " cost: " + stock.unitCost.ToString("c2") 
 				+ inputCosts);
 			Assert.IsFalse(float.IsNaN(numProduced));
-
-			agent.producedThisRound[outputName] = numProduced;
 		}
 		return agent.producedThisRound.Sum(x => x.Value);
 	}

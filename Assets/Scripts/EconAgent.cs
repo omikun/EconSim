@@ -298,10 +298,19 @@ public class EconAgent : MonoBehaviour
 			var foodConsumed = config.foodConsumptionRate;
 			if (config.useFoodConsumptionCurve)
 				foodConsumed = config.foodConsumptionCurve.Evaluate(food.Quantity / config.numFoodHappy);
+			else
+			{
+				if (food.Quantity > 10)
+					foodConsumed = 3;
+				else if (food.Quantity > 5)
+					foodConsumed = 2;
+				else 
+					foodConsumed = 1;
+			}
 			//if (food.Quantity >= foodConsumed)
 			{
 				var foodAmount = food.Decrease(foodConsumed);
-				foodExpense += food.cost * foodConsumed;
+				foodExpense += food.unitCost * foodConsumed;
 				Debug.Log(auctionStats.round + ": " + name + " consumed " + foodConsumed.ToString("n2") +
 				          " food expense " + foodExpense.ToString("c2"));
 			}

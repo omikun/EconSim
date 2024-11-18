@@ -42,9 +42,17 @@ public abstract class AskPriceStrategy
 
 			var stock = agent.inventory[commodityName];
 			float sellQuantity = FindSellCount(commodityName);
+			if (sellQuantity <= 0)
+				continue;
 			//float sellPrice = sellStock.GetPrice();
 			// + cost of food since last sell
 			float sellPrice = GetSellPrice(commodityName);
+			if (agent.config.sellPriceMinFoodExpense)
+			{
+				var minCost = stock.unitCost + (agent.foodExpense / sellQuantity);
+				sellPrice = Mathf.Max(sellPrice, minCost);
+				Assert.IsTrue(sellPrice > 0f);
+			}
 
 			if (agent.config.sanityCheckSellQuant)
 			{
@@ -75,7 +83,7 @@ public abstract class AskPriceStrategy
 			var max = 1f + delta;
 			sellPrice *= UnityEngine.Random.Range(min, max);
 		}
-		if (agent.config.baselineSellPriceMinCost)
+		if (agent.config.sellPriceMinCost)
 			sellPrice = Mathf.Max(sellPrice, cost);
 		return sellPrice;
 	}
@@ -87,7 +95,7 @@ public class AtCostAskStrategy : AskPriceStrategy
 	public override float GetSellPrice(string commodityName)
 	{
 		var expense = Mathf.Max(0, agent.foodExpense);
-		var cost = agent.inventory[commodityName].cost;
+		var cost = agent.inventory[commodityName].unitCost;
 		var sellPrice = cost + expense;
 		return RandomizeSellPrice(sellPrice, sellPrice);
 	}
@@ -99,7 +107,8 @@ public class FixedProfitAskStrategy : AtCostAskStrategy
 	public override float GetSellPrice(string commodityName)
 	{
 		var expense = Mathf.Max(0, agent.foodExpense);
-		var cost = agent.inventory[commodityName].cost;
+		var cost = agent.inventory[commodityName].unitCost;
+		//TODO expense should be spread over all units
 		var sellPrice = cost * agent.config.profitMarkup + expense;
 		return RandomizeSellPrice(sellPrice, sellPrice);
 	}
@@ -110,7 +119,7 @@ public class MarketAskStrategy : AtCostAskStrategy
 	public override float GetSellPrice(string commodityName)
 	{
 		var sellPrice = agent.book[commodityName].marketPrice;
-		var cost = agent.inventory[commodityName].cost;
+		var cost = agent.inventory[commodityName].unitCost;
 		return RandomizeSellPrice(sellPrice, cost);
 		
 	}
@@ -122,7 +131,7 @@ public class FixedAskPriceStrategy : AtCostAskStrategy
 	public override float GetSellPrice(string commodityName)
 	{
 		var sellPrice = agent.book[commodityName].setPrice;
-		var cost = agent.inventory[commodityName].cost;
+		var cost = agent.inventory[commodityName].unitCost;
 		return RandomizeSellPrice(sellPrice, cost);
 	}
 }
