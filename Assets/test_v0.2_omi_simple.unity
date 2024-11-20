@@ -619,16 +619,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5340b96b9e4f7420e865bd103e760776, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  autoNextRound: 0
+  autoNextRound: 1
   tickInterval: 0.001
-  EnableDebug: 1
-  EnableLog: 0
+  EnableDebug: 0
+  EnableLog: 1
   appendTimeToLog: 1
   exitAfterNoTrade: 1
+  EnableGovernment: 1
   seed: 42
   maxRounds: 300
   numRoundsNoTrade: 100
-  tradeResolution: 0
+  tradeResolution: 2
   bidSortOrder: 1
   bidSortBy: 0
   askSortOrder: 0
@@ -668,6 +669,7 @@ MonoBehaviour:
   changeProfessionAfterNDays: 10
   declareBankruptcy: 1
   historySize: 10
+  SimpleAgent: 1
   initCash: 50
   initGovCash: 1000
   randomInitStock: 1
@@ -676,15 +678,15 @@ MonoBehaviour:
   numAgents:
     _serializedList:
     - Key: Food
-      Value: 20
+      Value: 1
     - Key: Wood
-      Value: 20
+      Value: 1
     - Key: Ore
-      Value: 10
+      Value: 0
     - Key: Metal
-      Value: 5
+      Value: 0
     - Key: Tool
-      Value: 5
+      Value: 1
   initialization:
     _serializedList:
     - Key: Food
@@ -697,7 +699,7 @@ MonoBehaviour:
         - Key: Prod_multiplier
           Value: 1
         - Key: Prod_rate
-          Value: 25
+          Value: 10
         - Key: Batch_rate
           Value: 1
         - Key: Set_price
@@ -710,7 +712,7 @@ MonoBehaviour:
         - Key: Prod_multiplier
           Value: 1
         - Key: Prod_rate
-          Value: 2
+          Value: 10
         - Key: Batch_rate
           Value: 1
         - Key: Set_price
@@ -751,7 +753,7 @@ MonoBehaviour:
         - Key: Metal
           Value: 2
         - Key: Prod_multiplier
-          Value: 1
+          Value: 10
         - Key: Prod_rate
           Value: 1
         - Key: Batch_rate
@@ -788,13 +790,14 @@ MonoBehaviour:
     m_RotationOrder: 4
   numFoodHappy: 10
   productionRate: 0
-  consumerType: 2
-  sellRate: 0
+  consumerType: 1
+  sellRate: 1
   sellPrice: 4
-  consumeRate: 1
-  buyPrice: 0
+  consumeRate: 3
+  buyPrice: 2
   randomizeSellPrice: 0
-  baselineSellPriceMinCost: 0
+  sellPriceMinFoodExpense: 1
+  sellPriceMinCost: 0
   sellPriceDelta: 0.05
   buyPriceDelta: 0.05
   profitMarkup: 1

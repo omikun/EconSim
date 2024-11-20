@@ -5,6 +5,7 @@ using UnityEngine.Assertions;
 using System.Linq;
 using UnityEngine.XR;
 using System;
+using System.Text;
 using Sirenix.Reflection.Editor;
 using DG.Tweening;
 using EconSim;
@@ -23,6 +24,7 @@ public class EconAgent : MonoBehaviour
 		Cash = 0;
 	}
 
+	public bool Alive { get; protected set; }
 	protected float prevCash;
 	protected internal float foodExpense = 0;
 	protected float initStock = 1;
@@ -118,6 +120,7 @@ public class EconAgent : MonoBehaviour
 
 	public virtual void Init(SimulationConfig cfg, AuctionStats at, string b, float _initStock, float maxstock)
 	{
+		Alive = true;
 		config = cfg;
 		uid = uid_idx++;
 		initStock = _initStock;
@@ -462,7 +465,11 @@ public float Buy(string commodity, float quantity, float price)
 		inventory[rsc.name].UpdateBuyerPriceBelief(name, in trade, in rsc);
 	}
 
-    /*********** Produce and consume; enter asks and bids to auction house *****/
+	public virtual void Decide()
+	{
+	}
+
+	/*********** Produce and consume; enter asks and bids to auction house *****/
 	public virtual Offers Consume(AuctionBook book)
 	{
 		Debug.Log(name + " consuming");

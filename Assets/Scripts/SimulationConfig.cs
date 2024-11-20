@@ -103,8 +103,12 @@ public class SimulationConfig : MonoBehaviour{
 	[BoxGroup("Simulation Settings/Split/Left/Box A")]
 	[LabelWidth(150)]
 	public bool exitAfterNoTrade = true;
+
 	[VerticalGroup("Simulation Settings/Split/Right")]
 	[BoxGroup("Simulation Settings/Split/Right/Box C", false)]
+	[LabelWidth(150)]
+	public bool EnableGovernment = true;
+	[BoxGroup("Simulation Settings/Split/Right/Box C")]
 	[LabelWidth(150)]
 	public int seed = 42;
 	[BoxGroup("Simulation Settings/Split/Right/Box C")]
@@ -163,7 +167,9 @@ public class SimulationConfig : MonoBehaviour{
 	public bool declareBankruptcy = true;
 	[Tooltip("for looking into recent past on different metrics, like most profitable good")]
 	public int historySize = 10;
-	
+
+	[TabGroup("tab2", "Agent Initialization")]
+	public bool SimpleAgent = false;
 	[TabGroup("tab2", "Agent Initialization")]
 	public float initCash = 100;
 	[TabGroup("tab2", "Agent Initialization")]

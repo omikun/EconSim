@@ -45,12 +45,15 @@ public class InventoryItem {
     public float OfferQuantity;// { get; private set; }
     public float OfferPrice;// { get; private set; }
     //end gov use
+    public bool canOfferAdditionalThisRound = true;
+    public float offersThisRound = 0;
     public float quantityTradedThisRound = 0;
+	public float meanPriceThisRound; //total cost spent to acquire stock
     public float costThisRound = 0;
+    
 	public float maxQuantity;
 	public float minPriceBelief;
 	public float priceBelief;
-	public float meanPriceThisRound; //total cost spent to acquire stock
     public float meanCost; 
 	//number of units produced per turn = production * productionRate
 	float productionPerBatch = 1; //num produced per batch
@@ -80,7 +83,7 @@ public class InventoryItem {
             return realProductionRate;
         }
         //derate
-        float rate = productionPerBatch * productionDeRate;
+        float rate = productionPerBatch * batchRate * productionDeRate;
         //random chance derate
         var chance = productionChance;
         realProductionRate = (UnityEngine.Random.value < chance) ? rate : 0;
@@ -297,6 +300,34 @@ public class InventoryItem {
 			Assert.IsTrue(numBids <= Deficit());
 		}
 		return numBids;
+    }
+
+	float Utility(float additionalQuant, float delta = 1f)
+	{
+		var c = name;
+		var recipe = agent.book[agent.outputName].recipe;
+		var quant = agent.inventory[c].Quantity + additionalQuant;
+		float numNeeded;
+		if (c == agent.outputName)
+		{
+			if (quant < 1)
+				return 0;
+			numNeeded = agent.book[c].productionPerBatch;
+			return Mathf.Log10(quant / (quant - delta*numNeeded)); 
+		}
+		else
+		{
+			numNeeded = recipe[c];
+			return Mathf.Log10((quant + delta*numNeeded) / quant); 
+		}
+		
+	}
+    public float GetNiceness(float delta = 1f)
+    {
+		var marketPrice = agent.book[name].marketPrice;
+		var utility = Utility(offersThisRound, delta);
+		var niceness = utility / marketPrice;
+		return niceness;
     }
 	public float GetPrice()
 	{

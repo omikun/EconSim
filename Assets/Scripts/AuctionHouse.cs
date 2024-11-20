@@ -88,6 +88,8 @@ public class AuctionHouse : MonoBehaviour {
 	}
 	void InitGovernment()
 	{
+		if (config.EnableGovernment == false)
+			return;
 		GameObject go = new GameObject();
 		go.transform.parent = transform;
 		go.name = "gov";
@@ -103,7 +105,14 @@ public class AuctionHouse : MonoBehaviour {
 	}
 	void InitAgents()
 	{
-		var prefab = Resources.Load("Agent");
+		GameObject prefab;
+		if (config.SimpleAgent == true)
+		{
+			prefab = (GameObject)Resources.Load("SimpleAgent");
+		} else
+		{
+			prefab = (GameObject)Resources.Load("Agent");
+		}
 		var professions = config.numAgents.Keys;
 		int agentId = 0;
 		foreach (string profession in professions)
@@ -234,6 +243,7 @@ public class AuctionHouse : MonoBehaviour {
 			//var numProduced = agent.Produce(book);
 			//PayIdleTax(agent, numProduced);
 
+			agent.Decide();
 			askTable.Add(agent.CreateAsks());
 			bidTable.Add(agent.Consume(book));
 		}
