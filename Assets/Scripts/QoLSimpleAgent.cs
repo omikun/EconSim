@@ -33,12 +33,28 @@ public class QoLSimpleAgent : EconAgent
     //produce
     public override float Tick(Government gov, ref bool changedProfession, ref bool bankrupted, ref bool starving)
     {
+        if (Alive == false)
+            return 0;
         ConsumeGoods();
         //check if food=0
-        if (inventory["Food"].Quantity <= 0)
+        var anyTrue2 = inventory.Values.Any(item => item.Quantity <= 0);
+        if (anyTrue2)
         {
-            Debug.Log(auctionStats.round + " " + name + " has died");
+            var anyTrue = false;
+            foreach (var value in inventory.Values)
+            {
+                if (value.Quantity <= 0)
+                    anyTrue = true;
+            }
+            Assert.IsTrue(anyTrue == anyTrue2);
+            var quants = inventory.Values.Select(item => item.Quantity);
+            //var msg = string.Join(",", quants);
+            var msg = $"{string.Join(",", inventory.Keys)}--{string.Join(",", inventory.Values.Select(item => item.Quantity))}";
+            //var msg = string.Join(",", inventory.SelectMany(t => t.Key, (t, i) => t.Key + ", " + t.Value.Quantity ));
+
+            Debug.Log(auctionStats.round + " " + name + " has died with " + msg);
             Alive = false;
+            outputName = "Ore";
         }
         //die
         //birth conditions? enough food for 5 rounds?
@@ -106,16 +122,32 @@ public class QoLSimpleAgent : EconAgent
                 continue;
             
             var niceness = item.GetNiceness();
-            var mostNice = inventory.Values
-                .Where(item => item.name != c)
-                .All(item => item.GetNiceness() <= niceness);
+            var mostNice = false;
+            var mostNice2 =
+                (c == outputName)
+                ? inventory.Values
+                    .Where(item => item.name != c)
+                    .Any(item => item.GetNiceness() >= niceness)
+                : inventory.Values
+                    .Where(item => item.name != c)
+                    .Any(item => item.GetNiceness() <= niceness);
             foreach (var it in inventory.Values)
             {
                 if (it.name != c)
                 {
-                    mostNice &= it.GetNiceness() <= niceness;
+                    var itNiceness = it.GetNiceness();
+                    // Debug.Log(auctionStats.round + " " + name + " " + it.name + " niceness: " + itNiceness + " has " + item.Quantity.ToString("n2"));
+                    if (c == outputName)
+                        mostNice |= itNiceness >= niceness;
+                    else
+                        mostNice |= itNiceness <= niceness;
+                }
+                else
+                {
+                    // Debug.Log(auctionStats.round + " " + name + " " + it.name + " niceness: " + niceness + " has " + item.Quantity.ToString("n2"));
                 }
             }
+            Assert.IsTrue(mostNice == mostNice2);
             if (mostNice)
             {
                 item.offersThisRound++;
@@ -129,12 +161,22 @@ public class QoLSimpleAgent : EconAgent
         //place bids and asks
         foreach (var (c, item) in inventory)
         {
+            Debug.Log(auctionStats.round + " " + Cash.ToString("c2") + " " + name + " has " + item.Quantity.ToString("n2") + " " + c);
             if (item.offersThisRound > 0)
             {
                 if (c == outputName)
-                    asks.Add(c, new Offer(c, item.GetPrice(), item.offersThisRound, this));
+                {
+                    var price = item.GetPrice();
+                    asks.Add(c, new Offer(c, price, item.offersThisRound, this));
+                    Debug.Log(auctionStats.round + " " + name + " asking " + item.offersThisRound.ToString("n2") + " " +
+                              c + " for " + price.ToString("c2"));
+                }
                 else
-                    bids.Add(c, new Offer(c, item.GetPrice(), item.offersThisRound, this));
+                {
+                    var price = item.GetPrice();
+                    bids.Add(c, new Offer(c, price, item.offersThisRound, this));
+                    Debug.Log(auctionStats.round + " " + name + " bidding " + item.offersThisRound.ToString("n2") + " " + c + " for " + price.ToString("c2"));
+                }
             }
         }
 

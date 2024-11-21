@@ -619,15 +619,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5340b96b9e4f7420e865bd103e760776, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  autoNextRound: 0
-  tickInterval: 0.35
+  autoNextRound: 1
+  tickInterval: 0.001
   EnableDebug: 1
   EnableLog: 0
   appendTimeToLog: 1
-  exitAfterNoTrade: 1
+  exitAfterNoTrade: 0
   EnableGovernment: 1
   seed: 42
-  maxRounds: 300
+  maxRounds: 400
   numRoundsNoTrade: 100
   tradeResolution: 2
   bidSortOrder: 1
@@ -672,8 +672,8 @@ MonoBehaviour:
   SimpleAgent: 1
   initCash: 50
   initGovCash: 1000
-  randomInitStock: 1
-  initStock: 3
+  randomInitStock: 0
+  initStock: 5
   maxStock: 4000
   numAgents:
     _serializedList:
@@ -703,11 +703,13 @@ MonoBehaviour:
         - Key: Batch_rate
           Value: 10
         - Key: Set_price
-          Value: 10
+          Value: 5
     - Key: Wood
       Value:
         _serializedList:
         - Key: Food
+          Value: 1
+        - Key: Tool
           Value: 1
         - Key: Prod_multiplier
           Value: 1
@@ -716,7 +718,7 @@ MonoBehaviour:
         - Key: Batch_rate
           Value: 10
         - Key: Set_price
-          Value: 10
+          Value: 5
     - Key: Ore
       Value:
         _serializedList:
@@ -729,7 +731,7 @@ MonoBehaviour:
         - Key: Batch_rate
           Value: 10
         - Key: Set_price
-          Value: 10
+          Value: 5
     - Key: Metal
       Value:
         _serializedList:
@@ -744,13 +746,13 @@ MonoBehaviour:
         - Key: Batch_rate
           Value: 10
         - Key: Set_price
-          Value: 10
+          Value: 5
     - Key: Tool
       Value:
         _serializedList:
         - Key: Food
           Value: 1
-        - Key: Metal
+        - Key: Wood
           Value: 1
         - Key: Prod_multiplier
           Value: 1
@@ -759,7 +761,7 @@ MonoBehaviour:
         - Key: Batch_rate
           Value: 10
         - Key: Set_price
-          Value: 10
+          Value: 5
   starvationThreshold: 0.1
   foodConsumption: 1
   foodConsumptionRate: 1
@@ -3962,7 +3964,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 224390226033679502, guid: 3dbd4bc71acbb1145b6e80827b858127, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 0
+      value: 55.27
       objectReference: {fileID: 0}
     - target: {fileID: 224390226033679502, guid: 3dbd4bc71acbb1145b6e80827b858127, type: 3}
       propertyPath: m_SizeDelta.y
@@ -4098,7 +4100,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3155788890126894321, guid: 3dbd4bc71acbb1145b6e80827b858127, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 0
+      value: 55.27
       objectReference: {fileID: 0}
     - target: {fileID: 3155788890126894321, guid: 3dbd4bc71acbb1145b6e80827b858127, type: 3}
       propertyPath: m_SizeDelta.y
@@ -4126,7 +4128,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4484771780012352589, guid: 3dbd4bc71acbb1145b6e80827b858127, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 0
+      value: 55.27
       objectReference: {fileID: 0}
     - target: {fileID: 4484771780012352589, guid: 3dbd4bc71acbb1145b6e80827b858127, type: 3}
       propertyPath: m_SizeDelta.y
@@ -4150,7 +4152,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4866549897623903779, guid: 3dbd4bc71acbb1145b6e80827b858127, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 0
+      value: 135.27
       objectReference: {fileID: 0}
     - target: {fileID: 4866549897623903779, guid: 3dbd4bc71acbb1145b6e80827b858127, type: 3}
       propertyPath: m_SizeDelta.y

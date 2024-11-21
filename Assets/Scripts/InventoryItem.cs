@@ -149,7 +149,7 @@ public class InventoryItem {
 		Quantity = _quantity;
 		maxQuantity = _maxQuantity;
         Assert.IsTrue(_meanPrice >= 0); //TODO really should never be 0???
-		minPriceBelief = _meanPrice / 2;
+		minPriceBelief = _meanPrice;
 		priceBelief = _meanPrice;
 		meanPriceThisRound = _meanPrice;
         meanCost = _meanPrice;
@@ -306,10 +306,10 @@ public class InventoryItem {
 	{
 		var c = name;
 		var recipe = agent.book[agent.outputName].recipe;
-		var quant = agent.inventory[c].Quantity + additionalQuant;
 		float numNeeded;
 		if (c == agent.outputName)
 		{
+			var quant = agent.inventory[c].Quantity - additionalQuant;
 			if (quant < 1)
 				return 0;
 			numNeeded = agent.book[c].productionPerBatch;
@@ -317,6 +317,7 @@ public class InventoryItem {
 		}
 		else
 		{
+			var quant = agent.inventory[c].Quantity + additionalQuant;
 			numNeeded = recipe[c];
 			return Mathf.Log10((quant + delta*numNeeded) / quant); 
 		}

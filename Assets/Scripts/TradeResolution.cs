@@ -109,22 +109,12 @@ public abstract class TradeResolution
 	    askSorter.SortOffer(ref asks);
 	    bidSorter.SortOffer(ref bids);
     
-		int idx = 0;
-		foreach (var ask in asks)
-		{
-			ask.agent.inventory[rsc.name].askOrder = idx;
-			idx++;
-		}
+	    for (int i = 0; i < asks.Count; i++)
+			asks[i].agent.inventory[rsc.name].askOrder = i;
+
+	    for (int i = 0; i < bids.Count; i++)
+			bids[i].agent.inventory[rsc.name].bidOrder = i;
 		
-		idx = 0;
-		foreach (var bid in bids)
-		{
-			bid.agent.inventory[rsc.name].bidOrder = idx;
-			idx++;
-		}
-		moneyExchangedThisRound = 0;
-		goodsExchangedThisRound = 0;
-    
 		int askIdx = 0;
 		int bidIdx = 0;
     
@@ -134,18 +124,9 @@ public abstract class TradeResolution
 			var bid = bids[bidIdx];
 
 			var cond = EndTrades(ask, bid);
-			if (cond == LoopState.Break)
-				break;
-			else if (cond == LoopState.ContinueAsks)
-			{
-				askIdx++;
-				continue;
-			}
-			else if (cond == LoopState.ContinueBids)
-			{
-				bidIdx++;
-				continue;
-			}
+			if (cond == LoopState.Break)             { break; }
+			else if (cond == LoopState.ContinueAsks) { askIdx++; continue; }
+			else if (cond == LoopState.ContinueBids) { bidIdx++; continue; }
     
 			//var clearingPrice = ResolveClearingPrice(ask, bid);
 			var clearingPrice = tradePriceResolver.ResolvePrice(ask, bid);
@@ -168,33 +149,16 @@ public abstract class TradeResolution
     
 			Assert.IsTrue(ask.remainingQuantity >= 0);
 			Assert.IsTrue(bid.remainingQuantity >= 0);
-			//go to next ask/bid if fullfilled
-			if (ask.remainingQuantity == 0)
-			{
-				ask.agent.UpdateSellerPriceBelief(ask, rsc);
-				askIdx++;
-			}
-
-			if (bid.remainingQuantity == 0)
-			{
-				bid.agent.UpdateBuyerPriceBelief(bid, rsc);	
-				bidIdx++;
-			}
+			
+			if (ask.remainingQuantity == 0) askIdx++;
+			if (bid.remainingQuantity == 0) bidIdx++;
 		}
 
-		while (askIdx < asks.Count)
-		{
-			var ask = asks[askIdx];
+		foreach (var ask in asks)
 			ask.agent.UpdateSellerPriceBelief(ask, rsc);
-			askIdx++;
-		}
 
-		while (bidIdx < bids.Count)
-		{
-			var bid = bids[bidIdx];
+		foreach (var bid in bids)
 			bid.agent.UpdateBuyerPriceBelief(bid, rsc);
-			bidIdx++;
-		}
 		Assert.IsFalse(goodsExchangedThisRound < 0);
 	}
 

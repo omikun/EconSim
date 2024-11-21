@@ -117,7 +117,6 @@ public class AuctionHouse : MonoBehaviour {
 		int agentId = 0;
 		foreach (string profession in professions)
 		{
-			Debug.Log(gov.name + " 2outputs: " + string.Join(", ", gov.outputName));
 			for (int i = 0; i < config.numAgents[profession]; ++i)
 			{
 				GameObject go = Instantiate(prefab) as GameObject;
@@ -129,7 +128,6 @@ public class AuctionHouse : MonoBehaviour {
 				agents.Add(agent);
 				agentId++;
 			}
-			Debug.Log(gov.name + " 3outputs: " + string.Join(", ", gov.outputName));
 		}
 	}
 	void InitAgent(EconAgent agent, string type)
@@ -239,6 +237,8 @@ public class AuctionHouse : MonoBehaviour {
 		var book = auctionTracker.book;
 		foreach (var agent in agents)
 		{
+			if (agent.Alive == false)
+				continue;
 			agent.Produce();
 			//var numProduced = agent.Produce(book);
 			//PayIdleTax(agent, numProduced);
@@ -248,13 +248,15 @@ public class AuctionHouse : MonoBehaviour {
 			bidTable.Add(agent.Consume(book));
 		}
 
+		moneyExchangedThisRound = 0;
+		goodsExchangedThisRound = 0;
 		//resolve prices
 		foreach (var entry in book)
 		{
 			tradeResolver.ResolveOffers(entry.Value, ref moneyExchangedThisRound, ref goodsExchangedThisRound);
 			RecordStats(entry.Value);
 			Debug.Log(entry.Key + ": have " + entry.Value.trades[^1] 
-				+ " at price: " + entry.Value.marketPrice);
+				+ " at price: " + entry.Value.marketPrice.ToString("c2"));
 		}
 
 		PrintAuctionStats();
@@ -277,6 +279,8 @@ public class AuctionHouse : MonoBehaviour {
 		Debug.Log(auctionTracker.round + " gov outputs: " + gov.outputName);
         foreach (var agent in agents)
         {
+			if (agent.Alive == false)
+				continue;
 	        Debug.Log("TickAgent() " + agent.name);
 			if (agent is Government)
 				continue;
@@ -404,7 +408,7 @@ public class AuctionHouse : MonoBehaviour {
 		bids.Clear();
 
 		PrintAuctionStats(rsc.name, quantityToBuy, quantityToSell);
-		Debug.Log(auctionTracker.round + ": " + rsc.name + ": " + goodsExchangedThisRound + " traded at average price of " + averagePrice);
+		Debug.Log(auctionTracker.round + ": " + rsc.name + ": " + goodsExchangedThisRound + " traded at average price of " + averagePrice.ToString("c2"));
 	}
 
 	// TODO decouple transfer of commodity with transfer of money
