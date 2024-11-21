@@ -248,11 +248,11 @@ public class AuctionHouse : MonoBehaviour {
 			bidTable.Add(agent.Consume(book));
 		}
 
-		moneyExchangedThisRound = 0;
-		goodsExchangedThisRound = 0;
 		//resolve prices
 		foreach (var entry in book)
 		{
+			moneyExchangedThisRound = 0;
+			goodsExchangedThisRound = 0;
 			tradeResolver.ResolveOffers(entry.Value, ref moneyExchangedThisRound, ref goodsExchangedThisRound);
 			RecordStats(entry.Value);
 			Debug.Log(entry.Key + ": have " + entry.Value.trades[^1] 

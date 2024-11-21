@@ -332,7 +332,7 @@ public class InventoryItem {
     }
 	public float GetPrice()
 	{
-		SanePriceBeliefs();
+		//SanePriceBeliefs();
 		var p = UnityEngine.Random.Range(minPriceBelief, priceBelief);
 		return p;
 	}
@@ -363,9 +363,6 @@ public class InventoryItem {
         Assert.IsTrue(historicalMeanPrice >= 0);
         string reason_msg = "none";
 
-        if (quantityBought == 0)
-	        return;
-        
         var prevPriceBelief = priceBelief; 
         if (quantityBought < trade.offerQuantity) //didn't buy it all
         {

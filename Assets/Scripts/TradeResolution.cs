@@ -19,7 +19,7 @@ class SortOfferByPriceDescend : OfferSorter
 {
 	public override void SortOffer(ref OfferList offers)
 	{
-		offers.Sort((x, y) => y.offerPrice.CompareTo(y.offerPrice)); //dec
+		offers.Sort((x, y) => y.offerPrice.CompareTo(x.offerPrice)); //dec
 	}
 }
 
@@ -123,8 +123,15 @@ public abstract class TradeResolution
 			var ask = asks[askIdx];
 			var bid = bids[bidIdx];
 
+				Debug.Log("starting summary trading " + goodsExchangedThisRound + " goods exchanged : " + rsc.name + " " + ask.agent.name + " ask: " + ask.offerQuantity.ToString("n2") + " for " + ask.offerPrice.ToString("c2"));
+				Debug.Log("starting summary trading " + goodsExchangedThisRound + " goods exchanged: " + rsc.name + " " + bid.agent.name + " bid: " + bid.offerQuantity.ToString("n2") + " for " + bid.offerPrice.ToString("c2"));
 			var cond = EndTrades(ask, bid);
-			if (cond == LoopState.Break)             { break; }
+			if (cond == LoopState.Break)
+			{
+				Debug.Log("BREAKING summary trading " + goodsExchangedThisRound + " goods exchanged : " + rsc.name + " " + ask.agent.name + " ask: " + ask.offerQuantity.ToString("n2") + " for " + ask.offerPrice.ToString("c2"));
+				Debug.Log("BREAKING summary trading " + goodsExchangedThisRound + " goods exchanged: " + rsc.name + " " + bid.agent.name + " bid: " + bid.offerQuantity.ToString("n2") + " for " + bid.offerPrice.ToString("c2"));
+				break;
+			}
 			else if (cond == LoopState.ContinueAsks) { askIdx++; continue; }
 			else if (cond == LoopState.ContinueBids) { bidIdx++; continue; }
     
@@ -139,11 +146,13 @@ public abstract class TradeResolution
 			// =========== trade ============== 
 			//bought quantity may be lower than trade quantity (buyer can buy less depending on clearing price)
 			var boughtQuantity = Trade(rsc, clearingPrice, tradeQuantity, ref bid, ask);
+			Assert.IsTrue(boughtQuantity >= 0);
     
 			moneyExchangedThisRound += clearingPrice * boughtQuantity;
 			goodsExchangedThisRound += boughtQuantity;
     
-			//this is necessary for price belief updates after the big loop
+				Debug.Log("summary trading " + goodsExchangedThisRound + " goods exchanged; bought " + boughtQuantity + " : " + rsc.name + " " + ask.agent.name + " ask: " + ask.offerQuantity.ToString("n2") + " for " + ask.offerPrice.ToString("c2"));
+				Debug.Log("summary trading " + goodsExchangedThisRound + " goods exchanged: bought " + boughtQuantity + " : " + rsc.name + " " + bid.agent.name + " bid: " + bid.offerQuantity.ToString("n2") + " for " + bid.offerPrice.ToString("c2"));
 			ask.Accepted(clearingPrice, boughtQuantity);
 			bid.Accepted(clearingPrice, boughtQuantity);
     
@@ -160,6 +169,17 @@ public abstract class TradeResolution
 		foreach (var bid in bids)
 			bid.agent.UpdateBuyerPriceBelief(bid, rsc);
 		Assert.IsFalse(goodsExchangedThisRound < 0);
+		
+		//at end of auction, if someone bid and someone else asked, goods exchanged should not be zero??
+		var numBids = bids.Sum(item => item.offerQuantity);
+		var numAsks = asks.Sum(item => item.offerQuantity);
+		if (numBids > 0 && numAsks > 0 && goodsExchangedThisRound == 0)
+		{
+			foreach (var ask in asks)
+				Debug.Log("summary " + goodsExchangedThisRound + " goods exchanged: " + rsc.name + " " + ask.agent.name + " ask: " + ask.offerQuantity.ToString("n2") + " for " + ask.offerPrice.ToString("c2"));
+			foreach (var bid in bids)
+				Debug.Log("summary " + goodsExchangedThisRound + " goods exchanged: " + rsc.name + " " + bid.agent.name + " bid: " + bid.offerQuantity.ToString("n2") + " for " + bid.offerPrice.ToString("c2"));
+		}
 	}
 
 	protected float OnlyBuyAffordable(Offer ask, ref Offer bid, float quantity, float price)
@@ -226,7 +246,7 @@ class SimonTradeResolution : TradeResolution
 	public SimonTradeResolution(AuctionStats aStats, FiscalPolicy fp, OfferTable at, OfferTable bt) : base(aStats, fp, at, bt) {}
     protected override LoopState EndTrades(Offer ask, Offer bid)
     {
-	    if (ask.offerPrice > bid.offerPrice)
+	    if (ask.offerPrice > bid.offerPrice + 0.1f)
 		    return LoopState.Break;
 	    else
 		    return LoopState.None;

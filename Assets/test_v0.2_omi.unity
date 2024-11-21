@@ -619,7 +619,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5340b96b9e4f7420e865bd103e760776, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  autoNextRound: 1
+  autoNextRound: 0
   tickInterval: 0.001
   EnableDebug: 1
   EnableLog: 0
@@ -627,7 +627,7 @@ MonoBehaviour:
   exitAfterNoTrade: 0
   EnableGovernment: 1
   seed: 42
-  maxRounds: 400
+  maxRounds: 300
   numRoundsNoTrade: 100
   tradeResolution: 2
   bidSortOrder: 1
@@ -678,7 +678,7 @@ MonoBehaviour:
   numAgents:
     _serializedList:
     - Key: Food
-      Value: 1
+      Value: 2
     - Key: Wood
       Value: 1
     - Key: Ore
