@@ -109,53 +109,38 @@ public class QoLSimpleAgent : EconAgent
             item.canOfferAdditionalThisRound = true;
         }
         //determine how much of each good to offer
-        int i = 0;
-        while (inventory.Values.Any(item => item.canOfferAdditionalThisRound == true))
+        for (float allocatedSpending = 0, i = 0; 
+             i < 100 && inventory.Values.Any(item => item.canOfferAdditionalThisRound); 
+             i++)
         {
             var idx = UnityEngine.Random.Range(0, inventory.Count);
             var (c, item) = inventory.ElementAt(idx);
-            if (c == outputName)
+            var itemPrice = item.GetPrice();
+            var selling = (c == outputName);
+            
+            if (selling) 
                 item.canOfferAdditionalThisRound = item.Quantity - item.offersThisRound >= 1;
-            else
-                item.canOfferAdditionalThisRound = ((Cash / book[c].marketPrice) - item.offersThisRound) > 1f;
+            else         
+                item.canOfferAdditionalThisRound = ((Cash - allocatedSpending) / itemPrice) > 1f;
+            
             if (false == item.canOfferAdditionalThisRound)
                 continue;
             
             var niceness = item.GetNiceness();
-            var mostNice = false;
-            var mostNice2 =
-                (c == outputName)
+            var mostNice = (selling)
                 ? inventory.Values
                     .Where(item => item.name != c)
                     .Any(item => item.GetNiceness() >= niceness)
                 : inventory.Values
                     .Where(item => item.name != c)
                     .Any(item => item.GetNiceness() <= niceness);
-            foreach (var it in inventory.Values)
-            {
-                if (it.name != c)
-                {
-                    var itNiceness = it.GetNiceness();
-                    // Debug.Log(auctionStats.round + " " + name + " " + it.name + " niceness: " + itNiceness + " has " + item.Quantity.ToString("n2"));
-                    if (c == outputName)
-                        mostNice |= itNiceness >= niceness;
-                    else
-                        mostNice |= itNiceness <= niceness;
-                }
-                else
-                {
-                    // Debug.Log(auctionStats.round + " " + name + " " + it.name + " niceness: " + niceness + " has " + item.Quantity.ToString("n2"));
-                }
-            }
-            Assert.IsTrue(mostNice == mostNice2);
+            
             if (mostNice)
             {
                 item.offersThisRound++;
+                if (false == selling)
+                    allocatedSpending += itemPrice;
             }
-
-            i++;
-            if (i > 100)
-                break;
         }
 
         //place bids and asks
