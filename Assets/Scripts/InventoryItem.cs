@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http.Headers;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.WindowsRuntime;
@@ -36,7 +37,7 @@ public class InventoryItem {
 	const float lowInventory = .1f;
 	const float highInventory = 2f;
 	public TransactionHistory buyHistory;
-	public TransactionHistory sellHistory;
+	public TransactionHistory saleHistory;
 	public float unitCost = 1;
 	public float wobble = .02f;
 	public float Quantity { get; private set; }
@@ -110,7 +111,7 @@ public class InventoryItem {
         }
         if (soldThisRound)
         {
-            ret += header + name + ", sellQuant, " + sellHistory[^1].quantity + ",n/a\n";
+            ret += header + name + ", sellQuant, " + saleHistory[^1].quantity + ",n/a\n";
         }
         if (boughtThisRound || soldThisRound)
         {
@@ -144,7 +145,7 @@ public class InventoryItem {
 		agent = a;
         auctionStats = at;
 		buyHistory = new TransactionHistory();
-		sellHistory = new TransactionHistory();
+		saleHistory = new TransactionHistory();
 		name = _name;
 		Quantity = _quantity;
 		maxQuantity = _maxQuantity;
@@ -154,7 +155,7 @@ public class InventoryItem {
 		meanPriceThisRound = _meanPrice;
         meanCost = _meanPrice;
 		buyHistory.Add(new Transaction(1,_meanPrice));
-		sellHistory.Add(new Transaction(1,_meanPrice));
+		saleHistory.Add(new Transaction(1,_meanPrice));
 		productionPerBatch = _production;
 		batchRate = _batchRate;
 	}
@@ -242,9 +243,9 @@ public class InventoryItem {
         
         if (soldThisRound)
         {
-            sellHistory.UpdateLast(new Transaction(price, quant));
+            saleHistory.UpdateLast(new Transaction(price, quant));
         } else {
-            sellHistory.Add(new Transaction(price, quant));
+            saleHistory.Add(new Transaction(price, quant));
         }
         soldThisRound = true;
         Assert.IsFalse(boughtThisRound);
@@ -258,8 +259,8 @@ public class InventoryItem {
 
 		if (enablePriceFavorability) {
 			var avgPrice = rsc.avgBidPrice.LastAverage(historySize);
-			var lowestPrice = sellHistory.Min();
-			var highestPrice = sellHistory.Max();
+			var lowestPrice = saleHistory.Min();
+			var highestPrice = saleHistory.Max();
 			float favorability = .5f;
 			if (true || lowestPrice != highestPrice)
 			{
@@ -369,12 +370,20 @@ public class InventoryItem {
 	        var delta = 1 + agent.config.sellPriceDelta;
 	        priceBelief *= delta;
 	        minPriceBelief *= delta;
+            float minItems = 3;
         }
         else
         {
 	        var delta = 1 - agent.config.sellPriceDelta;
 	        priceBelief *= delta;
 	        minPriceBelief *= delta;
+        }
+        if (Quantity < agent.config.minItemRaiseBuyPrice)
+        {
+	        // priceBelief = Mathf.Max(priceBelief, agent.book[name].marketPrice);
+	        priceBelief = agent.book[name].marketPrice;
+	        priceBelief *= (1 + .01f * Mathf.Pow(agent.config.minItemRaiseBuyPrice, 2));
+	        minPriceBelief = priceBelief;
         }
 
         Debug.Log(agent.auctionStats.round + " " + agent.name + " price belief update: " + name + " bid: " + trade.offerQuantity + " bought: " + quantityBought + " prev price " + prevPriceBelief.ToString("c2") + " current price belief " + priceBelief.ToString("c2"));
@@ -456,6 +465,14 @@ public void UpdateSellerPriceBelief(String agentName, in Offer trade, in Resourc
 	        var delta = 1 - agent.config.sellPriceDelta;
 	        priceBelief *= delta;
 	        minPriceBelief *= delta;
+	        if (agent.config.minSellPrice)
+	        {
+		        var otherCosts = agent.inventory.Values
+			        .Where(item => agent.inputs.Contains(item.name))
+			        .Sum(item => item.meanCost);
+		        priceBelief = Mathf.Max(otherCosts/agent.config.minSellToAffordOthers, priceBelief);
+		        minPriceBelief = priceBelief;
+	        }
         }
         Debug.Log(agent.auctionStats.round + " " + agent.name + " price belief update: " + name + " asked: " + trade.offerQuantity + " sold: " + quantitySold + " prev price " + prevPriceBelief.ToString("c2") + " current price belief " + priceBelief.ToString("c2"));
 

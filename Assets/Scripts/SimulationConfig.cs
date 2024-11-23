@@ -226,7 +226,15 @@ public class SimulationConfig : MonoBehaviour{
 
 	[TabGroup("tab2", "Agent Trade")] public bool sellPriceMinFoodExpense = true;
 	[FormerlySerializedAs("baselineSellPriceMinCost")] [TabGroup("tab2", "Agent Trade")] 
-	public bool sellPriceMinCost = false; 
+	public bool sellPriceMinCost = false;
+
+	[FormerlySerializedAs("baselineSellPriceDelta")] [TabGroup("tab2", "Agent Trade")]
+	public bool minSellPrice = true;
+	[InfoBox("priced to afford 1 of every other rsc after selling this many output")]
+	[FormerlySerializedAs("baselineSellPriceDelta")] [TabGroup("tab2", "Agent Trade")]
+	public float minSellToAffordOthers = 10f;
+	[FormerlySerializedAs("baselineSellPriceDelta")] [TabGroup("tab2", "Agent Trade")]
+	public float minItemRaiseBuyPrice = 3f;
 	[FormerlySerializedAs("baselineSellPriceDelta")] [TabGroup("tab2", "Agent Trade")] 
 	public float sellPriceDelta = 0.05f;
 	[FormerlySerializedAs("baselineBuyPriceDelta")] [TabGroup("tab2", "Agent Trade")] 

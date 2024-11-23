@@ -620,7 +620,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   autoNextRound: 0
-  tickInterval: 0.001
+  tickInterval: 0.098
   EnableDebug: 1
   EnableLog: 0
   appendTimeToLog: 1
@@ -673,7 +673,7 @@ MonoBehaviour:
   initCash: 50
   initGovCash: 1000
   randomInitStock: 0
-  initStock: 5
+  initStock: 8
   maxStock: 4000
   numAgents:
     _serializedList:
@@ -703,7 +703,7 @@ MonoBehaviour:
         - Key: Batch_rate
           Value: 10
         - Key: Set_price
-          Value: 5
+          Value: 2
     - Key: Wood
       Value:
         _serializedList:
@@ -718,7 +718,7 @@ MonoBehaviour:
         - Key: Batch_rate
           Value: 10
         - Key: Set_price
-          Value: 5
+          Value: 2
     - Key: Ore
       Value:
         _serializedList:
@@ -731,7 +731,7 @@ MonoBehaviour:
         - Key: Batch_rate
           Value: 10
         - Key: Set_price
-          Value: 5
+          Value: 2
     - Key: Metal
       Value:
         _serializedList:
@@ -746,7 +746,7 @@ MonoBehaviour:
         - Key: Batch_rate
           Value: 10
         - Key: Set_price
-          Value: 5
+          Value: 2
     - Key: Tool
       Value:
         _serializedList:
@@ -761,7 +761,7 @@ MonoBehaviour:
         - Key: Batch_rate
           Value: 10
         - Key: Set_price
-          Value: 5
+          Value: 2
   starvationThreshold: 0.1
   foodConsumption: 1
   foodConsumptionRate: 1
@@ -800,6 +800,9 @@ MonoBehaviour:
   randomizeSellPrice: 0
   sellPriceMinFoodExpense: 1
   sellPriceMinCost: 0
+  minSellPrice: 1
+  minSellToAffordOthers: 8
+  minItemRaiseBuyPrice: 8
   sellPriceDelta: 0.05
   buyPriceDelta: 0.05
   profitMarkup: 1

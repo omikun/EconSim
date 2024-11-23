@@ -123,13 +123,13 @@ public abstract class TradeResolution
 			var ask = asks[askIdx];
 			var bid = bids[bidIdx];
 
-				Debug.Log("starting summary trading " + goodsExchangedThisRound + " goods exchanged : " + rsc.name + " " + ask.agent.name + " ask: " + ask.offerQuantity.ToString("n2") + " for " + ask.offerPrice.ToString("c2"));
-				Debug.Log("starting summary trading " + goodsExchangedThisRound + " goods exchanged: " + rsc.name + " " + bid.agent.name + " bid: " + bid.offerQuantity.ToString("n2") + " for " + bid.offerPrice.ToString("c2"));
+				// Debug.Log("starting summary trading " + goodsExchangedThisRound + " goods exchanged : " + rsc.name + " " + ask.agent.name + " ask: " + ask.offerQuantity.ToString("n2") + " for " + ask.offerPrice.ToString("c2"));
+				// Debug.Log("starting summary trading " + goodsExchangedThisRound + " goods exchanged: " + rsc.name + " " + bid.agent.name + " bid: " + bid.offerQuantity.ToString("n2") + " for " + bid.offerPrice.ToString("c2"));
 			var cond = EndTrades(ask, bid);
 			if (cond == LoopState.Break)
 			{
-				Debug.Log("BREAKING summary trading " + goodsExchangedThisRound + " goods exchanged : " + rsc.name + " " + ask.agent.name + " ask: " + ask.offerQuantity.ToString("n2") + " for " + ask.offerPrice.ToString("c2"));
-				Debug.Log("BREAKING summary trading " + goodsExchangedThisRound + " goods exchanged: " + rsc.name + " " + bid.agent.name + " bid: " + bid.offerQuantity.ToString("n2") + " for " + bid.offerPrice.ToString("c2"));
+				// Debug.Log("BREAKING summary trading " + goodsExchangedThisRound + " goods exchanged : " + rsc.name + " " + ask.agent.name + " ask: " + ask.offerQuantity.ToString("n2") + " for " + ask.offerPrice.ToString("c2"));
+				// Debug.Log("BREAKING summary trading " + goodsExchangedThisRound + " goods exchanged: " + rsc.name + " " + bid.agent.name + " bid: " + bid.offerQuantity.ToString("n2") + " for " + bid.offerPrice.ToString("c2"));
 				break;
 			}
 			else if (cond == LoopState.ContinueAsks) { askIdx++; continue; }
@@ -151,8 +151,8 @@ public abstract class TradeResolution
 			moneyExchangedThisRound += clearingPrice * boughtQuantity;
 			goodsExchangedThisRound += boughtQuantity;
     
-				Debug.Log("summary trading " + goodsExchangedThisRound + " goods exchanged; bought " + boughtQuantity + " : " + rsc.name + " " + ask.agent.name + " ask: " + ask.offerQuantity.ToString("n2") + " for " + ask.offerPrice.ToString("c2"));
-				Debug.Log("summary trading " + goodsExchangedThisRound + " goods exchanged: bought " + boughtQuantity + " : " + rsc.name + " " + bid.agent.name + " bid: " + bid.offerQuantity.ToString("n2") + " for " + bid.offerPrice.ToString("c2"));
+				// Debug.Log("summary trading " + goodsExchangedThisRound + " goods exchanged; bought " + boughtQuantity + " : " + rsc.name + " " + ask.agent.name + " ask: " + ask.offerQuantity.ToString("n2") + " for " + ask.offerPrice.ToString("c2"));
+				// Debug.Log("summary trading " + goodsExchangedThisRound + " goods exchanged: bought " + boughtQuantity + " : " + rsc.name + " " + bid.agent.name + " bid: " + bid.offerQuantity.ToString("n2") + " for " + bid.offerPrice.ToString("c2"));
 			ask.Accepted(clearingPrice, boughtQuantity);
 			bid.Accepted(clearingPrice, boughtQuantity);
     
