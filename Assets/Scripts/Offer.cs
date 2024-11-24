@@ -37,6 +37,26 @@ public class Offer
 		}
 		clearingPrice = clearingPriceVolume / tradedQuantity;
 	}
+
+	public void SetRemainingQuantity(float q)
+	{
+		remainingQuantity = q;
+	}
+
+	public void SetOfferQuantity(float q)
+	{
+		offerQuantity = q;
+	}
+
+	// update bid to reflect new bid after price update
+	public float UpdateOffer(float offerCeiling)
+	{
+		var origRemainingQuantity = remainingQuantity;
+		remainingQuantity = Mathf.Min(remainingQuantity, offerCeiling);
+		var delta = origRemainingQuantity - remainingQuantity;
+		offerQuantity -= delta;
+		return remainingQuantity;
+	}
 	public CommodityName commodityName { get; private set; }
 	public float offerPrice { get; private set; }
 	public float offerQuantity { get; private set; }

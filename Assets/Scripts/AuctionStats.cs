@@ -181,12 +181,12 @@ public class AuctionStats : MonoBehaviour
 		}
 		return hottestGood;
 	}
-	bool AddToBook(string name, float production, float productionMultiplier, float setPrice, Recipe dep)
+	bool AddToBook(string name, float production, float batch_rate, float productionMultiplier, float setPrice, Recipe dep)
 	{
 		if (book.ContainsKey(name)) { return false; }
 		Assert.IsNotNull(dep);
 
-		book.Add(name, new ResourceController(name, production, productionMultiplier, setPrice, dep));
+		book.Add(name, new ResourceController(name, production, batch_rate, productionMultiplier, setPrice, dep));
 		return true;
 	}
     void PrintStat()
@@ -244,6 +244,7 @@ public class AuctionStats : MonoBehaviour
 		foreach( var item in config.initialization)
 		{
 			Recipe dep = new Recipe();
+			float batch_rate = 0;
 			float prod_rate = 0;
 			float prod_multiplier = 0;
 			float set_price = 0;
@@ -264,9 +265,14 @@ public class AuctionStats : MonoBehaviour
 					set_price = field.Value;
 					continue;
 				}
+				if (field.Key == "Batch_rate")
+				{
+					batch_rate = field.Value;
+					continue;
+				}
 				dep.Add(field.Key, field.Value);
 			}
-			if (!AddToBook(item.Key, prod_rate, prod_multiplier, set_price, dep))
+			if (!AddToBook(item.Key, prod_rate, batch_rate, prod_multiplier, set_price, dep))
 			{
 				Debug.Log("Failed to add commodity; duplicate?");
 			}

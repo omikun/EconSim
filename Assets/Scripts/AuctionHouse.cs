@@ -8,6 +8,7 @@ using AYellowpaper.SerializedCollections;
 using UnityEngine.Rendering;
 using Sirenix.OdinInspector;
 using ChartAndGraph;
+using EconSim;
 using Sirenix.Serialization;
 using Sirenix.OdinInspector.Editor.ValueResolvers;
 
@@ -69,13 +70,26 @@ public class AuctionHouse : MonoBehaviour {
 		askTable = new OfferTable(com);
         bidTable = new OfferTable(com);
 
-        if (config.baselineAuction)
-	        tradeResolver = new XEvenResolution(auctionTracker, fiscalPolicy, askTable, bidTable);
-        else
-	        tradeResolver = new OmisTradeResolution(auctionTracker, fiscalPolicy, askTable, bidTable);
+        switch (config.tradeResolution)
+        {
+	        case TradeResolutionType.XEven:
+		        tradeResolver = new XEvenResolution(auctionTracker, fiscalPolicy, askTable, bidTable);
+		        break;
+	        case TradeResolutionType.OmiType:
+		        tradeResolver = new OmisTradeResolution(auctionTracker, fiscalPolicy, askTable, bidTable);
+		        break;
+	        case TradeResolutionType.SimonType:
+		        tradeResolver = new SimonTradeResolution(auctionTracker, fiscalPolicy, askTable, bidTable);
+		        break;
+	        default:
+		        Assert.IsTrue(false, "Unknown trade resolution");
+		        break;
+        }
 	}
 	void InitGovernment()
 	{
+		if (config.EnableGovernment == false)
+			return;
 		GameObject go = new GameObject();
 		go.transform.parent = transform;
 		go.name = "gov";
@@ -91,22 +105,29 @@ public class AuctionHouse : MonoBehaviour {
 	}
 	void InitAgents()
 	{
-		var prefab = Resources.Load("Agent");
+		GameObject prefab;
+		if (config.SimpleAgent == true)
+		{
+			prefab = (GameObject)Resources.Load("SimpleAgent");
+		} else
+		{
+			prefab = (GameObject)Resources.Load("Agent");
+		}
 		var professions = config.numAgents.Keys;
+		int agentId = 0;
 		foreach (string profession in professions)
 		{
-			Debug.Log(gov.name + " 2outputs: " + string.Join(", ", gov.outputName));
 			for (int i = 0; i < config.numAgents[profession]; ++i)
 			{
 				GameObject go = Instantiate(prefab) as GameObject;
 				go.transform.parent = transform;
-				go.name = "agent" + i.ToString();
+				go.name = "agent" + agentId.ToString();
 			
 				var agent = go.GetComponent<EconAgent>();
 				InitAgent(agent, profession);
 				agents.Add(agent);
+				agentId++;
 			}
-			Debug.Log(gov.name + " 3outputs: " + string.Join(", ", gov.outputName));
 		}
 	}
 	void InitAgent(EconAgent agent, string type)
@@ -216,10 +237,14 @@ public class AuctionHouse : MonoBehaviour {
 		var book = auctionTracker.book;
 		foreach (var agent in agents)
 		{
+			if (agent.Alive == false)
+				continue;
+			agent.ConsumeGoods();
 			agent.Produce();
 			//var numProduced = agent.Produce(book);
 			//PayIdleTax(agent, numProduced);
 
+			agent.Decide();
 			askTable.Add(agent.CreateAsks());
 			bidTable.Add(agent.Consume(book));
 		}
@@ -227,10 +252,12 @@ public class AuctionHouse : MonoBehaviour {
 		//resolve prices
 		foreach (var entry in book)
 		{
+			moneyExchangedThisRound = 0;
+			goodsExchangedThisRound = 0;
 			tradeResolver.ResolveOffers(entry.Value, ref moneyExchangedThisRound, ref goodsExchangedThisRound);
 			RecordStats(entry.Value);
 			Debug.Log(entry.Key + ": have " + entry.Value.trades[^1] 
-				+ " at price: " + entry.Value.marketPrice);
+				+ " at price: " + entry.Value.marketPrice.ToString("c2"));
 		}
 
 		PrintAuctionStats();
@@ -253,6 +280,9 @@ public class AuctionHouse : MonoBehaviour {
 		Debug.Log(auctionTracker.round + " gov outputs: " + gov.outputName);
         foreach (var agent in agents)
         {
+			if (agent.Alive == false)
+				continue;
+	        Debug.Log("TickAgent() " + agent.name);
 			if (agent is Government)
 				continue;
 			bool changedProfession = false;
@@ -277,6 +307,7 @@ public class AuctionHouse : MonoBehaviour {
 			book[profession].profits[^1] += agent.Profit;
 			
 			var amount = agent.Tick(gov, ref changedProfession, ref bankrupted, ref starving);
+			gov.Pay(amount); //welfare?
 
 			if (starving)
 			{
@@ -287,7 +318,6 @@ public class AuctionHouse : MonoBehaviour {
 				book[profession].bankrupted[^1]++;
 			if (changedProfession)
 				book[profession].changedProfession[^1]++;
-			gov.Pay(amount);
 			// Debug.Log(agent.name + " total cash line: " + agents.Sum(x => x.cash).ToString("c2") + amount.ToString("c2"));
 
 			agent.ClearRoundStats();
@@ -379,7 +409,7 @@ public class AuctionHouse : MonoBehaviour {
 		bids.Clear();
 
 		PrintAuctionStats(rsc.name, quantityToBuy, quantityToSell);
-		Debug.Log(auctionTracker.round + ": " + rsc.name + ": " + goodsExchangedThisRound + " traded at average price of " + averagePrice);
+		Debug.Log(auctionTracker.round + ": " + rsc.name + ": " + goodsExchangedThisRound + " traded at average price of " + averagePrice.ToString("c2"));
 	}
 
 	// TODO decouple transfer of commodity with transfer of money
