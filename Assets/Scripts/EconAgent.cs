@@ -23,6 +23,7 @@ public class EconAgent : MonoBehaviour
 	{
 		Cash = 0;
 	}
+	public string CashString { get{ return Cash.ToString("c2"); } }
 
 	public bool Alive { get; protected set; }
 	protected float prevCash;
@@ -288,6 +289,10 @@ public class EconAgent : MonoBehaviour
 		return Cash < bankruptcyThreshold;
 	}
 
+	public virtual void ConsumeGoods()
+	{
+		
+	}
 	public virtual float Tick(Government gov, ref bool changedProfession, ref bool bankrupted, ref bool starving)
 	{
 		Assert.IsTrue(this is not Government);

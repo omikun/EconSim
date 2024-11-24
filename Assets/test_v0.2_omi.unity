@@ -619,10 +619,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5340b96b9e4f7420e865bd103e760776, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  autoNextRound: 0
-  tickInterval: 0.098
-  EnableDebug: 1
-  EnableLog: 0
+  autoNextRound: 1
+  tickInterval: 0.001
+  EnableDebug: 0
+  EnableLog: 1
   appendTimeToLog: 1
   exitAfterNoTrade: 0
   EnableGovernment: 1
@@ -670,7 +670,7 @@ MonoBehaviour:
   declareBankruptcy: 1
   historySize: 10
   SimpleAgent: 1
-  initCash: 50
+  initCash: 100
   initGovCash: 1000
   randomInitStock: 0
   initStock: 8
@@ -801,7 +801,7 @@ MonoBehaviour:
   sellPriceMinFoodExpense: 1
   sellPriceMinCost: 0
   minSellPrice: 1
-  minSellToAffordOthers: 8
+  minSellToAffordOthers: 50
   minItemRaiseBuyPrice: 8
   sellPriceDelta: 0.05
   buyPriceDelta: 0.05

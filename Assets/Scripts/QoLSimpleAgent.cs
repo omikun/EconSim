@@ -35,18 +35,9 @@ public class QoLSimpleAgent : EconAgent
     {
         if (Alive == false)
             return 0;
-        ConsumeGoods();
         //check if food=0
-        var anyTrue2 = inventory.Values.Any(item => item.Quantity <= 0);
-        if (anyTrue2)
+        if ( inventory.Values.Any(item => item.Quantity <= 0) )
         {
-            var anyTrue = false;
-            foreach (var value in inventory.Values)
-            {
-                if (value.Quantity <= 0)
-                    anyTrue = true;
-            }
-            Assert.IsTrue(anyTrue == anyTrue2);
             var quants = inventory.Values.Select(item => item.Quantity);
             //var msg = string.Join(",", quants);
             var msg = $"{string.Join(",", inventory.Keys)}--{string.Join(",", inventory.Values.Select(item => item.Quantity))}";
@@ -71,10 +62,12 @@ public class QoLSimpleAgent : EconAgent
         base.Sell(commodity, quantity, price);
     }
 
-    public void ConsumeGoods()
+    public override void ConsumeGoods()
     {
         foreach (var item in inventory.Values)
         {
+            if (item.name == outputName)
+                continue;
             float amountConsumed = 0f;
             if (item.Quantity > 10)
                 amountConsumed = 3;
@@ -89,13 +82,13 @@ public class QoLSimpleAgent : EconAgent
     public override float Produce()
     {
         var item = inventory[outputName];
-        var numSoldLastRound = item.saleHistory[^1].quantity;
         var maxProduction = item.GetProductionRate();
-        var smoothedProduction = Mathf.Round((numSoldLastRound + maxProduction) / 2f);
-        var numProduced = Mathf.Min(smoothedProduction, maxProduction);
+        // var numSoldLastRound = item.saleHistory[^1].quantity;
+        // var smoothedProduction = Mathf.Round((numSoldLastRound + maxProduction) / 2f);
+        // var numProduced = Mathf.Min(smoothedProduction, maxProduction);
         // item.Increase(numProduced);
         item.Increase(maxProduction);
-        return numProduced;
+        return maxProduction;
     }
 
     public override void Decide()
@@ -118,63 +111,53 @@ public class QoLSimpleAgent : EconAgent
              i++)
         {
             var idx = UnityEngine.Random.Range(0, inventory.Count);
-            var (c, item) = inventory.ElementAt(idx);
-            var selling = (c == outputName);
+            var (itemName, item) = inventory.ElementAt(idx);
+            var selling = (itemName == outputName);
             var itemPrice = item.GetPrice();
             
-            if (selling) 
-                item.canOfferAdditionalThisRound = item.Quantity - item.offersThisRound >= 1;
-            else         
-                item.canOfferAdditionalThisRound = ((Cash - allocatedSpending) / itemPrice) > 1f;
+            item.canOfferAdditionalThisRound = (selling)
+                ? (item.Quantity - item.offersThisRound) >= 1
+                : item.canOfferAdditionalThisRound = ((Cash - allocatedSpending) / itemPrice) > 1f;
             
             if (false == item.canOfferAdditionalThisRound)
                 continue;
             
             var niceness = item.GetNiceness();
-            var mostNice = (selling)
+            //sell if not the nicest (sell until equal to least owned, weighed by price)
+            //buy if the nicest option (buy least owned first, weighed by price)
+            var worthTheOffer = (true == selling)
                 ? inventory.Values
-                    .Where(item => item.name != c && item.name != outputName)
+                    .Where(item => item.name != itemName && item.name != outputName)
                     .Any(item => item.GetNiceness() >= niceness)
                 : inventory.Values
-                    .Where(item => item.name != c && item.name != outputName)
-                    .Any(item => item.GetNiceness() <= niceness);
+                    .Where(item => item.name != itemName && item.name != outputName)
+                    .All(item => item.GetNiceness() <= niceness);
             
-            if (mostNice)
+            if (!worthTheOffer)
+                continue;
+            
+            item.offersThisRound++;
+            if (false == selling)
             {
-                item.offersThisRound++;
-                if (false == selling)
-                {
-                    // Debug.Log(auctionStats.round + " " + Cash.ToString("c2") + " " + name + " has " + item.Quantity.ToString("n2") + " " + c
-                    //     + " bidding " + item.offersThisRound.ToString("n2") + " with niceness " + niceness.ToString("n5"));
-                    allocatedSpending += itemPrice;
-                }
+                // Debug.Log(auctionStats.round + " " + CashString + " " + name + " has " + item.QuantityString
+                //     + item.offersThisRoundString + " with niceness " + niceness.ToString("n5"));
+                allocatedSpending += itemPrice;
             }
         }
 
         //place bids and asks
-        foreach (var (c, item) in inventory)
+        foreach (var (itemName, item) in inventory)
         {
-            Debug.Log(auctionStats.round + " " + Cash.ToString("c2") + " " + name + " has " + item.Quantity.ToString("n2") + " " + c
-                + " market price: " + book[c].marketPrice.ToString("c2"));
-            
-            if (item.offersThisRound > 0)
-            {
-                if (c == outputName)
-                {
-                    var price = item.GetPrice();
-                    asks.Add(c, new Offer(c, price, item.offersThisRound, this));
-                    Debug.Log(auctionStats.round + " " + name + " asking " + item.offersThisRound.ToString("n2") + " " +
-                              c + " for " + price.ToString("c2"));
-                }
-                else
-                {
-                    var price = item.GetPrice();
-                    bids.Add(c, new Offer(c, price, item.offersThisRound, this));
-                    Debug.Log(auctionStats.round + " " + name + " bidding " + item.offersThisRound.ToString("n2") + " " + c + " for " + price.ToString("c2"));
-                }
-            }
-        }
+            Debug.Log(auctionStats.round + " " + CashString + " " + name + " has " +
+                      item.QuantityString + " market price: " + book[itemName].marketPriceString);
 
+            if (item.offersThisRound <= 0)
+                continue;
+            var price = item.GetPrice();
+            var offers = (itemName == outputName) ? asks : bids;
+            offers.Add(itemName, new Offer(itemName, price, item.offersThisRound, this));
+            Debug.Log(auctionStats.round + " " + name + item.offersThisRound + " for " + price.ToString("c2"));
+        }
     }
 
     public override Offers CreateAsks()
@@ -187,7 +170,4 @@ public class QoLSimpleAgent : EconAgent
     {
         return bids;
     }
-    //consume
-    //create asks
-    //create bids
 }

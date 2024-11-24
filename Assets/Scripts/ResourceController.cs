@@ -77,6 +77,10 @@ public class ResourceController
 	}
 	public string name { get; private set; }
 	public float marketPrice { get; private set; } //market price
+	public string marketPriceString
+	{
+		get { return marketPrice.ToString("c2");  }
+	}
 	public float demand { get; private set; }
 	public float productionPerBatch { get; private set; }
 	public float batchRate { get; private set; }

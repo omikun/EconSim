@@ -239,6 +239,7 @@ public class AuctionHouse : MonoBehaviour {
 		{
 			if (agent.Alive == false)
 				continue;
+			agent.ConsumeGoods();
 			agent.Produce();
 			//var numProduced = agent.Produce(book);
 			//PayIdleTax(agent, numProduced);

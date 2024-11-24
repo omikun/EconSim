@@ -41,6 +41,10 @@ public class InventoryItem {
 	public float unitCost = 1;
 	public float wobble = .02f;
 	public float Quantity { get; private set; }
+	public string QuantityString
+	{
+		get { return " cash: " + Quantity.ToString("n2") + " " + name; }
+	}
     //gov use
     public float TargetQuantity = 0f;// { get; private set; }
     public float OfferQuantity;// { get; private set; }
@@ -48,6 +52,12 @@ public class InventoryItem {
     //end gov use
     public bool canOfferAdditionalThisRound = true;
     public float offersThisRound = 0;
+
+    public string offersThisRoundString
+    {
+	    get { return " offering: " + offersThisRound.ToString("n2") + " " + name; }
+    }
+
     public float quantityTradedThisRound = 0;
 	public float meanPriceThisRound; //total cost spent to acquire stock
     public float costThisRound = 0;
@@ -311,16 +321,19 @@ public class InventoryItem {
 		if (c == agent.outputName)
 		{
 			var quant = agent.inventory[c].Quantity - additionalQuant;
-			if (quant < 1)
-				return 0;
 			numNeeded = agent.book[c].productionPerBatch;
-			return Mathf.Log10(quant / (quant - delta*numNeeded)); 
+			var totalDelta = delta * numNeeded;
+			//TODO only sell in increments of totalDelta??
+			if (quant < totalDelta)
+				return 0;
+			return -1 * Mathf.Log10((quant - totalDelta) / quant); 
 		}
 		else
 		{
 			var quant = agent.inventory[c].Quantity + additionalQuant;
 			numNeeded = recipe[c];
-			return Mathf.Log10((quant + delta*numNeeded) / quant); 
+			var totalDelta = delta * numNeeded;
+			return Mathf.Log10((quant + totalDelta) / quant); 
 		}
 		
 	}
@@ -382,7 +395,7 @@ public class InventoryItem {
         {
 	        // priceBelief = Mathf.Max(priceBelief, agent.book[name].marketPrice);
 	        priceBelief = agent.book[name].marketPrice;
-	        priceBelief *= (1 + .01f * Mathf.Pow(agent.config.minItemRaiseBuyPrice, 2));
+	        priceBelief *= (1 + .01f * Mathf.Pow(agent.config.minItemRaiseBuyPrice - Quantity, 2));
 	        minPriceBelief = priceBelief;
         }
 
