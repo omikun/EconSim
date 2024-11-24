@@ -620,9 +620,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   autoNextRound: 1
-  tickInterval: 0.001
-  EnableDebug: 0
-  EnableLog: 1
+  tickInterval: 0.142
+  EnableDebug: 1
+  EnableLog: 0
   appendTimeToLog: 1
   exitAfterNoTrade: 0
   EnableGovernment: 1
@@ -678,15 +678,15 @@ MonoBehaviour:
   numAgents:
     _serializedList:
     - Key: Food
-      Value: 2
+      Value: 20
     - Key: Wood
-      Value: 1
+      Value: 10
     - Key: Ore
       Value: 0
     - Key: Metal
       Value: 0
     - Key: Tool
-      Value: 1
+      Value: 10
   initialization:
     _serializedList:
     - Key: Food
@@ -801,7 +801,7 @@ MonoBehaviour:
   sellPriceMinFoodExpense: 1
   sellPriceMinCost: 0
   minSellPrice: 1
-  minSellToAffordOthers: 50
+  minSellToAffordOthers: 5
   minItemRaiseBuyPrice: 8
   sellPriceDelta: 0.05
   buyPriceDelta: 0.05
@@ -3239,9 +3239,9 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 1700845192}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 872, y: -84}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 1832, y: -713}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1077058268
@@ -5239,9 +5239,9 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 1700845192}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 755, y: -81}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 1715, y: -710}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1935183168
