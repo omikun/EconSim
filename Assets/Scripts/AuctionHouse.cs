@@ -339,10 +339,12 @@ public class AuctionHouse : MonoBehaviour {
 
 			var prevPrice = rsc.avgClearingPrice[^2];
 			var currPrice = rsc.avgClearingPrice[^1];
-			inflation += (currPrice - prevPrice) / prevPrice;
+			if (prevPrice != 0)
+				inflation += (currPrice - prevPrice) / prevPrice;
+			Debug.Log("inflation current is " + inflation.ToString("p2"));
 		}
 
-		inflation /= (float)book.Count;
+		inflation /= 3f;//(float)book.Count;
 		auctionTracker.inflation = (!float.IsNaN(inflation) && !float.IsInfinity(inflation)) ? inflation : 0;
 		auctionTracker.happiness = approval / agents.Count;
 		auctionTracker.approval = approval / agents.Count;
