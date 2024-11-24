@@ -2,7 +2,7 @@
 
 An agent-based economy simulator in Unity3D based on "[Emergent Economies for Role Playing Games](https://ianparberry.com/pubs/econ.pdf)," [bazzarBot](https://github.com/larsiusprime/bazaarBot), and [bazzarBot2](https://github.com/Vibr8gKiwi/bazaarBot2/).
 
-![Screen Capture](ScreenCapture.gif)
+![Screen Capture](screencapture_v01_480p.gif)
 
 **Features:**
 - ~~Agent-based price beliefs that governs price range to in bids.~~

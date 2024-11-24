@@ -49,12 +49,14 @@ public class QoLSimpleAgent : EconAgent
         }
         //die
         //birth conditions? enough food for 5 rounds?
+        starving = inventory.Values.Any(item => item.Quantity <= 5);
         return 0;
     }
 
     public override float EvaluateHappiness()
     {
-        return base.EvaluateHappiness();
+        var x = (inventory.Values.Sum(item => item.Quantity));
+        return x / (x + 1);
     }
 
     public override void Sell(string commodity, float quantity, float price)
