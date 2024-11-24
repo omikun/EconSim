@@ -7,20 +7,26 @@ using UnityEngine.Assertions;
 using AYellowpaper.SerializedCollections;
 
 public class AuctionHouseTest : AuctionHouse {
-	new void Start() {
-		Debug.unityLogger.logEnabled=EnableDebug;
-		base.OpenFileForWrite();
+	void Awake()
+	{
+		auctionTracker = GetComponent<AuctionStats>();
+		config = GetComponent<SimulationConfig>();
+		auctionTracker.config = config;
+		auctionTracker.Init();
+	}
+	void Start() {
+		Debug.unityLogger.logEnabled=config.EnableDebug;
+		logger = new Logger(config);
+		logger.OpenFileForWrite();
 
-		UnityEngine.Random.InitState(seed);
+		UnityEngine.Random.InitState(config.seed);
 		lastTick = 0;
-		auctionTracker = AuctionStats.Instance;
 		var com = auctionTracker.book;
 	
-		config = GetComponent<AgentConfig>();
-		irs = 0; //GetComponent<EconAgent>();
+		config = GetComponent<SimulationConfig>();
 		var prefab = Resources.Load("Agent");
 
-		for (int i = transform.childCount; i < numAgents.Values.Sum(); i++)
+		for (int i = transform.childCount; i < config.numAgents.Values.Sum(); i++)
 		{
 		    GameObject go = Instantiate(prefab) as GameObject;
 			go.transform.parent = transform;
@@ -28,10 +34,10 @@ public class AuctionHouseTest : AuctionHouse {
 		}
 		
 		int agentIndex = 0;
-		var professions = numAgents.Keys;
+		var professions = config.numAgents.Keys;
 		foreach (string profession in professions)
 		{
-			for (int i = 0; i < numAgents[profession]; ++i)
+			for (int i = 0; i < config.numAgents[profession]; ++i)
 			{
 				GameObject child = transform.GetChild(agentIndex).gameObject;
 				var agent = child.GetComponent<EconAgent>();
@@ -40,24 +46,14 @@ public class AuctionHouseTest : AuctionHouse {
 				++agentIndex;
 			}
 		}
-		askTable = new OfferTable();
-        bidTable = new OfferTable();
+		askTable = new OfferTable(com);
+        bidTable = new OfferTable(com);
 
-		foreach (var entry in com)
-		{
-			trackBids.Add(entry.Key, new Dictionary<string, float>());
-            foreach (var item in com)
-			{
-				//allow tracking farmers buying food...
-				trackBids[entry.Key].Add(item.Key, 0);
-			}
-		}
 	}
 
 	void InitAgent(EconAgent agent, string type)
 	{
-        List<string> buildables = new List<string>();
-		buildables.Add(type);
+		string buildable = type;
 		float initStock = config.initStock;
 		float initCash = config.initCash;
 		if (config.randomInitStock)
@@ -69,6 +65,6 @@ public class AuctionHouseTest : AuctionHouse {
 		// TODO: This may cause uneven maxStock between agents
 		var maxStock = Mathf.Max(initStock, config.maxStock);
 
-        agent.Init(config, initCash, buildables, initStock, maxStock);
+        agent.Init(config, auctionTracker, buildable, initStock, maxStock);
 	}
 }

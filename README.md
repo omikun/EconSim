@@ -1,24 +1,34 @@
 # ECONSIM
 
-An agent-based economy simulator in Unity3D based on "[Emergent Economies for Role Playing Games](http://larc.unt.edu/techreports/LARC-2010-03.pdf)" and [bazzarBot](https://github.com/larsiusprime/bazaarBot).
+An agent-based economy simulator in Unity3D based on "[Emergent Economies for Role Playing Games](https://ianparberry.com/pubs/econ.pdf)," [bazzarBot](https://github.com/larsiusprime/bazaarBot), and [bazzarBot2](https://github.com/Vibr8gKiwi/bazaarBot2/).
 
 ![Screen Capture](ScreenCapture.gif)
 
 **Features:**
-- Agent-based price beliefs that governs price range to in bids.
-- Price beliefs are adjusted based on the success of each bid and the price trends of the commodity.
+- ~~Agent-based price beliefs that governs price range to in bids.~~
+- Prices are based on cost of inputs + profit margin
 - Commodity dependencies - If food is dependent on wood and there is a forest fire, the supply of wood drops and the price of food sky rockets. Non-farmers go bankrupt as a result.
- - Double-blind auction - all sellers enter their asking price and all buyers enter their asking price blindly for the current round but has access to historical data.
+ - AuctionHouse - all sellers enter their asking price and bidders buy from lowest price up.
  - Agents that go bankrupt respawn in a more lucrative profession; corollary: *bankruptcy drives growth*.
+ - Taxes - A government collects taxes on profits, uses money to fund respawns or stimulate economy.
  
 **Roadmap:**
- - Taxes - A government collects taxes on all agents, uses money to help bankruptcy or stimulate economy, can also make loans.
+v0.2
+ - User interactions
+    - Submit bid/asks on the auction
+    - Tax wealth/revenue/profit
+    - Welfare cash
+v0.3
+ - death and births of agents - population grows and shrinks with economic conditions
+v0.4
  - Banks - can make loans based on leverage ratio, create credit bubbles.
  - Agent development - agents invest surplus cash to develop new production abilities to become bigger, may develop scaling overheads.
  - Mergers - agents can buy competitions out.
  - Foreign markets - multiple instances of auction houses with its own set of agents and its own set of commodities.
  - International trades - agents can make trades in foreign markets; local markets may impose import tariffs (player's choice).
  - Separate currencies - each market has its own set of currencies; inflation rate; exchange rate.
+ - Hegemony - win condition
+   - gain or lose points based on how other nations react to you (fear, respect, dependence)
 
 **Instructions:**
  - Download Unity3D Personal Edition
@@ -26,6 +36,6 @@ An agent-based economy simulator in Unity3D based on "[Emergent Economies for Ro
  - Open folder in Unity
  - Press Play button
 
-Number of agents and init conditions can be found in the "auction house" game object properties in the Inspector panel. Commodity dependencies and info are in the Commodity.cs file
+Number of agents and init conditions can be found in the "auction house" game object properties in the Inspector panel. 
 
 This code is released under the MIT license.

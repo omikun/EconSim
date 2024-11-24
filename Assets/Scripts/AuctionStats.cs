@@ -8,20 +8,75 @@ using System;
 using AYellowpaper.SerializedCollections;
 using System.Security.Cryptography.X509Certificates;
 using System.Net.WebSockets;
-//using Dependency = System.Collections.Generic.Dictionary<string, float>;
+using Sirenix.OdinInspector;
+using Sirenix.Serialization;
 
+public class AuctionBook : Dictionary<string, ResourceController>{}
 public class AuctionStats : MonoBehaviour
 {
 	public int historySize = 10;
 	public bool changeToHighestBidPrice = false;
 	public bool probabilisticHottestGood = true;
-    public static AuctionStats Instance { get; private set; }
+    //public static AuctionStats Instance { get; private set; }
 
-	public Dictionary<string, Commodity> book { get; private set; }
+	public AuctionBook book { get; private set; }
+	public SimulationConfig config;
 	public int round { get; private set; }
+	[DisableInEditorMode]
+	public float inflation;
+	[DisableInEditorMode]
+	public float happiness;
+	[DisableInEditorMode]
+	public float approval;
+	[DisableInEditorMode]
+	public int numBankrupted;
+	[DisableInEditorMode]
+	public int numStarving;
+	[DisableInEditorMode]
+	public int numChangedProfession;
+	[DisableInEditorMode]
+	public int numNegProfit;
+	[DisableInEditorMode]
+	public int numNoInput;
+	[DisableInEditorMode]
+	public float gdp;// { get { return book.Values.Sum(x => x.gdp);}}
+	[DisableInEditorMode]
+	public float gini;
 
-	[SerializedDictionary("ID", "Dependency")]
-	public SerializedDictionary<string, SerializedDictionary<string, float>> initialization;
+	void Start()
+	{
+	}
+	public void ClearStats()
+	{
+		happiness = 0;
+		approval = 0;
+		numBankrupted = 0;
+		numStarving = 0;
+		numChangedProfession = 0;
+		numNegProfit = 0;
+		numNoInput = 0;
+		gdp = 0;
+		gini = 0;
+
+		foreach (var entry in book.Values)
+		{
+			entry.profits.Add(0);
+			entry.starving.Add(0);
+			entry.bankrupted.Add(0);
+			entry.changedProfession.Add(0);
+
+			entry.numAgents = 0;
+			entry.happiness = 0;
+			entry.approval = 0;
+			entry.numBankrupted = 0;
+			entry.numStarving = 0;
+			entry.numChangedProfession = 0;
+			entry.numNegProfit = 0;
+			entry.numNoInput = 0;
+			entry.gdp = 0;
+			entry.gini = 0;
+		}
+	}
 	string log_msg = "";
 	public string GetLog()
 	{
@@ -36,57 +91,62 @@ public class AuctionStats : MonoBehaviour
 	}
     private void Awake()
     {
-        Instance = this;
-		book = new Dictionary<string, Commodity>(); //names, market price
-		round = 0;
-		Init();
     }
-    public string GetMostProfitableProfession(String exclude_key)
+    public string GetMostProfitableProfession(ref float mostProfit, String exclude_key="invalid")
 	{
-		string prof = "invalid";
-		float most = 0;
+		string mostProfitableProf = "invalid";
+		mostProfit = 0;
 
 		foreach (var entry in book)
 		{
-			var commodity = entry.Key;
-			if (exclude_key == commodity) 
+			var profession = entry.Key;
+			if (exclude_key == profession) 
 			{
 				continue;
 			}
 			var profitHistory = entry.Value.profits;
 			//WARNING this history refers to the last # agents' profits, not last # rounds... short history if popular profession...
 			var profit = profitHistory.LastAverage(historySize);
-			if (profit > most)
+			if (profit > mostProfit)
 			{
-				prof = commodity;
-				most = profit;
+				mostProfitableProf = profession;
+				mostProfit = profit;
 			}
+			log_msg += round + ", auction, " + profession + ", none, profitability, " + profit + ", n/a\n";
 		}
-		return prof;
+		log_msg += round + ", auction, " + mostProfitableProf + ", none, mostProfit, " + mostProfit + ", n/a\n";
+		return mostProfitableProf;
 	}
 	//get price of good
 	int gotHottestGoodRound = 0;
-	string mostDemand = "invalid";
-	WeightedRandomPicker<string> picker = new WeightedRandomPicker<string>();
+	string hottestGood = "invalid";
+	string mostProfitable = "invalid";
+	WeightedRandomPicker<string> picker = new ();
 	public string GetHottestGood()
 	{
+		float best_ratio = 1.5f;
+		string ret = "invalid";
 		if (round != gotHottestGoodRound)
 		{
-			mostDemand = _GetHottestGood();
+			hottestGood = _GetHottestGood(ref best_ratio);
 		}
 		if (probabilisticHottestGood && !changeToHighestBidPrice)
 		{
-			mostDemand = picker.PickRandom();
+			if (picker.IsEmpty() == false)
+			{
+				ret = picker.PickRandom();
+			}
+		} else {
+			ret = hottestGood;
 		}
-		var best_ratio = picker.GetWeight(mostDemand);
-		Debug.Log(round + " picked demand: " + mostDemand + ": " + best_ratio);
-		log_msg += round + ", auction, " + mostDemand + ", none, hottestGood, " + best_ratio + ", n/a\n";
-		return mostDemand;
+		Debug.Log(round + " picked demand: " + ret + ": " + best_ratio);
+		log_msg += round + ", auction, " + ret + ", none, hottestGood, " + best_ratio + ", n/a\n";
+		return ret;
 	}
-	string _GetHottestGood()
+	string _GetHottestGood(ref float best_ratio)
 	{
-		mostDemand = "invalid";
-		float best_ratio = 1.5f;
+		hottestGood = "invalid";
+		gotHottestGoodRound = round;
 
 		if (changeToHighestBidPrice)
 		{
@@ -97,10 +157,10 @@ public class AuctionStats : MonoBehaviour
 				if (bid > mostBid)
 				{
 					mostBid = bid;
-					mostDemand = c.Key;
+					hottestGood = c.Key;
 				}
 			}
-			return mostDemand;
+			return hottestGood;
 		}
 		picker.Clear();
 		foreach (var c in book)
@@ -113,45 +173,81 @@ public class AuctionStats : MonoBehaviour
 			if (best_ratio < ratio)
 			{
 				best_ratio = ratio;
-				mostDemand = c.Key;
+				hottestGood = c.Key;
 				picker.AddItem(c.Key, 1);//Mathf.Sqrt(ratio)); //less likely a profession dies out
 			}
 			Debug.Log(round + " demand: " + c.Key + ": " + Mathf.Sqrt(best_ratio));
 			log_msg += round + ", auction, " + c.Key + ", none, demandsupplyratio, " + Mathf.Sqrt(ratio) + ", n/a\n";
 		}
-		gotHottestGoodRound = round;
-		return mostDemand;
+		return hottestGood;
 	}
-	bool Add(string name, float production, Dependency dep)
+	bool AddToBook(string name, float production, float batch_rate, float productionMultiplier, float setPrice, Recipe dep)
 	{
 		if (book.ContainsKey(name)) { return false; }
 		Assert.IsNotNull(dep);
 
-		book.Add(name, new Commodity(name, production, dep));
+		book.Add(name, new ResourceController(name, production, batch_rate, productionMultiplier, setPrice, dep));
 		return true;
 	}
     void PrintStat()
     {
 		foreach (var item in book)
 		{
-			Debug.Log(item.Key + ": " + item.Value.price);
-			if (item.Value.dep != null)
+			Debug.Log(item.Key + ": " + item.Value.marketPrice);
+			if (item.Value.recipe != null)
 			{
 				Debug.Log("Dependencies: " );
-				foreach (var depItem in item.Value.dep)
+				foreach (var depItem in item.Value.recipe)
 				{
                     Debug.Log(" -> " + depItem.Key + ": " + depItem.Value);
 				}
 			}
 		}
 	}
+	void InitInitialization() 
+	{
+		config.initialization["Food"] = new() { 
+			{ "Wood", .1f}, 
+			{ "Prod_multiplier", 1f}, 
+			{ "Tool", .1f}, 
+			{ "Prod_rate", 5f}, 
+			};
+		config.initialization["Wood"] = new() { 
+			{ "Food", 1f}, 
+			{ "Prod_multiplier", 1f}, 
+			{ "Prod_rate", 1f}, 
+			};
+		config.initialization["Ore"] = new() { 
+			{ "Food", 1f}, 
+			{ "Prod_multiplier", 1f}, 
+			{ "Prod_rate", 5f}, 
+			};
+		config.initialization["Metal"] = new() { 
+			{ "Food", 1f}, 
+			{ "Ore", 2f}, 
+			{ "Prod_multiplier", 1f}, 
+			{ "Prod_rate", 3f}, 
+			};
+		config.initialization["Tool"] = new() { 
+			{ "Food", 1f}, 
+			{ "Metal", 2f}, 
+			{ "Prod_multiplier", 1f}, 
+			{ "Prod_rate", 1f}, 
+			};
+	}
     // Use this for initialization
-    void Init () {
+    public void Init () {
 		Debug.Log("Initializing commodities");
-		foreach( var item in initialization)
+		book = new AuctionBook();
+		round = 0;
+		//InitInitialization();
+		foreach( var item in config.initialization)
 		{
-			Dependency dep = new Dependency();
+			Recipe dep = new Recipe();
+			float batch_rate = 0;
 			float prod_rate = 0;
+			float prod_multiplier = 0;
+			float set_price = 0;
 			foreach (var field in item.Value)
 			{
 				if (field.Key == "Prod_rate")
@@ -159,9 +255,24 @@ public class AuctionStats : MonoBehaviour
 					prod_rate = field.Value;
 					continue;
 				}
+				if (field.Key == "Prod_multiplier")
+				{
+					prod_multiplier = field.Value;
+					continue;
+				}
+				if (field.Key == "Set_price")
+				{
+					set_price = field.Value;
+					continue;
+				}
+				if (field.Key == "Batch_rate")
+				{
+					batch_rate = field.Value;
+					continue;
+				}
 				dep.Add(field.Key, field.Value);
 			}
-			if (!Add(item.Key, prod_rate, dep))
+			if (!AddToBook(item.Key, prod_rate, batch_rate, prod_multiplier, set_price, dep))
 			{
 				Debug.Log("Failed to add commodity; duplicate?");
 			}

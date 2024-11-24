@@ -10,9 +10,9 @@ using System;
 using CommodityName = System.String;
 public class OfferTable : Dictionary<CommodityName, OfferList>
 {
-	public OfferTable() 
+	public OfferTable(AuctionBook book) 
 	{
-        var com = AuctionStats.Instance.book;
+        var com = book;
         foreach (var c in com)
         {
             base.Add(c.Key, new OfferList());
