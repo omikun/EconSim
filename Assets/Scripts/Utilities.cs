@@ -6,8 +6,9 @@ using System.Linq;
 using UnityEngine.XR;
 using System;
 using System.Net.WebSockets;
+using System.Security.Cryptography.X509Certificates;
 
-public class Utilities : MonoBehaviour
+public class Utilities 
 {
     // Start is called before the first frame update
     void Start()
@@ -30,16 +31,12 @@ public class Utilities : MonoBehaviour
 public class ESList : List<float>
 {
     float avg;
-    int lastRound = 0;
-    AuctionStats comInstance;
     public ESList()
     {
-        comInstance = AuctionStats.Instance;
     }
     new public void Add(float num)
     {
         base.Add(num);
-        lastRound = comInstance.round;
     }
     public float LastHighest(int history)
     {
@@ -70,15 +67,11 @@ public class ESList : List<float>
     {
         if (base.Count == 0)
         {
-            return -1;
+            return 0;
         }
         var skip = Mathf.Max(0, base.Count - history);
-        var end = Math.Min(history, base.Count);
-        if (skip == end)
-        {
-            return -2;
-        }
-        return base.GetRange(skip, end).Sum();
+        var numElements = Math.Min(history, base.Count);
+        return base.GetRange(skip, numElements).Sum();
     }
 }
 
@@ -91,6 +84,10 @@ public class WeightedRandomPicker<T>
     {
         items.Add((item, weight));
         totalWeight += weight;
+    }
+    public bool IsEmpty()
+    {
+        return items.Count == 0;
     }
     public void Clear()
     {
@@ -126,5 +123,40 @@ public class WeightedRandomPicker<T>
         }
 
         return items[items.Count - 1].item; // Fallback, should rarely happen
+    }
+}
+
+public class WaitNumRoundsNotTriggered {
+    int numRounds = 0;
+    bool triggered = false;
+    public int Count()
+    {
+        return numRounds;
+    }
+    public void Reset()
+    {
+        numRounds = 0;
+    }
+    public void Tick()
+    {
+        if (triggered)
+        {
+            numRounds = 0;
+            triggered = false;
+        } else {
+            numRounds++;
+        }
+    }
+}
+
+public static class ListUtil {
+    public static string ListToString(List<float> list, string format)
+    {
+        string msg = "";
+        foreach(var elem in list)
+        {
+            msg += elem.ToString(format) + ", ";
+        }
+        return msg;
     }
 }

@@ -51,5 +51,6 @@
         "temp/": true,
         "Temp/": true
     },
-    "dotnet.defaultSolution": "EconSim.sln"
+    "dotnet.defaultSolution": "EconSim.sln",
+    "dotnet.preferCSharpExtension": true
 }
