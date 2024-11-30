@@ -43,7 +43,7 @@ public class InventoryItem {
 	public float Quantity { get; private set; }
 	public string QuantityString
 	{
-		get { return " cash: " + Quantity.ToString("n2") + " " + name; }
+		get { return Quantity.ToString("n2") + " " + name; }
 	}
     //gov use
     public float TargetQuantity = 0f;// { get; private set; }
@@ -117,11 +117,11 @@ public class InventoryItem {
         //ret += header + commodityName + ", max_stock, " + maxQuantity + ",n/a\n"; 
         if (boughtThisRound)
         {
-            ret += header + name + ", buyQuant, " + buyHistory[^1].quantity + ",n/a\n";
+            ret += header + name + ", buyQuant, " + buyHistory[^1].Quantity + ",n/a\n";
         }
         if (soldThisRound)
         {
-            ret += header + name + ", sellQuant, " + saleHistory[^1].quantity + ",n/a\n";
+            ret += header + name + ", sellQuant, " + saleHistory[^1].Quantity + ",n/a\n";
         }
         if (boughtThisRound || soldThisRound)
         {
@@ -164,8 +164,6 @@ public class InventoryItem {
 		priceBelief = _meanPrice;
 		meanPriceThisRound = _meanPrice;
         meanCost = _meanPrice;
-		buyHistory.Add(new Transaction(1,_meanPrice));
-		saleHistory.Add(new Transaction(1,_meanPrice));
 		productionPerBatch = _production;
 		batchRate = _batchRate;
 	}
@@ -313,6 +311,7 @@ public class InventoryItem {
 		return numBids;
     }
 
+
 	float Utility(float additionalQuant, float delta = 1f)
 	{
 		var c = name;
@@ -328,14 +327,17 @@ public class InventoryItem {
 				return 0;
 			return -1 * Mathf.Log10((quant - totalDelta) / quant); 
 		}
-		else
+		else if (!recipe.ContainsKey(c)) //not input/output, MUST SELL
+		{
+			return Mathf.NegativeInfinity;
+		} else
 		{
 			var quant = agent.inventory[c].Quantity + additionalQuant;
+
 			numNeeded = recipe[c];
 			var totalDelta = delta * numNeeded;
 			return Mathf.Log10((quant + totalDelta) / quant); 
 		}
-		
 	}
     public float GetNiceness(float delta = 1f)
     {

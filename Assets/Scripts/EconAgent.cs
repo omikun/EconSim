@@ -213,6 +213,15 @@ public class EconAgent : MonoBehaviour
 		}
 	}
 
+    protected bool isSellable(string itemName)
+    {
+	    return !inRecipe(itemName);
+    }
+
+    protected bool inRecipe(string itemName)
+    {
+	    return (book[outputName].recipe.ContainsKey(itemName));
+    }
 	public void Respawn(bool bankrupted, string buildable, Government gov = null)
 	{
 		Assert.IsTrue(this is not Government);
@@ -380,7 +389,7 @@ public class EconAgent : MonoBehaviour
 		return Mathf.Log10(numFoodEq);
 	}
 
-	void ChangeProfession(Government gov, bool bankrupted = true)
+	public virtual void ChangeProfession(Government gov, bool bankrupted = true)
 	{
 		string bestGood = auctionStats.GetHottestGood();
 		float profit = 0f;
@@ -426,17 +435,11 @@ public class EconAgent : MonoBehaviour
 
 		taxesPaidThisRound = 0;
 	}
-
-public float Buy(string commodity, float quantity, float price)
+	public float Buy(string commodity, float quantity, float price)
 	{
 		if (this is Government)
 		{
 			Debug.Log(auctionStats.round + " gov buying " + quantity.ToString("n0") + " " + commodity);
-		}
-
-		if (name == "agent14")
-		{
-			Debug.Log("agent14 buying something");
 		}
         Assert.IsTrue(quantity > 0);
 

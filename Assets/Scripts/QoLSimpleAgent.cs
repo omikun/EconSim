@@ -35,8 +35,18 @@ public class QoLSimpleAgent : EconAgent
     {
         if (Alive == false)
             return 0;
-        //check if food=0
-        if ( inventory.Values.Any(item => item.Quantity <= 0) )
+        // starving = inventory.Values.Any(item => item.Quantity <= 5);
+        starving = Food() <= 5;
+        var dying = (Food() <= 0);
+
+        if (config.changeProfession && dying)
+        {
+            bankrupted = Cash < book["Food"].marketPrice;
+            ChangeProfession(gov, bankrupted);
+            dying = false;
+        }
+        // if ( inventory.Values.Any(item => item.Quantity <= 0) )
+        if ( dying )
         {
             var quants = inventory.Values.Select(item => item.Quantity);
             //var msg = string.Join(",", quants);
@@ -45,18 +55,17 @@ public class QoLSimpleAgent : EconAgent
 
             Debug.Log(auctionStats.round + " " + name + " has died with " + msg);
             Alive = false;
-            outputName = "Ore";
+            outputName = "Dead";
         }
         //die
         //birth conditions? enough food for 5 rounds?
-        starving = inventory.Values.Any(item => item.Quantity <= 5);
         return 0;
     }
 
     public override float EvaluateHappiness()
     {
         var x = (inventory.Values.Sum(item => item.Quantity));
-        return x / (x + 1);
+        return x / (x + 20);
     }
 
     public override void Sell(string commodity, float quantity, float price)
@@ -68,9 +77,14 @@ public class QoLSimpleAgent : EconAgent
     {
         foreach (var item in inventory.Values)
         {
-            if (item.name == outputName)
+            if (!inRecipe(item.name))
+                continue;
+            if (item.Quantity <= 0) //can't go below 0
                 continue;
             float amountConsumed = 0f;
+            // if (item.Quantity > 20)
+            //     amountConsumed = 6;
+            // else 
             if (item.Quantity > 10)
                 amountConsumed = 3;
             else if (item.Quantity > 5)
@@ -85,10 +99,15 @@ public class QoLSimpleAgent : EconAgent
     {
         var item = inventory[outputName];
         var maxProduction = item.GetProductionRate();
+        //produce less if sold less
         // var numSoldLastRound = item.saleHistory[^1].quantity;
         // var smoothedProduction = Mathf.Round((numSoldLastRound + maxProduction) / 2f);
         // var numProduced = Mathf.Min(smoothedProduction, maxProduction);
         // item.Increase(numProduced);
+        //don't make any if missing a recipe ingredient
+        var produceNothing = book[outputName].recipe.Keys.Any(item => inventory[item].Quantity <= 0);
+        if (produceNothing)
+            return 0;
         item.Increase(maxProduction);
         return maxProduction;
     }
@@ -100,13 +119,15 @@ public class QoLSimpleAgent : EconAgent
         //until out of money or can't sell anymore or can't buy anymore
         asks.Clear();
         bids.Clear();
-        bool canBuy = true;
-        bool canSell = true;
         foreach (var item in inventory.Values)
         {
             item.offersThisRound = 0;
             item.canOfferAdditionalThisRound = true;
         }
+        
+        var msg = $"{string.Join(",", inventory.Keys)}--{string.Join(",", inventory.Values.Select(item => item.Quantity))}";
+        Debug.Log(auctionStats.round + " produces " + outputName + " offering? -- " + msg);
+        
         //determine how much of each good to offer
         for (float allocatedSpending = 0, i = 0; 
              i < 100 && inventory.Values.Any(item => item.canOfferAdditionalThisRound); 
@@ -114,7 +135,7 @@ public class QoLSimpleAgent : EconAgent
         {
             var idx = UnityEngine.Random.Range(0, inventory.Count);
             var (itemName, item) = inventory.ElementAt(idx);
-            var selling = (itemName == outputName);
+            var selling = isSellable(itemName);
             var itemPrice = item.GetPrice();
             
             item.canOfferAdditionalThisRound = (selling)
@@ -147,6 +168,8 @@ public class QoLSimpleAgent : EconAgent
             }
         }
 
+            var msg2 = $"{string.Join(",", inventory.Keys)}--{string.Join(",", inventory.Values.Select(item => item.Quantity))}";
+            Debug.Log(auctionStats.round + " debug " + CashString + " " + name + " has " + msg2);
         //place bids and asks
         foreach (var (itemName, item) in inventory)
         {
@@ -158,7 +181,7 @@ public class QoLSimpleAgent : EconAgent
             var price = item.GetPrice();
             var offers = (itemName == outputName) ? asks : bids;
             offers.Add(itemName, new Offer(itemName, price, item.offersThisRound, this));
-            Debug.Log(auctionStats.round + " " + name + item.offersThisRound + " for " + price.ToString("c2"));
+            Debug.Log(auctionStats.round + " " + name + " offers " + item.offersThisRound + " for " + price.ToString("c2"));
         }
     }
 

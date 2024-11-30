@@ -9,7 +9,7 @@ using Sirenix.Reflection.Editor;
 using DG.Tweening;
 
 public class Government : EconAgent {
-	public float FoodTarget = 50;
+	public float FoodTarget = 500;
 	public override void Init(SimulationConfig cfg, AuctionStats at, string b, float _initStock, float maxstock) {
 		config = cfg;
 		uid = uid_idx++;
@@ -92,7 +92,7 @@ public class Government : EconAgent {
 				continue;
 
 			var offerQuantity = item.TargetQuantity - item.Quantity;
-			var offerPrice = book[com].marketPrice * .95f;
+			var offerPrice = book[com].marketPrice * 1.15f;
 			if (item.OfferQuantity < 0)
 			{
 				asks.Add(com, new Offer(com, offerPrice, offerQuantity, this));
@@ -127,9 +127,9 @@ public class Government : EconAgent {
 		//quant should be no more than what gov's inventory holds
 		//only enough to refill agent's inv back to 2
 		//should not be negative in case agent has more than 2 already
-		var agentFood = agent.inventory["Food"].Quantity;
-		var govFood = inventory["Food"].Quantity;
-		var refillThreshold = 1f;
+		var agentFood = agent.Food();
+		var govFood = Food();
+		var refillThreshold = 5f;
 		if (agentFood < refillThreshold)
 		{
 			var refill = refillThreshold - agentFood;
