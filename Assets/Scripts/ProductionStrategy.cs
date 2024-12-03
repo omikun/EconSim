@@ -10,9 +10,7 @@ public abstract class ProductionStrategy
     {
         agent = a;
     }
-	//build as many as one can 
-	//TODO what if I don't want to produce as much as one can? what if costs are high rn?
-	public float CalculateNumProduceable(ResourceController rsc, InventoryItem outputItem)
+	public float NumBatchesProduceable(ResourceController rsc, InventoryItem outputItem)
 	{
 		float numProduceable = float.MaxValue;
 		
@@ -41,19 +39,19 @@ public abstract class ProductionStrategy
 				Assert.IsTrue(false, agent.auctionStats.round + " " + agent.name + " not valid output " + outputName);
 			}
 			Assert.IsTrue(agent.book.ContainsKey(outputName));
-			var com = agent.book[outputName];
+			var rsc = agent.book[outputName];
 			var stock = agent.inventory[outputName];
-			var numProduced = CalculateNumProduced(com, stock);
+			var numProduced = CalculateNumProduced(rsc, stock);
 
 			var inputCosts = "";
-			agent.ConsumeInput(com, numProduced, ref inputCosts);
+			agent.ConsumeInput(rsc, numProduced, ref inputCosts);
 
 			//auction wide multiplier (e.g. richer ore vien or forest fire)
-			var multiplier = com.productionMultiplier;
+			var multiplier = rsc.productionMultiplier;
 			if (numProduced == 0f || multiplier == 0f)
 				return 0;
 
-			stock.Produced(numProduced * multiplier, agent.GetCostOf(com)); 
+			stock.Produced(numProduced * multiplier, agent.GetCostOf(rsc)); 
 			agent.producedThisRound[outputName] = numProduced;
 
 			Debug.Log(agent.auctionStats.round + " " + agent.name 
@@ -73,7 +71,7 @@ public class FixedProduction : ProductionStrategy
     public FixedProduction(EconAgent a) : base(a) {}
 	protected internal override float CalculateNumProduced(ResourceController rsc, InventoryItem item)
 	{
-		var numProduced = CalculateNumProduceable(rsc, item);
+		var numProduced = NumBatchesProduceable(rsc, item);
 		//can only build fixed rate at a time
 		numProduced = Mathf.Clamp(numProduced, 0, item.GetProductionRate());
 		numProduced = Mathf.Floor(numProduced);

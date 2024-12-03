@@ -59,6 +59,8 @@ public abstract class TradeResolution
     protected TradePriceResolver tradePriceResolver;
     protected enum LoopState { None, ContinueBids, ContinueAsks, Break }
 
+    protected Dictionary<string, List<GenericTransaction>> transactions = new();
+
     public TradeResolution(AuctionStats aStats, FiscalPolicy fp, OfferTable at, OfferTable bt)
     {
 	    auctionTracker = aStats;
@@ -74,6 +76,11 @@ public abstract class TradeResolution
 	    bidSorter = (cfg.bidSortOrder == OfferSortOrder.Ascending)
 		    ? new SortOfferByPriceAscend()
 		    : new SortOfferByPriceDescend();
+
+	    foreach (var com in auctionTracker.book.Keys)
+	    {
+		    transactions.Add(com, new());
+	    }
 	    //what about random?
 	    ConfigureTradePriceResolution();
     }
@@ -200,6 +207,12 @@ public abstract class TradeResolution
 		tradeQuantity = OnlyBuyAffordable(ask, ref bid, tradeQuantity, clearingPrice);
 		if (tradeQuantity <= 0)
 			return tradeQuantity;
+		
+		//transfer cash from debitor to creditor
+		//transfer goods from seller to buyer
+		transactions[rsc.name].Add(new GenericTransaction(ask.agent, bid.agent, rsc.name, tradeQuantity));
+		transactions[rsc.name].Add(new GenericTransaction(bid.agent, ask.agent, "Cash", tradeQuantity*clearingPrice));
+		
 		var boughtQuantity = bid.agent.Buy(rsc.name, tradeQuantity, clearingPrice);
 		ask.agent.Sell(rsc.name, boughtQuantity, clearingPrice);
 		fiscalPolicy.AddSalesTax(rsc.name, boughtQuantity, clearingPrice, bid.agent);
@@ -214,6 +227,29 @@ public abstract class TradeResolution
 		// 	+ " -- " + rsc.name + " offer quantity: " + tradeQuantity.ToString("n2") 
 		// 	+ " bought quantity: " + boughtQuantity.ToString("n2"));
 		return boughtQuantity;
+	}
+
+	public void ClearStats()
+	{
+		foreach (var rscTransaction in transactions.Values)
+		{
+			rscTransaction.Clear();
+		}
+	}
+
+	public string PrintTransactions()
+	{
+		string msg = "";
+		foreach (var (com, rscTransaction) in transactions)
+		{
+			string header = auctionTracker.round + ", ";
+			foreach (var trans in rscTransaction)
+			{
+				msg += trans.ToString(header);
+			}
+		}
+
+		return msg;
 	}
 }
 

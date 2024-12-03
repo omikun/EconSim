@@ -580,7 +580,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   historySize: 10
   changeToHighestBidPrice: 0
-  probabilisticHottestGood: 1
+  probabilisticHottestGood: 0
   config: {fileID: 0}
   inflation: 0
   happiness: 0
@@ -620,9 +620,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   autoNextRound: 1
-  tickInterval: 0.142
-  EnableDebug: 1
-  EnableLog: 0
+  tickInterval: 0.001
+  EnableDebug: 0
+  EnableLog: 1
   appendTimeToLog: 1
   exitAfterNoTrade: 0
   EnableGovernment: 1
@@ -669,7 +669,7 @@ MonoBehaviour:
   changeProfessionAfterNDays: 10
   declareBankruptcy: 1
   historySize: 10
-  SimpleAgent: 1
+  agentType: 2
   initCash: 100
   initGovCash: 1000
   randomInitStock: 0
@@ -678,13 +678,13 @@ MonoBehaviour:
   numAgents:
     _serializedList:
     - Key: Food
-      Value: 20
+      Value: 10
     - Key: Wood
       Value: 10
     - Key: Ore
-      Value: 0
+      Value: 2
     - Key: Metal
-      Value: 0
+      Value: 2
     - Key: Tool
       Value: 10
   initialization:
@@ -716,7 +716,7 @@ MonoBehaviour:
         - Key: Prod_rate
           Value: 1
         - Key: Batch_rate
-          Value: 10
+          Value: 5
         - Key: Set_price
           Value: 2
     - Key: Ore
@@ -744,7 +744,7 @@ MonoBehaviour:
         - Key: Prod_rate
           Value: 1
         - Key: Batch_rate
-          Value: 10
+          Value: 5
         - Key: Set_price
           Value: 2
     - Key: Tool
@@ -759,7 +759,7 @@ MonoBehaviour:
         - Key: Prod_rate
           Value: 1
         - Key: Batch_rate
-          Value: 10
+          Value: 5
         - Key: Set_price
           Value: 2
   starvationThreshold: 0.1

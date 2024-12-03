@@ -68,16 +68,14 @@ public class QoLSimpleAgent : EconAgent
         return x / (x + 20);
     }
 
-    public override void Sell(string commodity, float quantity, float price)
-    {
-        base.Sell(commodity, quantity, price);
-    }
-
     public override void ConsumeGoods()
     {
+        //consume food
+        //unless consuming food to produce
+        //consume all other inputs proportional to output
         foreach (var item in inventory.Values)
         {
-            if (!inRecipe(item.name))
+            if (!inRecipe(item.name)) //if not inputs
                 continue;
             if (item.Quantity <= 0) //can't go below 0
                 continue;
@@ -191,7 +189,7 @@ public class QoLSimpleAgent : EconAgent
         return asks;
     }
 
-    public override Offers Consume(AuctionBook book)
+    public override Offers CreateBids(AuctionBook book)
     {
         return bids;
     }

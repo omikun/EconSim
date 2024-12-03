@@ -34,6 +34,13 @@ namespace EconSim
         TakeBidPrice,
         TakeAveragePrice,
     }
+
+    public enum AgentType
+    {
+	    Default,
+	    Simple,
+	    Medium,
+    }
     public enum AgentProduction
     {
         FixedRate,
@@ -169,7 +176,7 @@ public class SimulationConfig : MonoBehaviour{
 	public int historySize = 10;
 
 	[TabGroup("tab2", "Agent Initialization")]
-	public bool SimpleAgent = false;
+	public AgentType agentType = AgentType.Default;
 	[TabGroup("tab2", "Agent Initialization")]
 	public float initCash = 100;
 	[TabGroup("tab2", "Agent Initialization")]

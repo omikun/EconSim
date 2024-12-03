@@ -435,6 +435,13 @@ public class EconAgent : MonoBehaviour
 
 		taxesPaidThisRound = 0;
 	}
+	public float CanBuy(string commodity, float quantity, float price)
+	{
+        Assert.IsTrue(quantity > 0);
+
+		var boughtQuantity = inventory[commodity].Buy(quantity, price);
+		return boughtQuantity;
+	}
 	public float Buy(string commodity, float quantity, float price)
 	{
 		if (this is Government)
@@ -475,10 +482,12 @@ public class EconAgent : MonoBehaviour
 
 	public virtual void Decide()
 	{
+		ConsumeGoods();
+		Produce();
 	}
 
 	/*********** Produce and consume; enter asks and bids to auction house *****/
-	public virtual Offers Consume(AuctionBook book)
+	public virtual Offers CreateBids(AuctionBook book)
 	{
 		Debug.Log(name + " consuming");
 		return consumer.Consume(book);
@@ -492,7 +501,7 @@ public class EconAgent : MonoBehaviour
 		Assert.IsTrue(book.ContainsKey(outputName));
 		var rsc = book[outputName];
 		var item = inventory[rsc.name];
-		return productionStrategy.CalculateNumProduceable(rsc, item);
+		return productionStrategy.NumBatchesProduceable(rsc, item);
 	}
 	protected internal void ConsumeInput(ResourceController rsc, float numProduced, ref string msg)
 	{
@@ -511,10 +520,8 @@ public class EconAgent : MonoBehaviour
     protected internal float GetCostOf(ResourceController rsc)
 	{
 		float cost = 0;
-		foreach (var dep in rsc.recipe)
+		foreach (var (depCommodity, numDep) in rsc.recipe)
 		{
-			var depCommodity = dep.Key;
-			var numDep = dep.Value;
 			var depCost = inventory[depCommodity].meanCost;
 			cost += numDep * depCost;
 		}

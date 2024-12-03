@@ -67,7 +67,7 @@ public class Government : EconAgent {
 	{
 		inventory[com].TargetQuantity += quant;
 	}
-	public override Offers Consume(AuctionBook book) 
+	public override Offers CreateBids(AuctionBook book) 
 	{
         var bids = new Offers();
 

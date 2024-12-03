@@ -87,14 +87,16 @@ public class InventoryItem {
         return Quantity/maxQuantity;
     }
     int lastRoundComputedProductionRate = -1;
-    public float GetProductionRate()
+    public float GetProductionRate(float producingNumBatches = -1)
     {
+	    if (producingNumBatches == -1)
+		    producingNumBatches = batchRate;
         if (auctionStats.round == lastRoundComputedProductionRate)
         {
             return realProductionRate;
         }
         //derate
-        float rate = productionPerBatch * batchRate * productionDeRate;
+        float rate = productionPerBatch * producingNumBatches * productionDeRate;
         //random chance derate
         var chance = productionChance;
         realProductionRate = (UnityEngine.Random.value < chance) ? rate : 0;
@@ -227,9 +229,9 @@ public class InventoryItem {
         //may buy multiple times per round
         if (boughtThisRound)
         {
-            buyHistory.UpdateLast(new Transaction(price, quant));
+            buyHistory.UpdateLast(new InventoryTransaction(price, quant));
         } else {
-            buyHistory.Add(new Transaction(price, quant));
+            buyHistory.Add(new InventoryTransaction(price, quant));
         }
         boughtThisRound = true;
         Assert.IsFalse(soldThisRound);
@@ -251,9 +253,9 @@ public class InventoryItem {
         
         if (soldThisRound)
         {
-            saleHistory.UpdateLast(new Transaction(price, quant));
+            saleHistory.UpdateLast(new InventoryTransaction(price, quant));
         } else {
-            saleHistory.Add(new Transaction(price, quant));
+            saleHistory.Add(new InventoryTransaction(price, quant));
         }
         soldThisRound = true;
         Assert.IsFalse(boughtThisRound);

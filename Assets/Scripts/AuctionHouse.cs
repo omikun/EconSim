@@ -106,9 +106,12 @@ public class AuctionHouse : MonoBehaviour {
 	void InitAgents()
 	{
 		GameObject prefab;
-		if (config.SimpleAgent == true)
+		if (config.agentType == AgentType.Simple)
 		{
 			prefab = (GameObject)Resources.Load("SimpleAgent");
+		} else if (config.agentType == AgentType.Medium)
+		{
+			prefab = (GameObject)Resources.Load("MediumAgent");
 		} else
 		{
 			prefab = (GameObject)Resources.Load("Agent");
@@ -239,14 +242,12 @@ public class AuctionHouse : MonoBehaviour {
 		{
 			if (agent.Alive == false)
 				continue;
-			agent.ConsumeGoods();
-			agent.Produce();
+			agent.Decide();
 			//var numProduced = agent.Produce(book);
 			//PayIdleTax(agent, numProduced);
 
-			agent.Decide();
 			askTable.Add(agent.CreateAsks());
-			bidTable.Add(agent.Consume(book));
+			bidTable.Add(agent.CreateBids(book));
 		}
 
 		//resolve prices
@@ -269,6 +270,7 @@ public class AuctionHouse : MonoBehaviour {
 		}
 		logAgentsStats();
 		auctionTracker.ClearStats();
+		tradeResolver.ClearStats();
 		TickAgent();
 		QuitIf();
 	}
@@ -341,7 +343,7 @@ public class AuctionHouse : MonoBehaviour {
 			var currPrice = rsc.avgClearingPrice[^1];
 			if (prevPrice != 0)
 				inflation += (currPrice - prevPrice) / prevPrice;
-			Debug.Log("inflation current is " + inflation.ToString("p2"));
+			Debug.Log("inflation current for " + rsc.name + " is " + inflation.ToString("p2"));
 		}
 
 		inflation /= 3f;//(float)book.Count;
@@ -360,6 +362,7 @@ public class AuctionHouse : MonoBehaviour {
 		msg += auctionTracker.GetLog();
 		msg += info.GetLog(header);
 
+		msg += tradeResolver.PrintTransactions();
 		logger.PrintToFile(msg);
 	}
 

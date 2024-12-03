@@ -14,7 +14,7 @@ using Sirenix.Serialization;
 public class AuctionBook : Dictionary<string, ResourceController>{}
 public class AuctionStats : MonoBehaviour
 {
-	public int historySize = 10;
+	public int historySize = 1;
 	public bool changeToHighestBidPrice = false;
 	public bool probabilisticHottestGood = true;
     //public static AuctionStats Instance { get; private set; }
@@ -166,8 +166,9 @@ public class AuctionStats : MonoBehaviour
 		foreach (var c in book)
 		{
 			var asks = c.Value.asks.LastAverage(historySize);
+			// var asks = c.Value.asks[^1];
 			var bids = c.Value.bids.LastAverage(historySize);
-            asks = Mathf.Max(.5f, asks);
+			// var bids = c.Value.bids[^1];
 			var ratio = bids / asks;
 
 			if (best_ratio < ratio)
@@ -176,8 +177,9 @@ public class AuctionStats : MonoBehaviour
 				hottestGood = c.Key;
 				picker.AddItem(c.Key, 1);//Mathf.Sqrt(ratio)); //less likely a profession dies out
 			}
-			Debug.Log(round + " demand: " + c.Key + ": " + Mathf.Sqrt(best_ratio));
-			log_msg += round + ", auction, " + c.Key + ", none, demandsupplyratio, " + Mathf.Sqrt(ratio) + ", n/a\n";
+			Debug.Log(round + " num bids: " + bids.ToString("n2") 
+			          + " num asks: " + asks.ToString("n2") + " demand: " + c.Key + ": " + (ratio));
+			log_msg += round + ", auction, " + c.Key + ", none, demandsupplyratio, " + (ratio) + ", n/a\n";
 		}
 		return hottestGood;
 	}

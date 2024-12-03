@@ -82,8 +82,8 @@ public class ResourceController
 		get { return marketPrice.ToString("c2");  }
 	}
 	public float demand { get; private set; }
-	public float productionPerBatch { get; private set; }
-	public float batchRate { get; private set; }
+	public float productionPerBatch { get; private set; } //base line production is productionPerBatch * batchRate
+	public float batchRate { get; private set; } //num batches per round
 	public float productionMultiplier { get; private set; } //forest fire or rich mineral vein
 	public float resourceAmount { get; private set; } // for fish or finite ore
 	public Recipe recipe { get; private set; }

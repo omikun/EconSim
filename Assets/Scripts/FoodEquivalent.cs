@@ -50,7 +50,7 @@ public class FoodEquivalent
 		var foodPrice = book["Food"].marketPrice;
 		var foodEquivalent = book[agent.Profession].marketPrice / foodPrice;
 		var inputFoodEquivalent =
-			agent.productionStrategy.CalculateNumProduceable(book[agent.Profession], agent.inventory[agent.Profession]) * foodEquivalent;
+			agent.productionStrategy.NumBatchesProduceable(book[agent.Profession], agent.inventory[agent.Profession]) * foodEquivalent;
 		return inputFoodEquivalent;
 	}
 

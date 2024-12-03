@@ -8,7 +8,7 @@ using UnityEngine;
 using UnityEngine.Assertions;
 
 
-public class TransactionHistory : List<Transaction>
+public class TransactionHistory : List<InventoryTransaction>
 {
     float min = 0;
     float max = 0;
@@ -17,7 +17,7 @@ public class TransactionHistory : List<Transaction>
     ESList prices = new ESList();
     public float Min() { return min; }
 	public float Max() { return max; }
-    public new void Add(Transaction t)
+    public new void Add(InventoryTransaction t)
     {
         base.Add(t);
   
@@ -34,7 +34,7 @@ public class TransactionHistory : List<Transaction>
         }
         avg = (count == 0) ? 0 : sum / (float)count;
     }
-    public void UpdateLast(Transaction t)
+    public void UpdateLast(InventoryTransaction t)
     {
         var priceVolume = base[^1].Quantity * base[^1].Price;
         priceVolume += t.Price * t.Quantity;

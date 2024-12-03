@@ -58,9 +58,9 @@ public class ESList : List<float>
         {
             return 0;
         }
-        var skip = Mathf.Max(0, base.Count - history);
-        var end = Math.Min(history, base.Count);
-        return base.GetRange(skip, end).Average();
+        var index = Mathf.Max(0, base.Count - history);
+        var count = Math.Min(history, base.Count);
+        return base.GetRange(index, count).Average();
     }
 
     public float LastSum(int history)
