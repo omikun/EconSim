@@ -28,11 +28,31 @@ public class QolAgent : QoLSimpleAgent
         //else consume at least n food
         foreach (var item in inventory.Values)
         {
-            if (!inRecipe(item.name)) //if not inputs
+            float amountConsumed = 0f;
+            if (item.name == "Food")
+            {
+            if (item.Quantity > 20)
+                amountConsumed = 8;
+            else 
+                if (item.Quantity > 10)
+                    amountConsumed = 3;
+                else if (item.Quantity > 5)
+                    amountConsumed = 2;
+                else 
+                    amountConsumed = 1;
+            } else if (!inRecipe(item.name)) //if not inputs
                 continue;
-            if (item.Quantity <= 0) //can't go below 0
+            else if (item.Quantity <= 0) //can't go below 0
                 continue;
-            float amountConsumed = book[outputName].recipe[item.name] * numBatches;
+
+            var recipe = book[outputName].recipe;
+            if (recipe.ContainsKey(item.name))
+            {
+                float consumedByBatch = recipe[item.name] * numBatches;
+                amountConsumed = Mathf.Max(amountConsumed, consumedByBatch);
+            }
+            amountConsumed = Mathf.Min(item.Quantity, amountConsumed);
+            Debug.Log(auctionStats.round + " " + name + " has " + item.Quantity + " " + item.name + " remaining, consumed " + amountConsumed + " " + item.name);
             item.Decrease(amountConsumed);
             Assert.IsTrue(item.Quantity >= 0);
         }

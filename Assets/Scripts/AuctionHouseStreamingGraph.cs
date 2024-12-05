@@ -8,6 +8,7 @@ using System.Linq;
 using System.Collections.Generic;
 using System;
 using TMPro;
+using UnityEngine.Serialization;
 
 public class ESStreamingGraph : MonoBehaviour
 {
@@ -18,7 +19,9 @@ public class ESStreamingGraph : MonoBehaviour
     [Required]
     public GraphChart meanPriceGraph;
     [Required]
-    public GraphChart InventoryGraph;
+    public GraphChart tradeGraph;
+    [Required]
+    public GraphChart inventoryGraph;
     [Required]
     public PieChart jobChart;
     public int TotalPoints = 20;
@@ -26,6 +29,7 @@ public class ESStreamingGraph : MonoBehaviour
     float lastX = 0f;
     VerticalAxis vaxisPriceGraph;
     VerticalAxis vaxisTradeGraph;
+    VerticalAxis vaxisInventoryGraph;
     [Serializable]
     public struct ChartCategoryData
     {
@@ -119,11 +123,13 @@ public class ESStreamingGraph : MonoBehaviour
     void Start()
     {
         vaxisPriceGraph = meanPriceGraph.transform.GetComponent<VerticalAxis>();
-        vaxisTradeGraph = InventoryGraph.transform.GetComponent<VerticalAxis>();
+        vaxisTradeGraph = tradeGraph.transform.GetComponent<VerticalAxis>();
+        vaxisInventoryGraph = tradeGraph.transform.GetComponent<VerticalAxis>();
         Assert.IsFalse(vaxisPriceGraph == null);
 
         InitGraph(meanPriceGraph, "Changed Profession -test");
-        InitGraph(InventoryGraph, "Trades");
+        InitGraph(tradeGraph, "Trades");
+        InitGraph(inventoryGraph, "Inventory");
         //InitPieChart(jobChart);
 
         lastX = 0;//TotalPoints;
@@ -132,26 +138,57 @@ public class ESStreamingGraph : MonoBehaviour
 
     public float SlideTime = -1f;//.5f; //-1 will update y axis?
     List<float> starvValues = new();
+
+    // public void NewUpdateGraphs()
+    // {
+    //     foreach (var rsc in auctionTracker.book.Values)
+    //     {
+    //         jobChart.DataSource.SetValue(rsc.name, rsc.numAgents);
+    //     }
+    //     UpdateGraph(meanPriceGraph, vaxisPriceGraph, auctionTracker.book, value => value.avgClearingPrice);
+    //     UpdateGraph(tradeGraph, vaxisTradeGraph, auctionTracker.book, value => value.trades);
+    //     UpdateGraph(inventoryGraph, vaxisInventoryGraph, auctionTracker.book, value => value.inventory);
+    //     lastX += 1;
+    // }
+    // public void UpdateGraph<TKey, TValue, TResult>(GraphChart chart, VerticalAxis vaxis, Dictionary<TKey, TValue> dic, Func<TValue, TResult> selector)
+    // {
+    //     double newMaxY = 0;
+    //
+    //     foreach (var rsc in dic.Values)
+    //     {
+    //         var values = selector(rsc);
+    //         chart.DataSource.AddPointToCategoryRealtime(rsc.name, lastX, values[^1], SlideTime);
+    //
+    //         newMaxY  = Math.Max(newMaxY,  values.TakeLast(TotalPoints+2).Max());
+    //     }
+    //     chart.DataSource.VerticalViewSize = nearestBracket(vaxis, newMaxY);
+    // }
     public void UpdateGraph()
     {
         double newMaxY = 0;
         double newMaxY2 = 0;
+        double newMaxY3 = 0;
 
         foreach (var rsc in auctionTracker.book.Values)
         {
             //var values = rsc.changedProfession;
             var values = rsc.avgClearingPrice;
             var values2 = rsc.trades;
+            var values3 = rsc.inventory;
             jobChart.DataSource.SetValue(rsc.name, rsc.numAgents);
+            
             meanPriceGraph.DataSource.AddPointToCategoryRealtime(rsc.name, lastX, values[^1], SlideTime);
-            InventoryGraph.DataSource.AddPointToCategoryRealtime(rsc.name, lastX,values2[^1], SlideTime);
+            tradeGraph.DataSource.AddPointToCategoryRealtime(rsc.name, lastX,values2[^1], SlideTime);
+            inventoryGraph.DataSource.AddPointToCategoryRealtime(rsc.name, lastX,values3[^1], SlideTime);
 
             //newMaxY = Math.Max(newMaxY, rsc.avgClearingPrice.TakeLast(TotalPoints+2).Max());
             newMaxY  = Math.Max(newMaxY,  values.TakeLast(TotalPoints+2).Max());
             newMaxY2 = Math.Max(newMaxY2, values2.TakeLast(TotalPoints+2).Max());
+            newMaxY3 = Math.Max(newMaxY3, values3.TakeLast(TotalPoints+2).Max());
         }
         meanPriceGraph.DataSource.VerticalViewSize = nearestBracket(vaxisPriceGraph, newMaxY);
-        InventoryGraph.DataSource.VerticalViewSize = nearestBracket(vaxisTradeGraph, newMaxY2);
+        tradeGraph.DataSource.VerticalViewSize = nearestBracket(vaxisTradeGraph, newMaxY2);
+        inventoryGraph.DataSource.VerticalViewSize = nearestBracket(vaxisInventoryGraph, newMaxY3);
         lastX += 1;
     }
 

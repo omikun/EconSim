@@ -346,6 +346,7 @@ public class InventoryItem {
 		var marketPrice = agent.book[name].marketPrice;
 		var utility = Utility(offersThisRound, delta);
 		var niceness = utility / marketPrice;
+		Debug.Log(name + " GetNiceness " + niceness.ToString("f8"));
 		return niceness;
     }
 	public float GetPrice()

@@ -30,7 +30,7 @@ public class AuctionHouse : MonoBehaviour {
 	protected bool timeToQuit = false;
     protected OfferTable askTable, bidTable;
 	protected float lastTick;
-	ESStreamingGraph meanPriceGraph;
+	ESStreamingGraph streamingGraphs;
 	public Government gov { get; protected set; }
 	float moneyExchangedThisRound = 0;
 	float goodsExchangedThisRound = 0;
@@ -55,8 +55,8 @@ public class AuctionHouse : MonoBehaviour {
 		UnityEngine.Random.InitState(config.seed);
 		lastTick = 0;
 
-		meanPriceGraph = GetComponent<ESStreamingGraph>();
-		Assert.IsFalse(meanPriceGraph == null);
+		streamingGraphs = GetComponent<ESStreamingGraph>();
+		Assert.IsFalse(streamingGraphs == null);
 
 		InitGovernment();
 		InitAgents();
@@ -160,7 +160,7 @@ public class AuctionHouse : MonoBehaviour {
 	{
 		Tick();
 		auctionTracker.nextRound();
-		meanPriceGraph.UpdateGraph();
+		streamingGraphs.UpdateGraph();
 	}
 	[HideIf("forestFire")]
 	[Button(ButtonSizes.Large), GUIColor(0.4f, 0.8f,1)]
@@ -409,6 +409,9 @@ public class AuctionHouse : MonoBehaviour {
 			marketPrice = rsc.marketPrice;
 		rsc.Update(marketPrice, agentDemandRatio);
 
+		var totalInventory = agents.Sum(agent => (agent.inventory.Keys.Contains(rsc.name)) ? agent.inventory[rsc.name].Quantity : 0f);
+		rsc.inventory.Add(totalInventory);
+		
 		//update price beliefs if still a thing
 		asks.Clear();
 		bids.Clear();

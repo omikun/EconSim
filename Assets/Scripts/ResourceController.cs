@@ -17,6 +17,7 @@ public class ResourceController
  	public ESList avgAskPrice = new();
  	public ESList avgClearingPrice = new();
  	public ESList trades = new();
+ 	public ESList inventory = new();
  	public ESList profits = new();
  	public ESList changedProfession = new();
  	public ESList bankrupted = new();
@@ -58,6 +59,7 @@ public class ResourceController
 		bids.Add(1);
 		asks.Add(1);
 		trades.Add(1);
+		inventory.Add(1);
 		avgAskPrice.Add(1);
 		avgBidPrice.Add(1);
 		avgClearingPrice.Add(1);

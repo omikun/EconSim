@@ -172,14 +172,18 @@ public class QoLSimpleAgent : EconAgent
         foreach (var (itemName, item) in inventory)
         {
             Debug.Log(auctionStats.round + " " + CashString + " " + name + " has " +
-                      item.QuantityString + " market price: " + book[itemName].marketPriceString);
+                      item.QuantityString + " market price: " + book[itemName].marketPriceString + " offers " + item.offersThisRound);
 
             if (item.offersThisRound <= 0)
                 continue;
             var price = item.GetPrice();
-            var offers = (itemName == outputName) ? asks : bids;
+            var selling = itemName == outputName;
+            var offers = (selling) ? asks : bids;
             offers.Add(itemName, new Offer(itemName, price, item.offersThisRound, this));
-            Debug.Log(auctionStats.round + " " + name + " offers " + item.offersThisRound + " for " + price.ToString("c2"));
+            if (selling)
+                Debug.Log(auctionStats.round + " " + name + " asking " + item.offersThisRound + " " + itemName + " for " + price.ToString("c2"));
+            else
+                Debug.Log(auctionStats.round + " " + name + " bidding " + item.offersThisRound + " " + itemName + " for " + price.ToString("c2"));
         }
     }
 
