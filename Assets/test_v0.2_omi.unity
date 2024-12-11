@@ -611,7 +611,7 @@ MonoBehaviour:
   exitAfterNoTrade: 0
   EnableGovernment: 1
   seed: 42
-  maxRounds: 300
+  maxRounds: 50
   numRoundsNoTrade: 100
   tradeResolution: 2
   bidSortOrder: 1
@@ -662,15 +662,15 @@ MonoBehaviour:
   numAgents:
     _serializedList:
     - Key: Food
-      Value: 10
+      Value: 2
     - Key: Wood
-      Value: 10
+      Value: 2
     - Key: Ore
       Value: 2
     - Key: Metal
       Value: 2
     - Key: Tool
-      Value: 10
+      Value: 2
   initialization:
     _serializedList:
     - Key: Food
@@ -3822,7 +3822,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 224390226033679502, guid: 3dbd4bc71acbb1145b6e80827b858127, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 55.27
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 224390226033679502, guid: 3dbd4bc71acbb1145b6e80827b858127, type: 3}
       propertyPath: m_SizeDelta.y
@@ -3958,7 +3958,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3155788890126894321, guid: 3dbd4bc71acbb1145b6e80827b858127, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 55.27
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3155788890126894321, guid: 3dbd4bc71acbb1145b6e80827b858127, type: 3}
       propertyPath: m_SizeDelta.y
@@ -3986,7 +3986,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4484771780012352589, guid: 3dbd4bc71acbb1145b6e80827b858127, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 55.27
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4484771780012352589, guid: 3dbd4bc71acbb1145b6e80827b858127, type: 3}
       propertyPath: m_SizeDelta.y
@@ -4010,7 +4010,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4866549897623903779, guid: 3dbd4bc71acbb1145b6e80827b858127, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 135.27
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4866549897623903779, guid: 3dbd4bc71acbb1145b6e80827b858127, type: 3}
       propertyPath: m_SizeDelta.y

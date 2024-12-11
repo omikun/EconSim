@@ -214,7 +214,7 @@ public class InventoryItem {
         soldThisRound = false;
         boughtThisRound = false;
     }
-	public float Buy(float quant, float price)
+	public void Buy(float quant, float price)
 	{
         meanCost = (meanCost * Quantity + quant * price) / (Quantity + quant);
 		Quantity += quant;
@@ -236,7 +236,6 @@ public class InventoryItem {
         boughtThisRound = true;
         Assert.IsFalse(soldThisRound);
 		//return adjusted quant;
-		return quant;
 	}
 	public void Sell(float quant, float price)
 	{

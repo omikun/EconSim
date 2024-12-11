@@ -270,7 +270,6 @@ public class AuctionHouse : MonoBehaviour {
 		}
 		logAgentsStats();
 		auctionTracker.ClearStats();
-		tradeResolver.ClearStats();
 		TickAgent();
 		QuitIf();
 	}
@@ -362,7 +361,6 @@ public class AuctionHouse : MonoBehaviour {
 		msg += auctionTracker.GetLog();
 		msg += info.GetLog(header);
 
-		msg += tradeResolver.PrintTransactions();
 		logger.PrintToFile(msg);
 	}
 

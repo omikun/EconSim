@@ -34,8 +34,6 @@ public class EconAgent : MonoBehaviour
 	public float TaxableProfit { get; protected set; }
 	public Dictionary<string, InventoryItem> inventory = new();
 	float taxesPaidThisRound = 0;
-	bool boughtThisRound = false;
-	bool soldThisRound = false;
 	WaitNumRoundsNotTriggered noSaleIn = new();
 	WaitNumRoundsNotTriggered noPurchaseIn = new();
 	protected internal FoodEquivalent foodEquivalent;
@@ -435,13 +433,6 @@ public class EconAgent : MonoBehaviour
 
 		taxesPaidThisRound = 0;
 	}
-	public float CanBuy(string commodity, float quantity, float price)
-	{
-        Assert.IsTrue(quantity > 0);
-
-		var boughtQuantity = inventory[commodity].Buy(quantity, price);
-		return boughtQuantity;
-	}
 	public float Buy(string commodity, float quantity, float price)
 	{
 		if (this is Government)
@@ -450,14 +441,13 @@ public class EconAgent : MonoBehaviour
 		}
         Assert.IsTrue(quantity > 0);
 
-		var boughtQuantity = inventory[commodity].Buy(quantity, price);
+		inventory[commodity].Buy(quantity, price);
 		Debug.Log(name + " has " + Cash.ToString("c2") 
 			+ " want to buy " + quantity.ToString("n2") + " " + commodity 
-			+ " for " + price.ToString("c2") + " bought " + boughtQuantity.ToString("n2"));
+			+ " for " + price.ToString("c2") + " bought " + quantity.ToString("n2"));
 		Assert.IsFalse(outputName.Contains(commodity), name + " buying own output: " + outputName); 
-		Cash -= price * boughtQuantity;
-		boughtThisRound = true;
-		return boughtQuantity;
+		Cash -= price * quantity;
+		return quantity;
 	}
 	public virtual void Sell(string commodity, float quantity, float price)
 	{
@@ -468,7 +458,6 @@ public class EconAgent : MonoBehaviour
 		Assert.IsTrue(inventory[commodity].Quantity >= 0);
 		inventory[commodity].Sell(quantity, price);
 		Assert.IsTrue(inventory[commodity].Quantity >= 0);
-		soldThisRound = true;
 		Cash += price * quantity;
 	}
 	public void UpdateSellerPriceBelief(in Offer trade, in ResourceController rsc) 

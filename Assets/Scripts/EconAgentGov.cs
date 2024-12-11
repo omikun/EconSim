@@ -112,6 +112,7 @@ public class Government : EconAgent {
     {
 		if (agent.IsBankrupt())
 		{
+			var transferCash = Mathf.Max(0, config.initCash - agent.Cash);
 			Cash += agent.Cash;
 			Cash -= config.initCash;
 			agent.ResetCash();
@@ -135,6 +136,7 @@ public class Government : EconAgent {
 			var refill = refillThreshold - agentFood;
 			var quant = Mathf.Min(refill, govFood);
 			Debug.Log(auctionStats.round + " Fed agent" + agent.name + " " + quant.ToString("n1") + " food, prev had " + agentFood.ToString("n1"));
+			auctionStats.Transfer(this, agent, "Food", quant);
 			inventory["Food"].Decrease(quant);
 			agent.inventory["Food"].Increase(quant);
 		}

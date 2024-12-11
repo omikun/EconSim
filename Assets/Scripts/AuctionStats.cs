@@ -21,6 +21,7 @@ public class AuctionStats : MonoBehaviour
 
 	public AuctionBook book { get; private set; }
 	public SimulationConfig config;
+	public Dictionary<string, List<GenericTransaction>> transactions = new();
 	public int round { get; private set; }
 	[DisableInEditorMode]
 	public float inflation;
@@ -76,10 +77,23 @@ public class AuctionStats : MonoBehaviour
 			entry.gdp = 0;
 			entry.gini = 0;
 		}
+		foreach (var rscTransaction in transactions.Values)
+		{
+			rscTransaction.Clear();
+		}
 	}
 	string log_msg = "";
 	public string GetLog()
 	{
+		foreach (var (com, rscTransaction) in transactions)
+		{
+			string header = round + ", ";
+			foreach (var trans in rscTransaction)
+			{
+				log_msg += trans.ToString(header);
+			}
+		}
+		
 		var ret = log_msg;
 		log_msg = "";
 		return ret;
@@ -89,9 +103,10 @@ public class AuctionStats : MonoBehaviour
 	{
 		round += 1;
 	}
-    private void Awake()
-    {
-    }
+	public void Transfer(EconAgent from, EconAgent to, string kind, float amount)
+	{
+		transactions[kind].Add(new GenericTransaction(from, to, kind, amount)); //seller transfers
+	}
     public string GetMostProfitableProfession(ref float mostProfit, String exclude_key="invalid")
 	{
 		string mostProfitableProf = "invalid";
@@ -206,7 +221,7 @@ public class AuctionStats : MonoBehaviour
 			}
 		}
 	}
-	void InitInitialization() 
+	void InitCommodities() 
 	{
 		config.initialization["Food"] = new() { 
 			{ "Wood", .1f}, 
@@ -242,7 +257,7 @@ public class AuctionStats : MonoBehaviour
 		Debug.Log("Initializing commodities");
 		book = new AuctionBook();
 		round = 0;
-		//InitInitialization();
+		//InitCommodities();
 		foreach( var item in config.initialization)
 		{
 			Recipe dep = new Recipe();
@@ -279,6 +294,11 @@ public class AuctionStats : MonoBehaviour
 				Debug.Log("Failed to add commodity; duplicate?");
 			}
 		}
+	    foreach (var com in book.Keys)
+	    {
+		    transactions.Add(com, new());
+	    }
+	    transactions.Add("Cash", new());
 		//PrintStat();
 		return;
     }

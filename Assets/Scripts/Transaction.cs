@@ -6,7 +6,7 @@ using UnityEngine.Assertions;
 public class GenericTransaction {
     public GenericTransaction(EconAgent d, EconAgent c, string com, float q)
     {
-        Assert.IsTrue(q > 0);
+        Assert.IsTrue(q != 0);
         Quantity = q;
         DebitAccount = d;
         CreditAccount = c;
@@ -17,13 +17,20 @@ public class GenericTransaction {
     {
         var debit = new string(DebitAccount.name.Where(char.IsDigit).ToArray());
         var credit = new string(CreditAccount.name.Where(char.IsDigit).ToArray());
-        return header + debit
+        //debit agent loses Quantity, but credit agent gains it
+        var msg = header + debit 
                       + ", " + DebitAccount.outputName
-               + ", " + Commodity +
-               ", transaction"
-               + ", " + Quantity.ToString("n2")
-               + ", " + credit
-               + "\n";
+                      + ", " + Commodity + ", transaction"
+                      + ", " + (-Quantity).ToString("n2")
+                      + ", " + credit
+                      + "\n";
+        msg += header + credit 
+                      + ", " + DebitAccount.outputName
+                      + ", " + Commodity + ", transaction"
+                      + ", " + Quantity.ToString("n2")
+                      + ", " + debit
+                      + "\n";
+        return msg;
     }
 
     public EconAgent DebitAccount { get; }

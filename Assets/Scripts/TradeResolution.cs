@@ -59,7 +59,6 @@ public abstract class TradeResolution
     protected TradePriceResolver tradePriceResolver;
     protected enum LoopState { None, ContinueBids, ContinueAsks, Break }
 
-    protected Dictionary<string, List<GenericTransaction>> transactions = new();
 
     public TradeResolution(AuctionStats aStats, FiscalPolicy fp, OfferTable at, OfferTable bt)
     {
@@ -77,10 +76,6 @@ public abstract class TradeResolution
 		    ? new SortOfferByPriceAscend()
 		    : new SortOfferByPriceDescend();
 
-	    foreach (var com in auctionTracker.book.Keys)
-	    {
-		    transactions.Add(com, new());
-	    }
 	    //what about random?
 	    ConfigureTradePriceResolution();
     }
@@ -202,54 +197,26 @@ public abstract class TradeResolution
 
 		return quantity;
 	}
+
 	protected float Trade(ResourceController rsc, float clearingPrice, float tradeQuantity, ref Offer bid, Offer ask)
 	{
 		tradeQuantity = OnlyBuyAffordable(ask, ref bid, tradeQuantity, clearingPrice);
 		if (tradeQuantity <= 0)
 			return tradeQuantity;
 		
-		//transfer cash from debitor to creditor
 		//transfer goods from seller to buyer
-		transactions[rsc.name].Add(new GenericTransaction(ask.agent, bid.agent, rsc.name, tradeQuantity));
-		transactions[rsc.name].Add(new GenericTransaction(bid.agent, ask.agent, "Cash", tradeQuantity*clearingPrice));
+		auctionTracker.Transfer(ask.agent, bid.agent, rsc.name, tradeQuantity);
+		//transfer cash from buyer to seller
+		auctionTracker.Transfer(bid.agent, ask.agent, "Cash", tradeQuantity * clearingPrice);
 		
-		var boughtQuantity = bid.agent.Buy(rsc.name, tradeQuantity, clearingPrice);
-		ask.agent.Sell(rsc.name, boughtQuantity, clearingPrice);
-		fiscalPolicy.AddSalesTax(rsc.name, boughtQuantity, clearingPrice, bid.agent);
+		bid.agent.Buy(rsc.name, tradeQuantity, clearingPrice);
+		ask.agent.Sell(rsc.name, tradeQuantity, clearingPrice);
+		fiscalPolicy.AddSalesTax(rsc.name, tradeQuantity, clearingPrice, bid.agent);
 
 		Debug.Log("Trade(), " + auctionTracker.round + ", " + ask.agent.name + ", " + bid.agent.name + ", " + 
-			rsc.name + ", " + boughtQuantity.ToString("n2") + ", " + clearingPrice.ToString("c2") +
+			rsc.name + ", " + tradeQuantity.ToString("n2") + ", " + clearingPrice.ToString("c2") +
 			", " + ask.offerPrice.ToString("c2") + ", " + bid.offerPrice.ToString("c2"));
-		// Debug.Log(auctionTracker.round + ": " + ask.agent.name 
-		// 	+ " ask " + ask.remainingQuantity.ToString("n2") + "x" + ask.offerPrice.ToString("c2")
-		// 	+ " | " + bid.agent.name 
-		// 	+ " bid: " + bid.remainingQuantity.ToString("n2") + "x" + bid.offerPrice.ToString("c2")
-		// 	+ " -- " + rsc.name + " offer quantity: " + tradeQuantity.ToString("n2") 
-		// 	+ " bought quantity: " + boughtQuantity.ToString("n2"));
-		return boughtQuantity;
-	}
-
-	public void ClearStats()
-	{
-		foreach (var rscTransaction in transactions.Values)
-		{
-			rscTransaction.Clear();
-		}
-	}
-
-	public string PrintTransactions()
-	{
-		string msg = "";
-		foreach (var (com, rscTransaction) in transactions)
-		{
-			string header = auctionTracker.round + ", ";
-			foreach (var trans in rscTransaction)
-			{
-				msg += trans.ToString(header);
-			}
-		}
-
-		return msg;
+		return tradeQuantity;
 	}
 }
 
