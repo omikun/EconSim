@@ -263,7 +263,7 @@ public class EconAgent : MonoBehaviour
 			msg += entry.Value.Quantity + " " + entry.Key + ", ";
 		}
 
-		Debug.Log(auctionStats.round + ": " + name + " " + label + " reinit2: " + msg);
+		Debug.Log(auctionStats.round + ": " + name + " " + label + " reinit2: " + msg + " cash: " + CashString);
 	}
 
 	public float TaxProfit(float taxRate)
@@ -289,7 +289,7 @@ public class EconAgent : MonoBehaviour
 		TaxableProfit = Mathf.Max(0, cumDelta);
 	}
 
-	const float bankruptcyThreshold = 0;
+	const float bankruptcyThreshold = 30;
 
 	public bool IsBankrupt()
 	{

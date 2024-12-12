@@ -46,7 +46,7 @@ GameObject:
   - component: {fileID: 5391474068508475847}
   - component: {fileID: 6747240379170481705}
   m_Layer: 5
-  m_Name: totalInventoryGraph
+  m_Name: 202412-graph
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

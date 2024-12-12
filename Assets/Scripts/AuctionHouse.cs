@@ -409,6 +409,16 @@ public class AuctionHouse : MonoBehaviour {
 
 		var totalInventory = agents.Sum(agent => (agent.inventory.Keys.Contains(rsc.name)) ? agent.inventory[rsc.name].Quantity : 0f);
 		rsc.inventory.Add(totalInventory);
+
+		var totalCash = agents.Sum(agent => (agent.outputName == rsc.name) ? agent.Cash : 0f);
+		string msg = "";
+		foreach (var agent in agents)
+		{
+			msg += agent.name + " makes " + agent.outputName + " has cash " + agent.CashString + "\n";
+		}
+
+		Debug.Log(auctionTracker.round + ": " + rsc.name + " cash list:\n " + msg);
+		rsc.cash.Add(totalCash);
 		
 		//update price beliefs if still a thing
 		asks.Clear();

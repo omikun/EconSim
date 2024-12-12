@@ -23,6 +23,8 @@ public class ESStreamingGraph : MonoBehaviour
     [Required]
     public GraphChart inventoryGraph;
     [Required]
+    public GraphChart cashGraph;
+    [Required]
     public PieChart jobChart;
     public int TotalPoints = 20;
     float lastTime = 0f;
@@ -30,6 +32,7 @@ public class ESStreamingGraph : MonoBehaviour
     VerticalAxis vaxisPriceGraph;
     VerticalAxis vaxisTradeGraph;
     VerticalAxis vaxisInventoryGraph;
+    VerticalAxis vaxisCashGraph;
     [Serializable]
     public struct ChartCategoryData
     {
@@ -64,7 +67,6 @@ public class ESStreamingGraph : MonoBehaviour
     }
     void InitPieChart(PieChart chart)
     {
-       // /*
         Assert.IsFalse(chart == null);
 
         chart.DataSource.StartBatch(); 
@@ -78,15 +80,9 @@ public class ESStreamingGraph : MonoBehaviour
             Debug.Log("init line material for " + good);
             index++;
         }
-        for (int i = 0; i < TotalPoints; i++)  //add random points to the graph
-        {
-            //TODO with AddPointToCategoryWithLabel in the future?
-            //graph.DataSource.AddPointToCategory("Food",x,UnityEngine.Random.value);
-        }
         chart.DataSource.EndBatch(); // finally we call EndBatch , this will cause the GraphChart to redraw itself
 
         lastX = 0;
-        //*/
     }
     void InitGraph(GraphChart graph, string title)
     {
@@ -111,11 +107,6 @@ public class ESStreamingGraph : MonoBehaviour
             Debug.Log("init line material for " + good);
             index++;
         }
-        for (int i = 0; i < TotalPoints; i++)  //add random points to the graph
-        {
-            //TODO with AddPointToCategoryWithLabel in the future?
-            //graph.DataSource.AddPointToCategory("Food",x,UnityEngine.Random.value);
-        }
         graph.DataSource.EndBatch(); // finally we call EndBatch , this will cause the GraphChart to redraw itself
 
         lastX = 0;
@@ -125,11 +116,13 @@ public class ESStreamingGraph : MonoBehaviour
         vaxisPriceGraph = meanPriceGraph.transform.GetComponent<VerticalAxis>();
         vaxisTradeGraph = tradeGraph.transform.GetComponent<VerticalAxis>();
         vaxisInventoryGraph = tradeGraph.transform.GetComponent<VerticalAxis>();
+        vaxisCashGraph = tradeGraph.transform.GetComponent<VerticalAxis>();
         Assert.IsFalse(vaxisPriceGraph == null);
 
         InitGraph(meanPriceGraph, "Changed Profession -test");
         InitGraph(tradeGraph, "Trades");
         InitGraph(inventoryGraph, "Inventory");
+        InitGraph(cashGraph, "Cash");
         //InitPieChart(jobChart);
 
         lastX = 0;//TotalPoints;
@@ -168,6 +161,7 @@ public class ESStreamingGraph : MonoBehaviour
         double newMaxY = 0;
         double newMaxY2 = 0;
         double newMaxY3 = 0;
+        double newMaxY4 = 0;
 
         foreach (var rsc in auctionTracker.book.Values)
         {
@@ -175,20 +169,24 @@ public class ESStreamingGraph : MonoBehaviour
             var values = rsc.avgClearingPrice;
             var values2 = rsc.trades;
             var values3 = rsc.inventory;
+            var values4 = rsc.cash;
             jobChart.DataSource.SetValue(rsc.name, rsc.numAgents);
             
             meanPriceGraph.DataSource.AddPointToCategoryRealtime(rsc.name, lastX, values[^1], SlideTime);
             tradeGraph.DataSource.AddPointToCategoryRealtime(rsc.name, lastX,values2[^1], SlideTime);
             inventoryGraph.DataSource.AddPointToCategoryRealtime(rsc.name, lastX,values3[^1], SlideTime);
+            cashGraph.DataSource.AddPointToCategoryRealtime(rsc.name, lastX,values4[^1], SlideTime);
 
             //newMaxY = Math.Max(newMaxY, rsc.avgClearingPrice.TakeLast(TotalPoints+2).Max());
             newMaxY  = Math.Max(newMaxY,  values.TakeLast(TotalPoints+2).Max());
             newMaxY2 = Math.Max(newMaxY2, values2.TakeLast(TotalPoints+2).Max());
             newMaxY3 = Math.Max(newMaxY3, values3.TakeLast(TotalPoints+2).Max());
+            newMaxY4 = Math.Max(newMaxY4, values4.TakeLast(TotalPoints+2).Max());
         }
         meanPriceGraph.DataSource.VerticalViewSize = nearestBracket(vaxisPriceGraph, newMaxY);
         tradeGraph.DataSource.VerticalViewSize = nearestBracket(vaxisTradeGraph, newMaxY2);
         inventoryGraph.DataSource.VerticalViewSize = nearestBracket(vaxisInventoryGraph, newMaxY3);
+        cashGraph.DataSource.VerticalViewSize = nearestBracket(vaxisCashGraph, newMaxY4);
         lastX += 1;
     }
 
