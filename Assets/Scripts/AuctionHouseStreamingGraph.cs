@@ -25,6 +25,8 @@ public class ESStreamingGraph : MonoBehaviour
     [Required]
     public GraphChart cashGraph;
     [Required]
+    public GraphChart perAgentGraph;
+    [Required]
     public PieChart jobChart;
     public int TotalPoints = 20;
     float lastTime = 0f;
