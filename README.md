@@ -4,7 +4,7 @@ An agent-based economy simulator in Unity3D based on "[Emergent Economies for Ro
 
 ![Screen Capture](screencapture_v01_480p.gif)
 
-**Features:**
+## Features:
 - ~~Agent-based price beliefs that governs price range to in bids.~~
 - Prices are based on cost of inputs + profit margin
 - Commodity dependencies - If food is dependent on wood and there is a forest fire, the supply of wood drops and the price of food sky rockets. Non-farmers go bankrupt as a result.
@@ -12,15 +12,18 @@ An agent-based economy simulator in Unity3D based on "[Emergent Economies for Ro
  - Agents that go bankrupt respawn in a more lucrative profession; corollary: *bankruptcy drives growth*.
  - Taxes - A government collects taxes on profits, uses money to fund respawns or stimulate economy.
  
-**Roadmap:**
-v0.2
+## Roadmap:
+
+### v0.2
  - User interactions
     - Submit bid/asks on the auction
     - Tax wealth/revenue/profit
     - Welfare cash
-v0.3
+ 
+### v0.3
  - death and births of agents - population grows and shrinks with economic conditions
-v0.4
+
+### v0.4
  - Banks - can make loans based on leverage ratio, create credit bubbles.
  - Agent development - agents invest surplus cash to develop new production abilities to become bigger, may develop scaling overheads.
  - Mergers - agents can buy competitions out.
@@ -30,7 +33,7 @@ v0.4
  - Hegemony - win condition
    - gain or lose points based on how other nations react to you (fear, respect, dependence)
 
-**Instructions:**
+## Instructions:
  - Download Unity3D Personal Edition
  - Download this repository
  - Open folder in Unity

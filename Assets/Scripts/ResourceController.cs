@@ -80,7 +80,12 @@ public class ResourceController
 		productionMultiplier = pm;
 	}
 	public string name { get; private set; }
-	public float marketPrice { get; private set; } //market price
+	private float _marketPrice;
+	public float marketPrice
+	{
+		get { return _marketPrice;}
+		private set { _marketPrice = value; } //Mathf.Max(0.01f, value); }
+	} 
 	public string marketPriceString
 	{
 		get { return marketPrice.ToString("c2");  }

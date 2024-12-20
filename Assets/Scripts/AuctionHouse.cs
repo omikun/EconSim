@@ -283,7 +283,7 @@ public class AuctionHouse : MonoBehaviour {
         {
 			if (agent.Alive == false)
 				continue;
-	        Debug.Log("TickAgent() " + agent.name);
+//	        Debug.Log("TickAgent() " + agent.name);
 			if (agent is Government)
 				continue;
 			bool changedProfession = false;
@@ -414,7 +414,8 @@ public class AuctionHouse : MonoBehaviour {
 		string msg = "";
 		foreach (var agent in agents)
 		{
-			msg += agent.name + " makes " + agent.outputName + " has cash " + agent.CashString + "\n";
+			if (agent.outputName == rsc.name)
+				msg += agent.name + " makes " + agent.outputName + " has cash " + agent.CashString + "\n";
 		}
 
 		Debug.Log(auctionTracker.round + ": " + rsc.name + " cash list:\n " + msg);

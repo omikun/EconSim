@@ -104,7 +104,6 @@ public class ESStreamingGraph : MonoBehaviour
             graph.DataSource.ClearCategory(good);
             graph.DataSource.SetCategoryLine(good, template.lineMaterials[index], template.lineThickness, template.lineTiling);
             graph.DataSource.SetCategoryFill(good, null, false);
-            Debug.Log("init line material for " + good);
             index++;
         }
         graph.DataSource.EndBatch(); // finally we call EndBatch , this will cause the GraphChart to redraw itself

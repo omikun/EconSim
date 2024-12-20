@@ -154,6 +154,13 @@ public class EconAgent : MonoBehaviour
 					book[commodity].productionPerBatch, book[commodity].batchRate);
 			}
 
+			if (buildable != "Food")
+			{
+				var commodity = "Food";
+				AddToInventory(commodity, initStock, maxStock, book[commodity].marketPrice,
+					book[commodity].productionPerBatch, book[commodity].batchRate);
+			}
+
 			AddToInventory(buildable, 0, maxStock, book[buildable].marketPrice, book[buildable].productionPerBatch, book[buildable].batchRate);
 			Debug.Log("New " + gameObject.name + " has " + inventory[buildable].Quantity + " " + buildable);
 		}
@@ -214,6 +221,11 @@ public class EconAgent : MonoBehaviour
     protected bool isSellable(string itemName)
     {
 	    return !inRecipe(itemName);
+    }
+
+    protected bool isConsumable(string itemName)
+    {
+	    return inRecipe(itemName) || itemName == "Food";
     }
 
     protected bool inRecipe(string itemName)

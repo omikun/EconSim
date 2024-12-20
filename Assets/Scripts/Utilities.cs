@@ -149,6 +149,27 @@ public class WaitNumRoundsNotTriggered {
     }
 }
 
+public class WatchDogTimer
+{
+    private int count = 0;
+    private int timeOut = 0;
+
+    public WatchDogTimer(int timeOutValue)
+    {
+        timeOut = timeOutValue;
+    }
+
+    public bool IsRunning()
+    {
+        count++;
+        return count <= timeOut;
+    }
+
+    public void Reset()
+    {
+        count = 0;
+    }
+}
 public static class ListUtil {
     public static string ListToString(List<float> list, string format)
     {

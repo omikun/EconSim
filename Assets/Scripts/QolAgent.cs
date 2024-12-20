@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.Assertions;
 using System.Linq;
 
+//medium agent
 public class QolAgent : QoLSimpleAgent
 {
     public override void Init(SimulationConfig cfg, AuctionStats at, string b, float initStock, float maxstock)
@@ -31,9 +32,9 @@ public class QolAgent : QoLSimpleAgent
             float amountConsumed = 0f;
             if (item.name == "Food")
             {
-            if (item.Quantity > 20)
-                amountConsumed = 8;
-            else 
+                if (item.Quantity > 20)
+                    amountConsumed = 6;
+                else 
                 if (item.Quantity > 10)
                     amountConsumed = 3;
                 else if (item.Quantity > 5)

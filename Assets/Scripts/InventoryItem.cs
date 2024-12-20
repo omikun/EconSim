@@ -50,8 +50,15 @@ public class InventoryItem {
     public float OfferQuantity;// { get; private set; }
     public float OfferPrice;// { get; private set; }
     //end gov use
-    public bool canOfferAdditionalThisRound = true;
-    public float offersThisRound = 0;
+    public bool CanOfferAdditionalThisRound = true;
+    private float _offersThisRound = 0;
+    public float offersThisRound
+    {
+	    get { return _offersThisRound; }
+	    set { _offersThisRound = value;
+		    UpdateNiceness = true;
+	    }
+    }
 
     public string offersThisRoundString
     {
@@ -322,31 +329,41 @@ public class InventoryItem {
 		{
 			var quant = agent.inventory[c].Quantity - additionalQuant;
 			numNeeded = agent.book[c].productionPerBatch;
-			var totalDelta = delta * numNeeded;
+			var totalDelta = delta;// * numNeeded;
 			//TODO only sell in increments of totalDelta??
 			if (quant < totalDelta)
 				return 0;
 			return -1 * Mathf.Log10((quant - totalDelta) / quant); 
 		}
-		else if (!recipe.ContainsKey(c)) //not input/output, MUST SELL
+		else if (c != "Food" && !recipe.ContainsKey(c)) //not input/output, MUST SELL
 		{
 			return Mathf.NegativeInfinity;
-		} else
+		} else //buying
 		{
 			var quant = agent.inventory[c].Quantity + additionalQuant;
 
-			numNeeded = recipe[c];
+			numNeeded = (c == "Food") ? 1f : recipe[c];
 			var totalDelta = delta * numNeeded;
-			return Mathf.Log10((quant + totalDelta) / quant); 
+			return Mathf.Log10((quant + totalDelta) / quant / numNeeded); 
 		}
 	}
+
+	private float _niceness = 0;
+	public bool UpdateNiceness = true;
     public float GetNiceness(float delta = 1f)
     {
+	    if (false == UpdateNiceness)
+		    return _niceness;
+	    
 		var marketPrice = agent.book[name].marketPrice;
+		Assert.IsTrue(marketPrice > 0);
 		var utility = Utility(offersThisRound, delta);
 		var niceness = utility / marketPrice;
-		Debug.Log(name + " GetNiceness " + niceness.ToString("f8"));
-		return niceness;
+//		Debug.Log(name + " GetNiceness " + niceness.ToString("f8") + " utility " + utility.ToString("f8") + "	marketPrice " + marketPrice.ToString("c2"));
+		
+		_niceness = niceness;
+		UpdateNiceness = false;
+		return _niceness;
     }
 	public float GetPrice()
 	{
@@ -365,9 +382,9 @@ public class InventoryItem {
 	
     public void UpdateBuyerPriceBelief(String agentName, in Offer trade, in ResourceController rsc)
     {
-        var prevMinPriceBelief = minPriceBelief;
-        var prevMaxPriceBelief = priceBelief;
-
+        if (trade.offerQuantity == 0)
+	        return;
+        
         // supply/demand axis
         // low/high inventory axis
         // overbid/underbid axis
@@ -457,8 +474,9 @@ public class InventoryItem {
     }
 public void UpdateSellerPriceBelief(String agentName, in Offer trade, in ResourceController rsc)
     {
-        var prevMinPriceBelief = minPriceBelief;
-        var prevMaxPriceBelief = priceBelief;
+        if (trade.offerQuantity == 0)
+	        return;
+        
 		//SanePriceBeliefs();
 
 		var meanBeliefPrice = (minPriceBelief + priceBelief) / 2;

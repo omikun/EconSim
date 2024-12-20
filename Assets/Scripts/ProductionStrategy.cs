@@ -19,13 +19,15 @@ public abstract class ProductionStrategy
 		{
 			var numProduceableWithCom = Mathf.Floor(agent.inventory[com].NumProduceable(rsc));
 			numProduceable = Mathf.Min(numProduceableWithCom, numProduceable);
-			// Debug.Log(agent.auctionStats.round + " " + agent.name 
-			// 	+ " can produce " + numProduceable + " " + outputItem.name
-			// 	+ " with " + agent.inventory[com].Quantity + "/" + rsc.recipe[com] + " " + com);
+			Debug.Log(agent.auctionStats.round + " " + agent.name 
+				+ " can produce " + numProduceable + " " + outputItem.name
+				+ " with " + agent.inventory[com].Quantity + "/" + rsc.recipe[com] + " " + com);
 		}
 		float storage = outputItem.Deficit(); //can't produce more than max stock
 		numProduceable = Mathf.Min(numProduceable, storage);
 		numProduceable = Mathf.Min(numProduceable, outputItem.GetProductionRate());
+		Debug.Log(agent.auctionStats.round + " " + agent.name
+		          + " can ultimately produce " + numProduceable + " " + outputItem.name);
 		return numProduceable;
 	}
 

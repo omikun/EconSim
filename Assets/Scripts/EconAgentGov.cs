@@ -9,7 +9,7 @@ using Sirenix.Reflection.Editor;
 using DG.Tweening;
 
 public class Government : EconAgent {
-	public float FoodTarget = 500;
+	public float FoodTarget = 000;
 	public override void Init(SimulationConfig cfg, AuctionStats at, string b, float _initStock, float maxstock) {
 		config = cfg;
 		uid = uid_idx++;
@@ -111,6 +111,7 @@ public class Government : EconAgent {
     public void AbsorbBankruptcy(EconAgent agent)
     {
 		//if (agent.IsBankrupt())
+		if (config.declareBankruptcy)
 		{
 			var transferCash = config.initCash - agent.Cash;
 			

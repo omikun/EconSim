@@ -105,6 +105,8 @@ public class AuctionStats : MonoBehaviour
 	}
 	public void Transfer(EconAgent from, EconAgent to, string kind, float amount)
 	{
+		if (amount == 0)
+			return;
 		transactions[kind].Add(new GenericTransaction(from, to, kind, amount)); //seller transfers
 	}
     public string GetMostProfitableProfession(ref float mostProfit, String exclude_key="invalid")
