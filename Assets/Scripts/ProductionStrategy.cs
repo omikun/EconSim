@@ -12,23 +12,25 @@ public abstract class ProductionStrategy
     }
 	public float NumBatchesProduceable(ResourceController rsc, InventoryItem outputItem)
 	{
-		float numProduceable = float.MaxValue;
+		float numBatches = float.MaxValue;
 		
 		//find max that can be made w/ available stock
 		foreach (var com in rsc.recipe.Keys)
 		{
 			var numProduceableWithCom = Mathf.Floor(agent.inventory[com].NumProduceable(rsc));
-			numProduceable = Mathf.Min(numProduceableWithCom, numProduceable);
+			numBatches = Mathf.Min(numProduceableWithCom, numBatches);
 			Debug.Log(agent.auctionStats.round + " " + agent.name 
-				+ " can produce " + numProduceable + " " + outputItem.name
+				+ " can produce " + numBatches + " batches of " + outputItem.name
 				+ " with " + agent.inventory[com].Quantity + "/" + rsc.recipe[com] + " " + com);
 		}
-		float storage = outputItem.Deficit(); //can't produce more than max stock
-		numProduceable = Mathf.Min(numProduceable, storage);
-		numProduceable = Mathf.Min(numProduceable, outputItem.GetProductionRate());
+		
+	    numBatches = Mathf.Min(outputItem.GetMaxBatchRate(), numBatches);
+	    var realProductionRate = outputItem.GetMaxProductionRate(numBatches);
+	    var realBatchRate = Mathf.Floor(realProductionRate / outputItem.ProductionPerBatch);
+	    
 		Debug.Log(agent.auctionStats.round + " " + agent.name
-		          + " can ultimately produce " + numProduceable + " " + outputItem.name);
-		return numProduceable;
+		          + " can ultimately produce " + realBatchRate + " batches of " + outputItem.name);
+		return realBatchRate;
 	}
 
 	protected internal abstract float CalculateNumProduced(ResourceController rsc, InventoryItem item);
@@ -75,7 +77,7 @@ public class FixedProduction : ProductionStrategy
 	{
 		var numProduced = NumBatchesProduceable(rsc, item);
 		//can only build fixed rate at a time
-		numProduced = Mathf.Clamp(numProduced, 0, item.GetProductionRate());
+		numProduced = Mathf.Clamp(numProduced, 0, item.GetMaxProductionRate());
 		numProduced = Mathf.Floor(numProduced);
 
 		Assert.IsTrue(numProduced >= 0);

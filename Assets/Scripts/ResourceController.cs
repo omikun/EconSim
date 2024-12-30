@@ -4,6 +4,7 @@ using UnityEngine.Assertions;
 using UnityEngine;
 using System.Linq;
 using System;
+using Sirenix.OdinInspector;
 
 public class Recipe : Dictionary<string, float> {}
 public class ResourceController
@@ -95,5 +96,6 @@ public class ResourceController
 	public float batchRate { get; private set; } //num batches per round
 	public float productionMultiplier { get; private set; } //forest fire or rich mineral vein
 	public float resourceAmount { get; private set; } // for fish or finite ore
+	[DictionaryDrawerSettings(IsReadOnly = false, DisplayMode = DictionaryDisplayOptions.OneLine)]
 	public Recipe recipe { get; private set; }
 }

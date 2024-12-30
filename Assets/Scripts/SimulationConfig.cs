@@ -40,6 +40,7 @@ namespace EconSim
 	    Default,
 	    Simple,
 	    Medium,
+	    User,
     }
     public enum AgentProduction
     {

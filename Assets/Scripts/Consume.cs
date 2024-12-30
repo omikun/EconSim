@@ -79,7 +79,7 @@ public class SanityCheckConsumer : Consumer
 			if (dep.Key == com)
 			{
 				var numNeeded = dep.Value;
-				numBids = numNeeded * agent.inventory[agent.Profession].GetProductionRate() * agent.config.sanityCheckTradeVolume ;
+				numBids = numNeeded * agent.inventory[agent.Profession].GetMaxProductionRate() * agent.config.sanityCheckTradeVolume ;
 				break;
 			}
 		}

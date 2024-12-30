@@ -74,7 +74,7 @@ public class InventoryItem {
 	public float priceBelief;
     public float meanCost; 
 	//number of units produced per turn = production * productionRate
-	float productionPerBatch = 1; //num produced per batch
+	public float ProductionPerBatch = 1; //num produced per batch
 	float batchRate = 1; //num produced per batch
     float realProductionRate; //actual after modifiers
     float productionDeRate = 1; //if agent gets hurt/reduced productivity
@@ -93,22 +93,24 @@ public class InventoryItem {
     {
         return Quantity/maxQuantity;
     }
-    int lastRoundComputedProductionRate = -1;
-    public float GetProductionRate(float producingNumBatches = -1)
+
+    public float GetMaxBatchRate()
     {
-	    if (producingNumBatches == -1)
-		    producingNumBatches = batchRate;
-        if (auctionStats.round == lastRoundComputedProductionRate)
-        {
-            return realProductionRate;
-        }
+	    return batchRate;
+    }
+    public float GetMaxProductionRate(float numBatches = -1)
+    {
+	    if (numBatches == -1)
+		    numBatches = batchRate;
+	    
         //derate
-        float rate = productionPerBatch * producingNumBatches * productionDeRate;
+        float rate = ProductionPerBatch * numBatches * productionDeRate;
         //random chance derate
         var chance = productionChance;
         realProductionRate = (UnityEngine.Random.value < chance) ? rate : 0;
+        
+		realProductionRate = Mathf.Min(realProductionRate, Deficit()); //can't produce more than max stock
 
-        lastRoundComputedProductionRate = auctionStats.round;
         return realProductionRate;
     }
 
@@ -173,7 +175,7 @@ public class InventoryItem {
 		priceBelief = _meanPrice;
 		meanPriceThisRound = _meanPrice;
         meanCost = _meanPrice;
-		productionPerBatch = _production;
+		ProductionPerBatch = _production;
 		batchRate = _batchRate;
 	}
 	public void Tick()
@@ -319,7 +321,6 @@ public class InventoryItem {
 		return numBids;
     }
 
-
 	float Utility(float additionalQuant, float delta = 1f)
 	{
 		var c = name;
@@ -344,7 +345,7 @@ public class InventoryItem {
 
 			numNeeded = (c == "Food") ? 1f : recipe[c];
 			var totalDelta = delta * numNeeded;
-			return Mathf.Log10((quant + totalDelta) / quant / numNeeded); 
+			return Mathf.Log10((quant + totalDelta) / quant); //FIXME account for recipe in niceness too
 		}
 	}
 

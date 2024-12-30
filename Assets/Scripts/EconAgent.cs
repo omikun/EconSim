@@ -225,7 +225,7 @@ public class EconAgent : MonoBehaviour
 
     protected bool isConsumable(string itemName)
     {
-	    return inRecipe(itemName) || itemName == "Food";
+	    return inRecipe(itemName) || (outputName != "Food" && itemName == "Food");
     }
 
     protected bool inRecipe(string itemName)

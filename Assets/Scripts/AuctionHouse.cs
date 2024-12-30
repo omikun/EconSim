@@ -11,6 +11,7 @@ using ChartAndGraph;
 using EconSim;
 using Sirenix.Serialization;
 using Sirenix.OdinInspector.Editor.ValueResolvers;
+using UnityEngine.Serialization;
 
 public class AuctionHouse : MonoBehaviour {
 	[Required]
@@ -26,7 +27,7 @@ public class AuctionHouse : MonoBehaviour {
 	// public FiscalPolicy fiscalPolicy;
 
 
-	protected List<EconAgent> agents = new();
+	public List<EconAgent> agents = new();
 	protected bool timeToQuit = false;
     protected OfferTable askTable, bidTable;
 	protected float lastTick;
@@ -85,6 +86,7 @@ public class AuctionHouse : MonoBehaviour {
 		        Assert.IsTrue(false, "Unknown trade resolution");
 		        break;
         }
+		UpdateAgentTable();
 	}
 	void InitGovernment()
 	{
@@ -112,6 +114,9 @@ public class AuctionHouse : MonoBehaviour {
 		} else if (config.agentType == AgentType.Medium)
 		{
 			prefab = (GameObject)Resources.Load("MediumAgent");
+		} else if (config.agentType == AgentType.User)
+		{
+			prefab = (GameObject)Resources.Load("UserAgent");
 		} else
 		{
 			prefab = (GameObject)Resources.Load("Agent");
@@ -158,9 +163,35 @@ public class AuctionHouse : MonoBehaviour {
 	[Button(ButtonSizes.Large), GUIColor(0.4f, 0.8f,1)]
 	public void DoNextRound()
 	{
+		LatchBids();
 		Tick();
 		auctionTracker.nextRound();
 		streamingGraphs.UpdateGraph();
+		UpdateAgentTable();
+	}
+	//latch bid values in AgentTable to agent inventory offers
+	public void LatchBids()
+	{
+		Debug.Log("Latching bids");
+		// var entriesAgent = AgentTable.Zip(agents, (e, a) => new { entry = e, agent = a });
+		// foreach(var ea in entriesAgent)
+		for (int t = 0, a = 0; t < AgentTable.Count && a < agents.Count; )
+		{
+			var agent = agents[a];
+			var entry = AgentTable[t];
+			
+			if (agent is not UserAgent) { a++; continue; }
+			
+			string msg = agent.name + " offering ";
+			foreach (var c in entry.Bids)
+			{
+				agent.inventory[c.name].offersThisRound = c.quantity;
+				msg += c.name + ": " + c.quantity + " ";
+			}
+			Debug.Log(msg);
+			a++;
+			t++;
+		}
 	}
 	[HideIf("forestFire")]
 	[Button(ButtonSizes.Large), GUIColor(0.4f, 0.8f,1)]
@@ -204,7 +235,17 @@ public class AuctionHouse : MonoBehaviour {
 		((Government)gov).InsertBid(bidCom, bidQuant, 0f);
 	}
 	bool forestFire = false;
+
+	[FormerlySerializedAs("AlwaysExpandedTable")] [TableList(AlwaysExpanded = true, DrawScrollView = false)]
+	public List<AgentEntry> AgentTable = new List<AgentEntry>();
+
 	
+	[HorizontalGroup("InsertEntry")]
+	[Button]
+	public void InsertEntry() 
+	{
+		AgentTable.Add(new AgentEntry());
+	}
 	void Update () {
 		if (auctionTracker.round > config.maxRounds || timeToQuit)
 		{
@@ -272,6 +313,21 @@ public class AuctionHouse : MonoBehaviour {
 		auctionTracker.ClearStats();
 		TickAgent();
 		QuitIf();
+		//print agent to inspector
+	}
+
+	[Button]
+	public void UpdateAgentTable()
+	{
+		AgentTable.Clear();
+		foreach (var agent in agents)
+		{
+			if (agent is Government)
+				continue;
+			if (agent is not UserAgent)
+				continue;
+			AgentTable.Add(new (agent));
+		}
 	}
 	protected void TickAgent()
 	{

@@ -113,7 +113,7 @@ public class Player : MonoBehaviour
     {
         foreach (var key in comControls.Keys)
         {
-            Tick(key);
+            //Tick(key);
         }
     }
 }
