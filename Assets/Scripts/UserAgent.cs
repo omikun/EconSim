@@ -13,6 +13,10 @@ using UnityEngine.UIElements;
 
 public class UserAgent : QolAgent
 {
+    public void UserTriggeredPopulateOffersFromInventory()
+    {
+        base.PopulateOffersFromInventory();
+    }
     protected override void PopulateOffersFromInventory()
     {
         foreach (var (com, item) in inventory)

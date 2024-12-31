@@ -239,13 +239,6 @@ public class AuctionHouse : MonoBehaviour {
 	[FormerlySerializedAs("AlwaysExpandedTable")] [TableList(AlwaysExpanded = true, DrawScrollView = false)]
 	public List<AgentEntry> AgentTable = new List<AgentEntry>();
 
-	
-	[HorizontalGroup("InsertEntry")]
-	[Button]
-	public void InsertEntry() 
-	{
-		AgentTable.Add(new AgentEntry());
-	}
 	void Update () {
 		if (auctionTracker.round > config.maxRounds || timeToQuit)
 		{
@@ -326,6 +319,7 @@ public class AuctionHouse : MonoBehaviour {
 				continue;
 			if (agent is not UserAgent)
 				continue;
+			((UserAgent)agent).UserTriggeredPopulateOffersFromInventory();
 			AgentTable.Add(new (agent));
 		}
 	}

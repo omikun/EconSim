@@ -60,9 +60,7 @@ public class AgentEntry
 	{
 		foreach (var item in agent.inventory.Values)
 		{
-			item.offersThisRound = 0;
-			item.UpdateNiceness = true;
-			item.CanOfferAdditionalThisRound = true;
+			// item.offersThisRound = 0;
 		}
 		
 		Agent = agent.name + "-" + agent.outputName;
@@ -70,19 +68,19 @@ public class AgentEntry
 		var recipe = agent.book[agent.outputName].recipe;
 		if (agent is Government)
 			return;
-		foreach (var (com, numDepends) in recipe)
+		
+		//all inventory
+		foreach (var (com, numDepends) in agent.inventory)
 		{
 			var item = agent.inventory[com];
 			Commodities.Add(new (com, item.Quantity, item.GetPrice()));
 		}
 
-		var food = agent.inventory["Food"];
-		Commodities.Add(new (food.name, food.Quantity, food.GetPrice()));
-
+		//bids (inputs + food if output is not food)
 		foreach (var (com, numDepends) in recipe)
 		{
 			var item = agent.inventory[com];
-			Bids.Add(new (com, 0f, item.GetPrice()));
+			Bids.Add(new (com, item.offersThisRound, item.GetPrice()));
 		}
 		if (agent.outputName != "Food")
 		{
