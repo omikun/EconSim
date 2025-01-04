@@ -17,7 +17,7 @@ public class AuctionHouse : MonoBehaviour {
 	[Required]
 	public InfoDisplay info;
 	public SimulationConfig config;
-	public AuctionStats auctionTracker;
+	[FormerlySerializedAs("auctionTracker")] public AuctionStats district;
 
 	[ShowInInspector]
 	FiscalPolicy fiscalPolicy;
@@ -33,17 +33,15 @@ public class AuctionHouse : MonoBehaviour {
 	protected float lastTick;
 	ESStreamingGraph streamingGraphs;
 	public Government gov { get; protected set; }
-	float moneyExchangedThisRound = 0;
-	float goodsExchangedThisRound = 0;
 	protected Logger logger;
 	private TradeResolution tradeResolver;
 
 	void Awake()
 	{
-		auctionTracker = GetComponent<AuctionStats>();
+		district = GetComponent<AuctionStats>();
 		config = GetComponent<SimulationConfig>();
-		auctionTracker.config = config;
-		auctionTracker.Init();
+		district.config = config;
+		district.Init();
 	}
 	void Start()
 	{
@@ -64,23 +62,23 @@ public class AuctionHouse : MonoBehaviour {
 		
 		progressivePolicy.gov = gov;
 		progressivePolicy.config = config;
-		progressivePolicy.auctionStats = auctionTracker;
+		progressivePolicy.auctionStats = district;
 		fiscalPolicy = progressivePolicy;
 
-		var com = auctionTracker.book;
+		var com = district.book;
 		askTable = new OfferTable(com);
         bidTable = new OfferTable(com);
 
         switch (config.tradeResolution)
         {
 	        case TradeResolutionType.XEven:
-		        tradeResolver = new XEvenResolution(auctionTracker, fiscalPolicy, askTable, bidTable);
+		        tradeResolver = new XEvenResolution(district, fiscalPolicy, askTable, bidTable);
 		        break;
 	        case TradeResolutionType.OmiType:
-		        tradeResolver = new OmisTradeResolution(auctionTracker, fiscalPolicy, askTable, bidTable);
+		        tradeResolver = new OmisTradeResolution(district, fiscalPolicy, askTable, bidTable);
 		        break;
 	        case TradeResolutionType.SimonType:
-		        tradeResolver = new SimonTradeResolution(auctionTracker, fiscalPolicy, askTable, bidTable);
+		        tradeResolver = new SimonTradeResolution(district, fiscalPolicy, askTable, bidTable);
 		        break;
 	        default:
 		        Assert.IsTrue(false, "Unknown trade resolution");
@@ -101,7 +99,7 @@ public class AuctionHouse : MonoBehaviour {
 		float initStock = 10f;
 
 		var maxStock = Mathf.Max(initStock, 200);
-        gov.Init(config, auctionTracker, buildable, initStock, maxStock);
+        gov.Init(config, district, buildable, initStock, maxStock);
         
 		agents.Add(gov);
 	}
@@ -151,7 +149,7 @@ public class AuctionHouse : MonoBehaviour {
 		// This may cause uneven maxStock between agents
 		var maxStock = Mathf.Max(initStock, config.maxStock);
 
-        agent.Init(config, auctionTracker, buildable, initStock, maxStock);
+        agent.Init(config, district, buildable, initStock, maxStock);
 	}
 
 	void OnApplicationQuit() 
@@ -165,7 +163,7 @@ public class AuctionHouse : MonoBehaviour {
 	{
 		LatchBids();
 		Tick();
-		auctionTracker.nextRound();
+		district.nextRound();
 		streamingGraphs.UpdateGraph();
 		UpdateAgentTable();
 	}
@@ -199,7 +197,7 @@ public class AuctionHouse : MonoBehaviour {
 	{
 		//TODO rapid decline (*.6 every round) for 2-5 rounds, then regrow at 1.1 until reaches back to 1 multiplier
 		//do this in a new class
-		var wood = auctionTracker.book["Wood"];
+		var wood = district.book["Wood"];
 		var weight = wood.productionMultiplier;
 		weight = .2f;
 
@@ -211,7 +209,7 @@ public class AuctionHouse : MonoBehaviour {
 	[Button(ButtonSizes.Large), GUIColor(1, 0.4f, 0.4f)]
 	public void StopForestFire()
 	{
-		var wood = auctionTracker.book["Wood"];
+		var wood = district.book["Wood"];
 		var weight = wood.productionMultiplier;
 		weight = 1f;
 		wood.ChangeProductionMultiplier(weight);
@@ -240,7 +238,7 @@ public class AuctionHouse : MonoBehaviour {
 	public List<AgentEntry> AgentTable = new List<AgentEntry>();
 
 	void Update () {
-		if (auctionTracker.round > config.maxRounds || timeToQuit)
+		if (district.round > config.maxRounds || timeToQuit)
 		{
 			logger.CloseWriteFile();
 #if UNITY_EDITOR
@@ -256,7 +254,7 @@ public class AuctionHouse : MonoBehaviour {
 
 		if (config.autoNextRound && Time.time - lastTick > config.tickInterval)
 		{
-			Debug.Log("v1.4 Round: " + auctionTracker.round);
+			Debug.Log("v1.4 Round: " + district.round);
 			// if (auctionTracker.round == 100)
 			// 	ForestFire();
 			// if (auctionTracker.round == 200)
@@ -271,7 +269,7 @@ public class AuctionHouse : MonoBehaviour {
 		var totalCash = agents.Sum(x => x.Cash);
 		Debug.Log("Auction House tick: Total cash: " + totalCash);
 
-		var book = auctionTracker.book;
+		var book = district.book;
 		foreach (var agent in agents)
 		{
 			if (agent.Alive == false)
@@ -287,10 +285,9 @@ public class AuctionHouse : MonoBehaviour {
 		//resolve prices
 		foreach (var entry in book)
 		{
-			moneyExchangedThisRound = 0;
-			goodsExchangedThisRound = 0;
-			tradeResolver.ResolveOffers(entry.Value, ref moneyExchangedThisRound, ref goodsExchangedThisRound);
-			RecordStats(entry.Value);
+			TradeStats stats = new();
+			tradeResolver.ResolveOffers(entry.Value, ref stats);
+			RecordStats(entry.Value, stats);
 			Debug.Log(entry.Key + ": have " + entry.Value.trades[^1] 
 				+ " at price: " + entry.Value.marketPrice.ToString("c2"));
 		}
@@ -303,7 +300,7 @@ public class AuctionHouse : MonoBehaviour {
 			agent.CalculateProfit();
 		}
 		logAgentsStats();
-		auctionTracker.ClearStats();
+		district.ClearStats();
 		TickAgent();
 		QuitIf();
 		//print agent to inspector
@@ -325,10 +322,10 @@ public class AuctionHouse : MonoBehaviour {
 	}
 	protected void TickAgent()
 	{
-		var book = auctionTracker.book;
+		var book = district.book;
 		var approval = 0f;
 		
-		Debug.Log(auctionTracker.round + " gov outputs: " + gov.outputName);
+		Debug.Log(district.round + " gov outputs: " + gov.outputName);
         foreach (var agent in agents)
         {
 			if (agent.Alive == false)
@@ -379,14 +376,14 @@ public class AuctionHouse : MonoBehaviour {
 		{
 			rsc.happiness /= rsc.numAgents;
 			rsc.gdp = rsc.trades[^1] * rsc.marketPrice;
-			auctionTracker.gdp += rsc.gdp;
+			district.gdp += rsc.gdp;
 
-			auctionTracker.numBankrupted += rsc.numBankrupted;
-			auctionTracker.numStarving += rsc.numStarving;
-			auctionTracker.numNoInput += rsc.numNoInput;
-			auctionTracker.numNegProfit += rsc.numNegProfit;
+			district.numBankrupted += rsc.numBankrupted;
+			district.numStarving += rsc.numStarving;
+			district.numNoInput += rsc.numNoInput;
+			district.numNegProfit += rsc.numNegProfit;
 			rsc.numChangedProfession = (int)rsc.changedProfession[^1];
-			auctionTracker.numChangedProfession += rsc.numChangedProfession;
+			district.numChangedProfession += rsc.numChangedProfession;
 
 			var prevPrice = rsc.avgClearingPrice[^2];
 			var currPrice = rsc.avgClearingPrice[^1];
@@ -396,19 +393,19 @@ public class AuctionHouse : MonoBehaviour {
 		}
 
 		inflation /= 3f;//(float)book.Count;
-		auctionTracker.inflation = (!float.IsNaN(inflation) && !float.IsInfinity(inflation)) ? inflation : 0;
-		auctionTracker.happiness = approval / agents.Count;
-		auctionTracker.approval = approval / agents.Count;
-		auctionTracker.gini = GetGini(GetWealthOfAgents());
+		district.inflation = (!float.IsNaN(inflation) && !float.IsInfinity(inflation)) ? inflation : 0;
+		district.happiness = approval / agents.Count;
+		district.approval = approval / agents.Count;
+		district.gini = GetGini(GetWealthOfAgents());
 	}
 	void PrintAuctionStats()
 	{
 		if (!config.EnableLog)
 			return;
-		var header = auctionTracker.round + ", auction, none, none, ";
+		var header = district.round + ", auction, none, none, ";
 		var msg = header + "irs, " + gov.Cash + ", n/a\n";
 		msg += header + "taxed, " + fiscalPolicy.taxed + ", n/a\n";
-		msg += auctionTracker.GetLog();
+		msg += district.GetLog();
 		msg += info.GetLog(header);
 
 		logger.PrintToFile(msg);
@@ -418,15 +415,15 @@ public class AuctionHouse : MonoBehaviour {
 	{
 		if (!config.EnableLog)
 			return;
-		string header = auctionTracker.round + ", auction, none, " + c + ", ";
+		string header = district.round + ", auction, none, " + c + ", ";
 		string msg = header + "bid, " + buy + ", n/a\n";
 		msg += header + "ask, " + sell + ", n/a\n";
-		msg += header + "avgAskPrice, " + auctionTracker.book[c].avgAskPrice[^1] + ", n/a\n";
-		msg += header + "avgBidPrice, " + auctionTracker.book[c].avgBidPrice[^1] + ", n/a\n";
+		msg += header + "avgAskPrice, " + district.book[c].avgAskPrice[^1] + ", n/a\n";
+		msg += header + "avgBidPrice, " + district.book[c].avgBidPrice[^1] + ", n/a\n";
 
 		logger.PrintToFile(msg);
 	}
-	protected void RecordStats(ResourceController rsc)
+	protected void RecordStats(ResourceController rsc, TradeStats stats)
 	{
 		var asks = askTable[rsc.name];
 		var bids = bidTable[rsc.name];
@@ -446,14 +443,16 @@ public class AuctionHouse : MonoBehaviour {
 		var avgBidPrice = (quantityToBuy == 0) ? 0 : bids.Sum((x) => x.offerPrice * x.offerQuantity) / quantityToBuy;
 		rsc.avgBidPrice.Add(avgBidPrice);
 
-		var averagePrice = (goodsExchangedThisRound == 0) ? 0 : moneyExchangedThisRound / goodsExchangedThisRound;
+		var averagePrice = (stats.goodsExchangedThisRound == 0) ? 0 : stats.moneyExchangedThisRound / stats.goodsExchangedThisRound;
 
-		Debug.Log(auctionTracker.round + " " + rsc.name + " avgprice: " + averagePrice.ToString("c2") + " goods exchanged: " + goodsExchangedThisRound.ToString("n2") + " money exchanged: " + moneyExchangedThisRound.ToString("c2"));
+		Debug.Log(district.round + " " + rsc.name + " avgprice: " + averagePrice.ToString("c2") + " goods exchanged: " + stats.goodsExchangedThisRound.ToString("n2") + " money exchanged: " + stats.moneyExchangedThisRound.ToString("c2"));
 		Assert.IsTrue(averagePrice >= 0f);
 		rsc.avgClearingPrice.Add(averagePrice);
-		rsc.trades.Add(goodsExchangedThisRound);
+		rsc.maxClearingPrice.Add(stats.maxClearingPrice);
+		rsc.minClearingPrice.Add(stats.minClearingPrice);
+		rsc.trades.Add(stats.goodsExchangedThisRound);
 		var marketPrice = averagePrice;
-		if (goodsExchangedThisRound == 0)
+		if (stats.goodsExchangedThisRound == 0)
 			marketPrice = rsc.marketPrice;
 		rsc.Update(marketPrice, agentDemandRatio);
 
@@ -468,7 +467,7 @@ public class AuctionHouse : MonoBehaviour {
 				msg += agent.name + " makes " + agent.outputName + " has cash " + agent.CashString + "\n";
 		}
 
-		Debug.Log(auctionTracker.round + ": " + rsc.name + " cash list:\n " + msg);
+		Debug.Log(district.round + ": " + rsc.name + " cash list:\n " + msg);
 		rsc.cash.Add(totalCash);
 		
 		//update price beliefs if still a thing
@@ -476,7 +475,7 @@ public class AuctionHouse : MonoBehaviour {
 		bids.Clear();
 
 		PrintAuctionStats(rsc.name, quantityToBuy, quantityToSell);
-		Debug.Log(auctionTracker.round + ": " + rsc.name + ": " + goodsExchangedThisRound + " traded at average price of " + averagePrice.ToString("c2"));
+		Debug.Log(district.round + ": " + rsc.name + ": " + stats.goodsExchangedThisRound + " traded at average price of " + averagePrice.ToString("c2"));
 	}
 
 	// TODO decouple transfer of commodity with transfer of money
@@ -497,7 +496,7 @@ public class AuctionHouse : MonoBehaviour {
 	protected void logAgentsStats() {
 		if (!config.EnableLog)
 			return;
-		string header = auctionTracker.round + ", ";
+		string header = district.round + ", ";
 		string msg = "";
 		foreach (var agent in agents)
 		{
@@ -511,11 +510,11 @@ public class AuctionHouse : MonoBehaviour {
 		{
 			return;
 		}
-		foreach (var entry in auctionTracker.book)
+		foreach (var entry in district.book)
 		{
 			var commodity = entry.Key;
 			var tradeVolume = entry.Value.trades.LastSum(config.numRoundsNoTrade);
-			if (auctionTracker.round > config.numRoundsNoTrade && tradeVolume == 0)
+			if (district.round > config.numRoundsNoTrade && tradeVolume == 0)
 			{
 				Debug.Log("quitting!! last " + config.numRoundsNoTrade + " round average " + commodity + " was : " + tradeVolume);
 				timeToQuit = true;
@@ -536,7 +535,7 @@ public class AuctionHouse : MonoBehaviour {
         // string msg = ListUtil.ListToString(cashList, "c2");
         // Debug.Log("cash: " + msg);
         int n = values.Count;
-        if (n == 0) return auctionTracker.gini;
+        if (n == 0) return district.gini;
 
         float totalWealth = values.Sum();
         Assert.IsTrue(totalWealth != 0);

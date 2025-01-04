@@ -49,6 +49,14 @@ class TakeAverage : TradePriceResolver
 		return (ask.offerPrice + bid.offerPrice) / 2f;
 	}
 }
+
+public class TradeStats
+{
+	public float moneyExchangedThisRound = 0;
+	public float goodsExchangedThisRound = 0;
+	public float minClearingPrice = float.MaxValue;
+	public float maxClearingPrice = 0;
+}
 public abstract class TradeResolution
 {
     protected OfferTable askTable, bidTable;
@@ -100,7 +108,7 @@ public abstract class TradeResolution
     }
 
     protected abstract LoopState EndTrades(Offer ask, Offer bid);
-    public virtual void ResolveOffers(ResourceController rsc, ref float moneyExchangedThisRound, ref float goodsExchangedThisRound)
+    public virtual void ResolveOffers(ResourceController rsc, ref TradeStats stats)
 	{
 		var asks = askTable[rsc.name];
 		var bids = bidTable[rsc.name];
@@ -139,6 +147,8 @@ public abstract class TradeResolution
     
 			//var clearingPrice = ResolveClearingPrice(ask, bid);
 			var clearingPrice = tradePriceResolver.ResolvePrice(ask, bid);
+			stats.maxClearingPrice = Mathf.Max(stats.maxClearingPrice, clearingPrice);
+			stats.minClearingPrice = Mathf.Min(stats.minClearingPrice, clearingPrice);
 			var tradeQuantity = Mathf.Min(bid.remainingQuantity, ask.remainingQuantity);
 			//var tradeQuantity = bid.UpdateOffer((ask.remainingQuantity));
 			if (tradeQuantity <= 0)
@@ -150,8 +160,8 @@ public abstract class TradeResolution
 			var boughtQuantity = Trade(rsc, clearingPrice, tradeQuantity, ref bid, ask);
 			Assert.IsTrue(boughtQuantity >= 0);
     
-			moneyExchangedThisRound += clearingPrice * boughtQuantity;
-			goodsExchangedThisRound += boughtQuantity;
+			stats.moneyExchangedThisRound += clearingPrice * boughtQuantity;
+			stats.goodsExchangedThisRound += boughtQuantity;
     
 				// Debug.Log("summary trading " + goodsExchangedThisRound + " goods exchanged; bought " + boughtQuantity + " : " + rsc.name + " " + ask.agent.name + " ask: " + ask.offerQuantity.ToString("n2") + " for " + ask.offerPrice.ToString("c2"));
 				// Debug.Log("summary trading " + goodsExchangedThisRound + " goods exchanged: bought " + boughtQuantity + " : " + rsc.name + " " + bid.agent.name + " bid: " + bid.offerQuantity.ToString("n2") + " for " + bid.offerPrice.ToString("c2"));
@@ -170,17 +180,17 @@ public abstract class TradeResolution
 
 		foreach (var bid in bids)
 			bid.agent.UpdateBuyerPriceBelief(bid, rsc);
-		Assert.IsFalse(goodsExchangedThisRound < 0);
+		Assert.IsFalse(stats.goodsExchangedThisRound < 0);
 		
 		//at end of auction, if someone bid and someone else asked, goods exchanged should not be zero??
 		var numBids = bids.Sum(item => item.offerQuantity);
 		var numAsks = asks.Sum(item => item.offerQuantity);
-		if (numBids > 0 && numAsks > 0 && goodsExchangedThisRound == 0)
+		if (numBids > 0 && numAsks > 0 && stats.goodsExchangedThisRound == 0)
 		{
 			foreach (var ask in asks)
-				Debug.Log("summary " + goodsExchangedThisRound + " goods exchanged: " + rsc.name + " " + ask.agent.name + " ask: " + ask.offerQuantity.ToString("n2") + " for " + ask.offerPrice.ToString("c2"));
+				Debug.Log("summary " + stats.goodsExchangedThisRound + " goods exchanged: " + rsc.name + " " + ask.agent.name + " ask: " + ask.offerQuantity.ToString("n2") + " for " + ask.offerPrice.ToString("c2"));
 			foreach (var bid in bids)
-				Debug.Log("summary " + goodsExchangedThisRound + " goods exchanged: " + rsc.name + " " + bid.agent.name + " bid: " + bid.offerQuantity.ToString("n2") + " for " + bid.offerPrice.ToString("c2"));
+				Debug.Log("summary " + stats.goodsExchangedThisRound + " goods exchanged: " + rsc.name + " " + bid.agent.name + " bid: " + bid.offerQuantity.ToString("n2") + " for " + bid.offerPrice.ToString("c2"));
 		}
 	}
 

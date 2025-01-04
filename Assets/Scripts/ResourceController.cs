@@ -17,6 +17,8 @@ public class ResourceController
  	public ESList avgBidPrice = new();
  	public ESList avgAskPrice = new();
  	public ESList avgClearingPrice = new();
+ 	public ESList minClearingPrice = new();
+ 	public ESList maxClearingPrice = new();
  	public ESList trades = new();
  	public ESList inventory = new();
  	public ESList cash = new();

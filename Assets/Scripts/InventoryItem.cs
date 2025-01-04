@@ -385,10 +385,6 @@ public class InventoryItem {
     {
         if (trade.offerQuantity == 0)
 	        return;
-        
-        // supply/demand axis
-        // low/high inventory axis
-        // overbid/underbid axis
 
         // implementation following paper
 		var meanBeliefPrice = (minPriceBelief + priceBelief) / 2;
