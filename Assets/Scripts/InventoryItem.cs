@@ -75,6 +75,7 @@ public class InventoryItem {
     public float meanCost; 
 	//number of units produced per turn = production * productionRate
 	public float ProductionPerBatch = 1; //num produced per batch
+	public float BaseProduction = 0; //num produced per batch
 	float batchRate = 1; //num produced per batch
     float realProductionRate; //actual after modifiers
     float productionDeRate = 1; //if agent gets hurt/reduced productivity
@@ -102,7 +103,9 @@ public class InventoryItem {
     {
 	    if (numBatches == -1)
 		    numBatches = batchRate;
-	    
+
+	    if (numBatches == 0)
+		    return BaseProduction;
         //derate
         float rate = ProductionPerBatch * numBatches * productionDeRate;
         //random chance derate
@@ -160,9 +163,13 @@ public class InventoryItem {
         return ret;
     }
 
-	public InventoryItem (EconAgent a, AuctionStats at, string _name, float _quantity=1, float _maxQuantity=10, 
-					float _meanPrice=1, float _production=1, float _batchRate=1)
+	public InventoryItem (EconAgent a, AuctionStats at, string _name, float _quantity, float _maxQuantity, 
+					ResourceController rsc)
 	{
+		var _meanPrice = rsc.marketPrice;
+		var _production = rsc.productionPerBatch;
+		var _baseProduction = rsc.baseProduction;
+		var _batchRate = rsc.batchRate;
 		agent = a;
         auctionStats = at;
 		buyHistory = new TransactionHistory();
@@ -176,6 +183,7 @@ public class InventoryItem {
 		meanPriceThisRound = _meanPrice;
         meanCost = _meanPrice;
 		ProductionPerBatch = _production;
+		BaseProduction = _baseProduction;
 		batchRate = _batchRate;
 	}
 	public void Tick()
@@ -387,25 +395,64 @@ public class InventoryItem {
 	        return;
 
         // implementation following paper
+        int history = 10;
 		var meanBeliefPrice = (minPriceBelief + priceBelief) / 2;
 		var deltaMean = Mathf.Abs(meanBeliefPrice - trade.clearingPrice); //TODO or use auction house mean price?
         var quantityBought = trade.offerQuantity - trade.remainingQuantity;
-        var historicalMeanPrice = rsc.avgClearingPrice.LastAverage(10);
+        var historicalMeanPrice = rsc.avgClearingPrice.LastAverage(history);
+        var minPrice = rsc.minClearingPrice.Last();
+        var maxPrice = rsc.maxClearingPrice.Last();
+        var supply = rsc.asks.Last();
+        var demand = rsc.bids.Last();
+        var urgency = Quantity / maxQuantity; //if 5 remaining, 
+        
         var displacement = deltaMean / historicalMeanPrice;
         Assert.IsTrue(historicalMeanPrice >= 0);
         string reason_msg = "none";
 
         var prevPriceBelief = priceBelief; 
-        if (quantityBought < trade.offerQuantity) //didn't buy it all
+        float boughtRatio = quantityBought / trade.offerQuantity;
+        float sdRatio = supply / demand;
+        //if unable to fulfill full bid, 
+			//if supply < demand
+			//use market average or increase price belief
+			//(lerp using how buy pressure if market is higher?)
+			//if demand > supply
+				//do 1-10% more than market price (depending on buy pressure and cash)
+		//if fulfill all bids
+			//if supply < demand
+				//do nothing?
+				//or raise price 0-1% depending on buy pressure
+			//if supply > demand
+				//drop price 5-10% depending on demand ratio
+
+
+	    bool moreDemand = (sdRatio < 0.8f); 
+	    bool equalDemand = (sdRatio <= 1.2f); 
+	    bool moreSupply = sdRatio > 1.2f;
+	    
+	    //how desperate?o
+			
+        if (boughtRatio < 0.8f) //didn't buy it all
         {
 	        var delta = 1 + agent.config.sellPriceDelta;
+            if (moreDemand)  delta = 1.1f; 
+            if (equalDemand) delta = 1.01f;
+            if (moreSupply)  delta = 1f;
+            
+            float minItems = 3; //minimum items before price belief explodes
+            float scaler = minItems - Quantity;
+            if (scaler > 0 && name == "Food")
+	            delta = Mathf.Pow(scaler, scaler);
 	        priceBelief *= delta;
 	        minPriceBelief *= delta;
-            float minItems = 3;
         }
-        else
+        else //bought all or bought enough
         {
 	        var delta = 1 - agent.config.sellPriceDelta;
+            if (moreDemand)  delta = 1.0f; 
+            if (equalDemand) delta = 0.99f;
+            if (moreSupply)  delta = 0.95f;
 	        priceBelief *= delta;
 	        minPriceBelief *= delta;
         }

@@ -263,7 +263,7 @@ public class AuctionHouse : MonoBehaviour {
 			lastTick = Time.time;
 		}
 	}
-	void Tick()
+	public void Tick()
 	{
 		//check total cash held by agents and government
 		var totalCash = agents.Sum(x => x.Cash);

@@ -133,24 +133,15 @@ public abstract class TradeResolution
 			var ask = asks[askIdx];
 			var bid = bids[bidIdx];
 
-				// Debug.Log("starting summary trading " + goodsExchangedThisRound + " goods exchanged : " + rsc.name + " " + ask.agent.name + " ask: " + ask.offerQuantity.ToString("n2") + " for " + ask.offerPrice.ToString("c2"));
-				// Debug.Log("starting summary trading " + goodsExchangedThisRound + " goods exchanged: " + rsc.name + " " + bid.agent.name + " bid: " + bid.offerQuantity.ToString("n2") + " for " + bid.offerPrice.ToString("c2"));
 			var cond = EndTrades(ask, bid);
-			if (cond == LoopState.Break)
-			{
-				// Debug.Log("BREAKING summary trading " + goodsExchangedThisRound + " goods exchanged : " + rsc.name + " " + ask.agent.name + " ask: " + ask.offerQuantity.ToString("n2") + " for " + ask.offerPrice.ToString("c2"));
-				// Debug.Log("BREAKING summary trading " + goodsExchangedThisRound + " goods exchanged: " + rsc.name + " " + bid.agent.name + " bid: " + bid.offerQuantity.ToString("n2") + " for " + bid.offerPrice.ToString("c2"));
-				break;
-			}
+			if (cond == LoopState.Break) { break; }
 			else if (cond == LoopState.ContinueAsks) { askIdx++; continue; }
 			else if (cond == LoopState.ContinueBids) { bidIdx++; continue; }
     
-			//var clearingPrice = ResolveClearingPrice(ask, bid);
 			var clearingPrice = tradePriceResolver.ResolvePrice(ask, bid);
 			stats.maxClearingPrice = Mathf.Max(stats.maxClearingPrice, clearingPrice);
 			stats.minClearingPrice = Mathf.Min(stats.minClearingPrice, clearingPrice);
 			var tradeQuantity = Mathf.Min(bid.remainingQuantity, ask.remainingQuantity);
-			//var tradeQuantity = bid.UpdateOffer((ask.remainingQuantity));
 			if (tradeQuantity <= 0)
 				Assert.IsTrue(tradeQuantity > 0);
 			Assert.IsTrue(clearingPrice > 0);
@@ -163,8 +154,6 @@ public abstract class TradeResolution
 			stats.moneyExchangedThisRound += clearingPrice * boughtQuantity;
 			stats.goodsExchangedThisRound += boughtQuantity;
     
-				// Debug.Log("summary trading " + goodsExchangedThisRound + " goods exchanged; bought " + boughtQuantity + " : " + rsc.name + " " + ask.agent.name + " ask: " + ask.offerQuantity.ToString("n2") + " for " + ask.offerPrice.ToString("c2"));
-				// Debug.Log("summary trading " + goodsExchangedThisRound + " goods exchanged: bought " + boughtQuantity + " : " + rsc.name + " " + bid.agent.name + " bid: " + bid.offerQuantity.ToString("n2") + " for " + bid.offerPrice.ToString("c2"));
 			ask.Accepted(clearingPrice, boughtQuantity);
 			bid.Accepted(clearingPrice, boughtQuantity);
     
@@ -221,7 +210,7 @@ public abstract class TradeResolution
 		
 		bid.agent.Buy(rsc.name, tradeQuantity, clearingPrice);
 		ask.agent.Sell(rsc.name, tradeQuantity, clearingPrice);
-		fiscalPolicy.AddSalesTax(rsc.name, tradeQuantity, clearingPrice, bid.agent);
+		fiscalPolicy.CollectSalesTax(rsc.name, tradeQuantity, clearingPrice, bid.agent);
 
 		Debug.Log("Trade(), " + auctionTracker.round + ", " + ask.agent.name + ", " + bid.agent.name + ", " + 
 			rsc.name + ", " + tradeQuantity.ToString("n2") + ", " + clearingPrice.ToString("c2") +

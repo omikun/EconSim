@@ -47,10 +47,11 @@ public class ResourceController
         avgPrice = avgClearingPrice.Skip(skip).Average();
         return avgPrice;
 	}
-	public ResourceController(string n, float p, float br, float pm, float sp,Recipe r)
+	public ResourceController(string n, float p, float bp, float br, float pm, float sp,Recipe r)
 	{
 		name = n;
 		productionPerBatch = p;
+		baseProduction = bp;
 		batchRate = br;
 		productionMultiplier = pm;
 		setPrice = sp; //why can't setPrice and price be the same thing?
@@ -68,6 +69,8 @@ public class ResourceController
 		avgAskPrice.Add(1);
 		avgBidPrice.Add(1);
 		avgClearingPrice.Add(1);
+		minClearingPrice.Add(1);
+		maxClearingPrice.Add(1);
 		profits.Add(1);
 		bankrupted.Add(1);
 		starving.Add(1);
@@ -95,6 +98,7 @@ public class ResourceController
 	}
 	public float demand { get; private set; }
 	public float productionPerBatch { get; private set; } //base line production is productionPerBatch * batchRate
+	public float baseProduction { get; private set; } //min production if no inputs
 	public float batchRate { get; private set; } //num batches per round
 	public float productionMultiplier { get; private set; } //forest fire or rich mineral vein
 	public float resourceAmount { get; private set; } // for fish or finite ore

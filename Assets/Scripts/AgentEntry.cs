@@ -9,6 +9,7 @@ using UnityEngine.Rendering;
 using Sirenix.OdinInspector;
 using ChartAndGraph;
 using EconSim;
+using Michsky.MUIP;
 using Sirenix.Serialization;
 using Sirenix.OdinInspector.Editor.ValueResolvers;
 using UnityEngine.Serialization;
@@ -38,8 +39,11 @@ public class AgentEntry
 	[TableColumnWidth(50), VerticalGroup("Agent"), HideLabel, LabelWidth(42), ReadOnly]
 	public string Agent;
 
-	[VerticalGroup("Cash"), HideLabel, LabelWidth(30), ReadOnly]
+	[VerticalGroup("Stats"), LabelWidth(30), ReadOnly]
 	public float Cash;
+
+	[VerticalGroup("Stats"), LabelWidth(80), ReadOnly]
+	public int DaysStarving;
 	
 	[VerticalGroup("Inventory"), ReadOnly, HideLabel]
 	[InlineProperty]
@@ -65,6 +69,7 @@ public class AgentEntry
 		
 		Agent = agent.name + "-" + agent.outputName;
 		Cash = agent.Cash;
+		DaysStarving = agent.DaysStarving;
 		var recipe = agent.book[agent.outputName].recipe;
 		if (agent is Government)
 			return;
@@ -84,7 +89,8 @@ public class AgentEntry
 		}
 		if (agent.outputName != "Food")
 		{
-			Bids.Add(new ("Food", 0f, agent.inventory["Food"].GetPrice()));
+			var food = agent.inventory["Food"];
+			Bids.Add(new ("Food", food.offersThisRound, food.GetPrice()));
 		}
 	}
 }

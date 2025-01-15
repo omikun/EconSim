@@ -32,7 +32,7 @@ public class Consumer
 	    return numBids;
     }
 
-    public virtual Offers Consume(AuctionBook book)
+    public virtual Offers CreateBids(AuctionBook book)
     {
 	    var bids = new Offers();
 	    if (agent.Cash <= 0)
@@ -41,20 +41,21 @@ public class Consumer
 	    {
 		    if (!agent.inputs.Contains(item.name) || agent.outputName.Contains(item.name)) 
 			    continue;
-		    CreateBids(book, bids, item);
+		    CreateBid(book, bids, item);
 	    }
 
 	    return bids;
     }
 
-    public void CreateBids(AuctionBook book, Offers bids, InventoryItem item)
+    public void CreateBid(AuctionBook book, Offers bids, InventoryItem item)
     {
 	    var numBids = SelectBuyQuantity(item.name);
 	    if (numBids <= 0)
 		    return;
 	    var buyPrice = SelectPrice(item.name);
 	    
-	    Debug.Log(agent.name + " wants to buy " + numBids + item.name + " for " + buyPrice.ToString(("c2")));
+	    Debug.Log(agent.name + " wants to buy " + numBids + item.name 
+	              + " for " + buyPrice.ToString(("c2")));
 	    bids.Add(item.name, new Offer(item.name, buyPrice, numBids, agent));
 	    item.bidPrice = buyPrice;
 	    item.bidQuantity += numBids;
@@ -95,7 +96,7 @@ public class QoLConsumer : Consumer
 		return agent.book[com].setPrice;
 	}
 
-	public override Offers Consume(AuctionBook book)
+	public override Offers CreateBids(AuctionBook book)
 	{
 	    var bids = new Offers();
 	    if (agent.Cash <= 0)

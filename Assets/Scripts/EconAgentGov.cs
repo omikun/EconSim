@@ -28,7 +28,7 @@ public class Government : EconAgent {
         {
             var name = good.Key;
             inputs.Add(name);
-            AddToInventory(name, 0, maxstock, 1, 0, 0);
+            AddToInventory(name, 0, maxstock, good.Value);
         }
 		
 		inventory["Food"].Increase(FoodTarget);

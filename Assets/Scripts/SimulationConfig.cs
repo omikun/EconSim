@@ -205,6 +205,8 @@ public class SimulationConfig : MonoBehaviour{
 	[TabGroup("tab2", "Agent FoodConsumption")]
 	public float starvationThreshold = 0.1f;
 	[TabGroup("tab2", "Agent FoodConsumption")]
+	public int maxDaysStarving = 3;
+	[TabGroup("tab2", "Agent FoodConsumption")]
 	public bool foodConsumption = false;
 	[TabGroup("tab2", "Agent FoodConsumption")]
 	public float foodConsumptionRate = 0.1f;

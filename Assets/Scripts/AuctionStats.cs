@@ -200,14 +200,6 @@ public class AuctionStats : MonoBehaviour
 		}
 		return hottestGood;
 	}
-	bool AddToBook(string name, float production, float batch_rate, float productionMultiplier, float setPrice, Recipe dep)
-	{
-		if (book.ContainsKey(name)) { return false; }
-		Assert.IsNotNull(dep);
-
-		book.Add(name, new ResourceController(name, production, batch_rate, productionMultiplier, setPrice, dep));
-		return true;
-	}
     void PrintStat()
     {
 		foreach (var item in book)
@@ -262,9 +254,15 @@ public class AuctionStats : MonoBehaviour
 		//InitCommodities();
 		foreach( var item in config.initialization)
 		{
+			if (book.ContainsKey(item.Key))
+			{
+				Debug.Log("Failed to add commodity; duplicate?");
+				continue;
+			}
 			Recipe dep = new Recipe();
 			float batch_rate = 0;
 			float prod_rate = 0;
+			float base_rate = 0;
 			float prod_multiplier = 0;
 			float set_price = 0;
 			foreach (var field in item.Value)
@@ -272,6 +270,11 @@ public class AuctionStats : MonoBehaviour
 				if (field.Key == "Prod_rate")
 				{
 					prod_rate = field.Value;
+					continue;
+				}
+				if (field.Key == "Base_rate")
+				{
+					base_rate = field.Value;
 					continue;
 				}
 				if (field.Key == "Prod_multiplier")
@@ -291,10 +294,9 @@ public class AuctionStats : MonoBehaviour
 				}
 				dep.Add(field.Key, field.Value);
 			}
-			if (!AddToBook(item.Key, prod_rate, batch_rate, prod_multiplier, set_price, dep))
-			{
-				Debug.Log("Failed to add commodity; duplicate?");
-			}
+
+			Assert.IsNotNull(dep);
+			book.Add(item.Key, new ResourceController(item.Key, prod_rate, base_rate, batch_rate, prod_multiplier, set_price, dep));
 		}
 	    foreach (var com in book.Keys)
 	    {

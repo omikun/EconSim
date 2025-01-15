@@ -3,7 +3,7 @@ using UnityEngine.Assertions;
 using System.Linq;
 
 //medium agent
-public class QolAgent : QoLSimpleAgent
+public partial class QolAgent : QoLSimpleAgent
 {
     public override void Init(SimulationConfig cfg, AuctionStats at, string b, float initStock, float maxstock)
     {
@@ -17,7 +17,7 @@ public class QolAgent : QoLSimpleAgent
         // decideOffers();
         base.Decide();
     }
-    private void decideProduction()
+    protected void decideProduction()
     {
         var rsc = book[outputName];
         var stock = inventory[outputName];
@@ -32,7 +32,7 @@ public class QolAgent : QoLSimpleAgent
     {
         //decide how much to buy and sell
         //how many inputs to buy at their respective price beliefs?
-        float buyPress = buyPressure();
+        float buyPress = 0f; //PopulateOffersFromInventory();
         //if input price is high, can current sell price be worth it?
         //how much was sold last round?
         //TODO what if none was sold last round??
@@ -66,36 +66,6 @@ public class QolAgent : QoLSimpleAgent
         //if last round sold more than 1 batch, 
     }
     
-    private float buyPressure()
-    {
-        //determine buy pressure
-        //if low input/output inventory
-        //if low on food
-        float buyPressureOutput = 0;
-        float buyPressureInput = 0;
-        float buyPressureFood = 0;
-        float numOutputs = inventory[outputName].Quantity;
-        //TODO what if output is food??
-        float minQuant = 3f;
-        
-        if (numOutputs < minQuant)
-            buyPressureOutput = (minQuant - numOutputs)/ minQuant;
-        var recipe = book[outputName].recipe;
-        foreach (var com in recipe.Keys)
-        {
-            float quant = inventory[com].Quantity;
-            if (quant < minQuant)
-                buyPressureInput += (minQuant - quant) / minQuant;
-        }
-
-        var food =  inventory["Food"].Quantity;
-        if (food < minQuant)
-            buyPressureFood += (minQuant - food) / minQuant;
-        float buyPressure = Mathf.Min(buyPressureOutput, buyPressureInput);
-        buyPressure = Mathf.Min(buyPressure, buyPressureFood);
-        return buyPressure;
-    }
-
     public float NumBatchesProduceable(ResourceController rsc, InventoryItem outputItem)
     {
 		float numBatches = float.MaxValue;

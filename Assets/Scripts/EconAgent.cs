@@ -26,6 +26,8 @@ public class EconAgent : MonoBehaviour
 	public string CashString { get{ return Cash.ToString("c2"); } }
 
 	public bool Alive { get; protected set; }
+	public int DaysStarving { get; protected set; }
+	
 	protected float prevCash;
 	protected internal float foodExpense = 0;
 	protected float initStock = 1;
@@ -89,16 +91,12 @@ public class EconAgent : MonoBehaviour
 		return ret;
 	}
 
-	void Start()
-	{
-	}
-
-	protected void AddToInventory(string name, float num, float max, float price, float production, float batchRate)
+	protected void AddToInventory(string name, float num, float max, ResourceController rsc)
 	{
 		if (inventory.ContainsKey(name))
 			return;
 
-		inventory.Add(name, new InventoryItem(this, auctionStats, name, num, max, price, production, batchRate));
+		inventory.Add(name, new InventoryItem(this, auctionStats, name, num, max, rsc));
 	}
 
 	public float PayWealthTax(float amountExempt, float taxRate)
@@ -150,18 +148,16 @@ public class EconAgent : MonoBehaviour
 				var commodity = dep.Key;
 				inputs.Add(commodity);
 				//Debug.Log("::" + commodity);
-				AddToInventory(commodity, initStock, maxStock, book[commodity].marketPrice,
-					book[commodity].productionPerBatch, book[commodity].batchRate);
+				AddToInventory(commodity, initStock, maxStock, book[commodity]);
 			}
 
 			if (buildable != "Food")
 			{
 				var commodity = "Food";
-				AddToInventory(commodity, initStock, maxStock, book[commodity].marketPrice,
-					book[commodity].productionPerBatch, book[commodity].batchRate);
+				AddToInventory(commodity, initStock, maxStock, book[commodity]);
 			}
 
-			AddToInventory(buildable, 0, maxStock, book[buildable].marketPrice, book[buildable].productionPerBatch, book[buildable].batchRate);
+			AddToInventory(buildable, 0, maxStock, book[buildable]);
 			Debug.Log("New " + gameObject.name + " has " + inventory[buildable].Quantity + " " + buildable);
 		}
 	}
@@ -258,10 +254,10 @@ public class EconAgent : MonoBehaviour
 			{
 				var com = book[dep.Key];
 				inputs.Add(com.name);
-				AddToInventory(com.name, 0, maxStock, com.marketPrice, com.productionPerBatch, com.batchRate);
+				AddToInventory(com.name, 0, maxStock, com);
 			}
 
-			AddToInventory(outputName, 0, maxStock, output.marketPrice, output.productionPerBatch, output.batchRate);
+			AddToInventory(outputName, 0, maxStock, output);
 
 			PrintInventory("post reinit");
 		}
@@ -344,6 +340,16 @@ public class EconAgent : MonoBehaviour
 			gov.Welfare(this);
 
 			starving = food.Quantity <= 0.1f;
+			if (starving)
+				DaysStarving++;
+			else
+				DaysStarving = 0;
+			
+			//if starving for 3 rounds, die off
+			if (DaysStarving == 3)
+			{
+				Alive = false;
+			}
 			foodExpense = Mathf.Max(0, foodExpense - Mathf.Max(0, Profit));
 		}
 
@@ -395,7 +401,7 @@ public class EconAgent : MonoBehaviour
 
 	public virtual float EvaluateHappiness()
 	{
-		var numFoodEq = foodEquivalent.GetNumFoodEquivalent(book, config.numFoodHappy);
+		var numFoodEq = foodEquivalent.GetHappyLevel(book, config.numFoodHappy);
 		return Mathf.Log10(numFoodEq);
 	}
 
@@ -491,7 +497,7 @@ public class EconAgent : MonoBehaviour
 	public virtual Offers CreateBids(AuctionBook book)
 	{
 		Debug.Log(name + " consuming");
-		return consumer.Consume(book);
+		return consumer.CreateBids(book);
 	}
 	public virtual float Produce() {
 		numProducedThisRound = productionStrategy.Produce();

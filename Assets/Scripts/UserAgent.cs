@@ -11,13 +11,26 @@ using EconSim;
 using UnityEditor;
 using UnityEngine.UIElements;
 
-public class UserAgent : QolAgent
+public partial class UserAgent : QolAgent
 {
+    public override void Decide()
+    {
+        decideProduction();
+        //decide how much to bid and ask (just think of them as buy and sell for now)
+        //randomly pick an inventory check if it's buying or selling it has a better utility than others
+        //until out of money or can't sell anymore or can't buy anymore
+        asks.Clear();
+        bids.Clear();
+        // PopulateOffersFromInventory(); //called by AuctionHouse.UpdateAgentTable
+        base.CreateOffersFromInventory();
+    }
     public void UserTriggeredPopulateOffersFromInventory()
     {
-        base.PopulateOffersFromInventory();
+        PopulateOffersFromInventory();
+        PrePopulateSellingOffers();
     }
-    protected override void PopulateOffersFromInventory()
+    // protected override void PopulateOffersFromInventory()
+    protected void PrePopulateSellingOffers()
     {
         foreach (var (com, item) in inventory)
         {

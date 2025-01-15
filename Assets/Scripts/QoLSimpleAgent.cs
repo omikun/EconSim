@@ -24,8 +24,8 @@ public class QoLSimpleAgent : EconAgent
     //will the different based on the order; which means it's not stable
     //but in the auction model all bids and asks are made separately, so how would that work? 
     //can't even use the auction model??
-    Offers asks = new Offers();
-    Offers bids = new Offers();
+    protected Offers asks = new Offers();
+    protected Offers bids = new Offers();
     public override void Init(SimulationConfig cfg, AuctionStats at, string b, float initStock, float maxstock)
     {
 	    base.Init(cfg, at, b, initStock, maxstock);
@@ -218,7 +218,7 @@ public class QoLSimpleAgent : EconAgent
         return worthTheOffer;
     }
 
-    private void CreateOffersFromInventory()
+    protected void CreateOffersFromInventory()
     {
         //place bids and asks
         foreach (var (itemName, item) in inventory)
@@ -226,7 +226,7 @@ public class QoLSimpleAgent : EconAgent
             if (item.offersThisRound <= 0)
                 continue;
             var price = item.GetPrice();
-            var selling = itemName == outputName;
+            var selling = !isConsumable(itemName);
             var offers = (selling) ? asks : bids;
             offers.Add(itemName, new Offer(itemName, price, item.offersThisRound, this));
             if (selling)
