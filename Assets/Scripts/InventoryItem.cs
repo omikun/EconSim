@@ -549,7 +549,8 @@ public void UpdateSellerPriceBelief(String agentName, in Offer trade, in Resourc
 		        var otherCosts = agent.inventory.Values
 			        .Where(item => agent.inputs.Contains(item.name))
 			        .Sum(item => item.meanCost);
-		        priceBelief = Mathf.Max(otherCosts/agent.config.minSellToAffordOthers, priceBelief);
+		        var amortizedQuantity = Mathf.Max(rsc.productionPerBatch, Quantity * .8f);
+		        priceBelief = Mathf.Max(otherCosts/amortizedQuantity, priceBelief);
 		        minPriceBelief = priceBelief;
 	        }
         }

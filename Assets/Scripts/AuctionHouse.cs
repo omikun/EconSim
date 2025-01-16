@@ -38,6 +38,10 @@ public class AuctionHouse : MonoBehaviour {
 
 	void Awake()
 	{
+#if UNITY_EDITOR
+		QualitySettings.vSyncCount = 2;  // VSync must be disabled
+		Application.targetFrameRate = 15;
+#endif
 		district = GetComponent<AuctionStats>();
 		config = GetComponent<SimulationConfig>();
 		district.config = config;
