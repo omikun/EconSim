@@ -34,14 +34,27 @@ public partial class UserAgent
         var foodPrice = book["Food"].marketPrice;
         var foodCost = numFood * foodPrice;
         var remainingCash = 0f;
-        (numFood, remainingCash) = allocateFund(numFood, foodCost, Cash);
+        (numFood, remainingCash) = allocateFund(numFood, foodPrice, Cash);
+        var inputBatchCost = GetInputBatchCost();
         
         if (numBatchInput > 0)
         {
-            var inputBatchCost = GetInputBatchCost();
             (numBatchInput, remainingCash) = allocateFund(numBatchInput, inputBatchCost, remainingCash);
         }
         //split remaining cash on both (evenly for now?)
+        var cashForFood = remainingCash / 2;
+        var cashForInputs = remainingCash - cashForFood;
+        var leftover = 0f;
+        var additionalFood = (Profession == "Food") ? 0 : float.PositiveInfinity;
+        (additionalFood, leftover) = allocateFund(additionalFood, foodPrice, cashForFood);
+        
+        cashForInputs += leftover;
+        var additionalInput = float.PositiveInfinity;
+        (additionalInput, cashForInputs) = allocateFund(additionalInput, inputBatchCost, cashForInputs);
+
+        numFood += additionalFood;
+        numBatchInput += additionalInput;
+        
         //loop over each inventory item and update offersThisRound
         inventory["Food"].offersThisRound = numFood;
         foreach (var (com, numNeeded) in book[outputName].recipe)
