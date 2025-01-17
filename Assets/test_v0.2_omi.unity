@@ -514,7 +514,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   info: {fileID: 1010474683}
   config: {fileID: 0}
-  auctionTracker: {fileID: 0}
+  district: {fileID: 0}
   progressivePolicy:
     config: {fileID: 0}
     auctionStats: {fileID: 0}
@@ -609,7 +609,7 @@ MonoBehaviour:
   tickInterval: 0.001
   EnableDebug: 1
   EnableLog: 0
-  appendTimeToLog: 1
+  appendTimeToLog: 0
   exitAfterNoTrade: 0
   EnableGovernment: 1
   seed: 42
@@ -659,7 +659,7 @@ MonoBehaviour:
   initCash: 30
   initGovCash: 1000
   randomInitStock: 0
-  initStock: 8
+  initStock: 2
   maxStock: 4000
   numAgents:
     _serializedList:
@@ -686,8 +686,10 @@ MonoBehaviour:
           Value: 1
         - Key: Prod_rate
           Value: 10
-        - Key: Batch_rate
+        - Key: Base_rate
           Value: 1
+        - Key: Batch_rate
+          Value: 2
         - Key: Set_price
           Value: 2
     - Key: Wood
@@ -696,11 +698,24 @@ MonoBehaviour:
         - Key: Prod_multiplier
           Value: 1
         - Key: Prod_rate
-          Value: 4
+          Value: 3
         - Key: Batch_rate
           Value: 1
         - Key: Set_price
           Value: 2
+    - Key: Tool
+      Value:
+        _serializedList:
+        - Key: Wood
+          Value: 2
+        - Key: Prod_multiplier
+          Value: 1
+        - Key: Prod_rate
+          Value: 1
+        - Key: Batch_rate
+          Value: 4
+        - Key: Set_price
+          Value: 8
     - Key: Ore
       Value:
         _serializedList:
@@ -725,20 +740,8 @@ MonoBehaviour:
           Value: 8
         - Key: Set_price
           Value: 2
-    - Key: Tool
-      Value:
-        _serializedList:
-        - Key: Wood
-          Value: 2
-        - Key: Prod_multiplier
-          Value: 1
-        - Key: Prod_rate
-          Value: 1
-        - Key: Batch_rate
-          Value: 4
-        - Key: Set_price
-          Value: 2
   starvationThreshold: 0.1
+  maxDaysStarving: 3
   foodConsumption: 1
   foodConsumptionRate: 1
   useFoodConsumptionCurve: 1
@@ -775,8 +778,8 @@ MonoBehaviour:
   buyPrice: 2
   randomizeSellPrice: 0
   sellPriceMinFoodExpense: 1
-  sellPriceMinCost: 0
-  minSellPrice: 0
+  sellPriceMinCost: 1
+  minSellPrice: 1
   minSellToAffordOthers: 5
   minItemRaiseBuyPrice: 8
   sellPriceDelta: 0.05
