@@ -99,7 +99,7 @@ public partial class QolAgent : QoLSimpleAgent
             if (item.name == "Food" && "Food" != outputName)
             {
                 if (item.Quantity > 20)
-                    amountConsumed = 6;
+                    amountConsumed = 4;
                 else 
                 if (item.Quantity > 10)
                     amountConsumed = 3;

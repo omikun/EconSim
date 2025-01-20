@@ -237,6 +237,7 @@ public class EconAgent : MonoBehaviour
 		prevCash = Cash;
 		foodExpense = 0;
 		inputs.Clear();
+		DaysStarving = 0;
 		//foreach (var outputName in outputName)
 		{
 			if (!book.ContainsKey(outputName))

@@ -606,14 +606,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   autoNextRound: 0
-  tickInterval: 0.001
+  tickInterval: 0.058
   EnableDebug: 1
   EnableLog: 0
   appendTimeToLog: 0
   exitAfterNoTrade: 0
   EnableGovernment: 1
   seed: 42
-  maxRounds: 50
+  maxRounds: 500
   numRoundsNoTrade: 100
   tradeResolution: 2
   bidSortOrder: 1
@@ -653,7 +653,7 @@ MonoBehaviour:
   changeProfession: 1
   earlyProfessionChange: 0
   changeProfessionAfterNDays: 10
-  declareBankruptcy: 0
+  declareBankruptcy: 1
   historySize: 10
   agentType: 3
   initCash: 30
@@ -664,15 +664,15 @@ MonoBehaviour:
   numAgents:
     _serializedList:
     - Key: Food
-      Value: 2
+      Value: 4
     - Key: Wood
-      Value: 2
+      Value: 4
     - Key: Ore
       Value: 0
     - Key: Metal
       Value: 0
     - Key: Tool
-      Value: 2
+      Value: 4
   initialization:
     _serializedList:
     - Key: Food
@@ -685,9 +685,9 @@ MonoBehaviour:
         - Key: Prod_multiplier
           Value: 1
         - Key: Prod_rate
-          Value: 10
+          Value: 5
         - Key: Base_rate
-          Value: 1
+          Value: 0
         - Key: Batch_rate
           Value: 2
         - Key: Set_price
@@ -4097,7 +4097,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 224390226033679502, guid: 3dbd4bc71acbb1145b6e80827b858127, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 0
+      value: 55.27
       objectReference: {fileID: 0}
     - target: {fileID: 224390226033679502, guid: 3dbd4bc71acbb1145b6e80827b858127, type: 3}
       propertyPath: m_SizeDelta.y
@@ -4233,7 +4233,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3155788890126894321, guid: 3dbd4bc71acbb1145b6e80827b858127, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 0
+      value: 55.27
       objectReference: {fileID: 0}
     - target: {fileID: 3155788890126894321, guid: 3dbd4bc71acbb1145b6e80827b858127, type: 3}
       propertyPath: m_SizeDelta.y
@@ -4261,7 +4261,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4484771780012352589, guid: 3dbd4bc71acbb1145b6e80827b858127, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 0
+      value: 55.27
       objectReference: {fileID: 0}
     - target: {fileID: 4484771780012352589, guid: 3dbd4bc71acbb1145b6e80827b858127, type: 3}
       propertyPath: m_SizeDelta.y
@@ -4285,7 +4285,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4866549897623903779, guid: 3dbd4bc71acbb1145b6e80827b858127, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 0
+      value: 135.27
       objectReference: {fileID: 0}
     - target: {fileID: 4866549897623903779, guid: 3dbd4bc71acbb1145b6e80827b858127, type: 3}
       propertyPath: m_SizeDelta.y

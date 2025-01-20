@@ -39,12 +39,12 @@ public class AgentEntry
 	[TableColumnWidth(50), VerticalGroup("Agent"), HideLabel, LabelWidth(42), ReadOnly]
 	public string Agent;
 
-	[VerticalGroup("Stats"), LabelWidth(30), ReadOnly]
+	[VerticalGroup("Stats"), LabelWidth(30), ReadOnly] [GUIColor("GetCashColor")]
 	public float Cash;
 
-	[VerticalGroup("Stats"), LabelWidth(80), ReadOnly]
+	[VerticalGroup("Stats"), LabelWidth(80), ReadOnly] [GUIColor("GetFoodColor")]
 	public int DaysStarving;
-	
+
 	[VerticalGroup("Inventory"), ReadOnly, HideLabel]
 	[InlineProperty]
 	public List<CommodityEntry> Commodities = new();
@@ -52,6 +52,27 @@ public class AgentEntry
 	[InlineProperty]
 	public List<CommodityEntry> Bids = new();
 
+	private float food = 0;
+	private float foodPrice = 0;
+	private Color GetFoodColor()
+	{
+		if (DaysStarving > 2)
+			return Color.magenta;
+		else if (DaysStarving > 0)
+			return Color.red;
+		else if (food <= 2)
+			return Color.yellow;
+		else
+			return Color.green;
+	}
+
+	private Color GetCashColor()
+	{
+		if (Cash > foodPrice)
+			return Color.green;
+		else
+			return Color.red;
+	}
 	[OnInspectorInit]
 	private void CreateEntry()
 	{
@@ -79,6 +100,11 @@ public class AgentEntry
 		{
 			var item = agent.inventory[com];
 			Commodities.Add(new (com, item.Quantity, item.GetPrice()));
+			if (com == "Food")
+			{
+				food = item.Quantity;
+				foodPrice = item.GetPrice();
+			}
 		}
 
 		//bids (inputs + food if output is not food)

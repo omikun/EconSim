@@ -72,12 +72,18 @@ public partial class UserAgent
         numFoodToBid += additionalFood;
         numBatchInputToBid += additionalInput;
 
+        //for cases where can't afford to buy enough inputs this round, ends up spending all money to food
+        //ends up never enough to produce, always broke
+        if (minInputBatches == 0 && numBatchInputToBid == 0)
+        {
+            numFoodToBid = 0;
+        }
         //loop over each inventory item and update offersThisRound
         inventory["Food"].offersThisRound = numFoodToBid;
         //only buy missing inputs to get to numBatchInput
         //determine how many batches of each input in current inventory
         //add numBatchInput - item.numbatches + minbatch
-        if (true)
+        if (false)
         {
             foreach (var (com, numNeeded) in output.recipe)
             {
@@ -91,22 +97,48 @@ public partial class UserAgent
         else
         {
             cashForInputs = numBatchInputToBid * inputBatchCost;
-            FillInputBids(numBatchInputToBid, cashForInputs);
+            FillInputBids(cashForInputs);
         }
     }
 
-    protected void FillInputBids(float inputBatchCost, float allocatedFunds)
+    protected void FillInputBids(float allocatedFunds)
     {
-        //get total cash equivalent of inputs, add to allocated funds
-        var inventoryWorth = GetInventoryWorth();
-        allocatedFunds += inventoryWorth;
-        //get max batch affordable by this
+        var _recipe = new Recipe();
+        foreach (var (k,v) in book[outputName].recipe)
+            _recipe.Add(k,v);
+        bool recompute;
+
+        if (_recipe.Count == 0)
+            return;
         
-        //foreach item: check if quantity exceeds this in batches supported
-        //subtract excess in value from allocatedFunds
-        //get max number of batches from updated allocatedFunds
-        //foreach item: offersThisRound = (maxBatch * numNeeded) - Quantity;
-        //track money needed for this, should be <= allocatedFunds
+        do {
+            float cashEquivalent = 0;
+            float batchCost = 0;
+            foreach (var (input, amount) in _recipe)
+            {
+                float priceOfGood = book[input].marketPrice;
+                cashEquivalent += priceOfGood * inventory[input].Quantity;
+                batchCost += priceOfGood * amount;
+            }
+            float totalCashEquivalent = cashEquivalent + allocatedFunds;
+            float targetBatch = Mathf.Floor(totalCashEquivalent / batchCost);
+
+            foreach (var com in book[outputName].recipe.Keys)
+            {
+                inventory[com].offersThisRound = 0;
+            }
+
+            recompute = false;
+            foreach (var (input, amount) in _recipe.ToList()) {
+                float amountNeeded = targetBatch * amount - inventory[input].Quantity;
+                if (amountNeeded <= 0) {     //more than needed, can discard and recompute w/o
+                    recompute = true;
+                    _recipe.Remove(input);
+                    continue;
+                }
+                inventory[input].offersThisRound = amountNeeded;
+            }
+        } while (recompute);
     }
 
     //returns remaining fund and num bids that can be allocated given initial fund
@@ -156,7 +188,7 @@ public partial class UserAgent
             return 0f;
 
         int daysToDeath = config.maxDaysStarving - DaysStarving;
-        Assert.IsTrue(daysToDeath > 0);
+        Assert.IsTrue(daysToDeath >= 0);
         var numFood =  (int)inventory["Food"].Quantity;
         float minFoodToBuy = (numFood <= 2) ? 1 : 0;
         if (daysToDeath == 1)

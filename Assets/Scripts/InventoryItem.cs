@@ -521,7 +521,7 @@ public void UpdateSellerPriceBelief(String agentName, in Offer trade, in Resourc
         if (trade.offerQuantity == 0)
 	        return;
         
-		//SanePriceBeliefs();
+	//SanePriceBeliefs();
 
 		var meanBeliefPrice = (minPriceBelief + priceBelief) / 2;
 		var deltaMean = meanBeliefPrice - trade.clearingPrice; //TODO or use auction house mean price?
@@ -531,6 +531,9 @@ public void UpdateSellerPriceBelief(String agentName, in Offer trade, in Resourc
         var offer_price = trade.offerPrice;
         var weight = quantitySold / trade.offerQuantity; //quantitySold / quantityAsked
         var displacement = (1 - weight) * meanBeliefPrice;
+        var supply = rsc.asks.LastAverage(10);
+        var demand = rsc.bids.LastAverage(10);
+        float sdRatio = supply / demand;
 
         var prevPriceBelief = priceBelief;
         if (quantitySold == trade.offerQuantity) //sold it all
@@ -541,7 +544,10 @@ public void UpdateSellerPriceBelief(String agentName, in Offer trade, in Resourc
         }
         else
         {
-	        var delta = 1 - agent.config.sellPriceDelta;
+	        var denom = 2f;
+	        if (sdRatio < 1.2f)
+		        denom = 8f;
+	        var delta = 1 - agent.config.sellPriceDelta/denom;
 	        priceBelief *= delta;
 	        minPriceBelief *= delta;
 	        if (agent.config.minSellPrice)
