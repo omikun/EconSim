@@ -52,11 +52,11 @@ public abstract class ProductionStrategy
 
 			//auction wide multiplier (e.g. richer ore vien or forest fire)
 			var multiplier = rsc.productionMultiplier;
-			if (numProduced == 0f || multiplier == 0f)
-				return 0;
+			numProduced *= multiplier; 
 
-			stock.Produced(numProduced * multiplier, agent.GetCostOf(rsc)); 
+			stock.Produced(numProduced, agent.GetCostOf(rsc)); 
 			agent.producedThisRound[outputName] = numProduced;
+			agent.numProducedThisRound = numProduced;
 
 			Debug.Log(agent.auctionStats.round + " " + agent.name 
 				+ " has " + agent.Cash.ToString("c2") 

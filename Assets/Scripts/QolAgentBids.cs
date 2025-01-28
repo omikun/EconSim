@@ -25,6 +25,8 @@ public partial class UserAgent
             item.CanOfferAdditionalThisRound = true;
         }
 
+        if (outputName == "Metal")
+            Debug.Log("Metal populateoffersfrominventory");
         float minQuant = 3f;
         // float outputPressure = buyOutputPressure(minQuant);
         float numBatchInputToBid = minBatchInputToBid();
@@ -39,6 +41,7 @@ public partial class UserAgent
         var minInputBatches = productionStrategy.NumBatchesProduceable(output, foodItem);
         
         //allocate fund for min food, then min inputs for low cash situation
+        if (false)
         {
             (numFoodToBid, remainingCash) = allocateFund(numFoodToBid, foodMarketPrice, Cash);
 
@@ -47,30 +50,55 @@ public partial class UserAgent
                 (numBatchInputToBid, remainingCash) = allocateFund(numBatchInputToBid, inputBatchCost, remainingCash);
             }
         }
-
-        //split remaining cash on both (evenly for now) -- start with least quantity
-        //if any money left over
-        //TODO what if only enough for one more? then don't split!?
-        var leftover = 0f;
-        var additionalInput = float.PositiveInfinity;
-        var additionalFood = (Profession == "Food") ? 0 : float.PositiveInfinity;
-        var cashForFood = remainingCash / 2;
-        var cashForInputs = remainingCash / 2;
-
-        if (foodItem.Quantity < minInputBatches) //bid on food first if less quantity
+        else
         {
-            (additionalFood, leftover) = allocateFund(additionalFood, foodMarketPrice, cashForFood);
-            cashForInputs = remainingCash - cashForFood + leftover;
-            (additionalInput, leftover) = allocateFund(additionalInput, inputBatchCost, cashForInputs);
+            numFoodToBid = 0;
+            numBatchInputToBid = 0;
+            remainingCash = Cash;
+        }
+
+        if (foodItem.Quantity < 2f) //bid on food first if less quantity
+        {
+            bool keepGoing = true;
+            while (keepGoing)
+            {
+                keepGoing = false;
+                if (remainingCash >= inputBatchCost && inputBatchCost > 0)
+                {
+                    numBatchInputToBid++;
+                    remainingCash -= inputBatchCost;
+                    keepGoing = true;
+                }
+
+                if (remainingCash >= foodMarketPrice)
+                {
+                    numFoodToBid++;
+                    remainingCash -= foodMarketPrice;
+                    keepGoing = true;
+                }
+            }
         }
         else //swap
         {
-            (additionalInput, leftover) = allocateFund(additionalInput, inputBatchCost, cashForInputs);
-            cashForFood = remainingCash - cashForInputs + leftover;
-            (additionalFood, leftover) = allocateFund(additionalFood, foodMarketPrice, cashForFood);
+            bool keepGoing = true;
+            while (keepGoing)
+            {
+                keepGoing = false;
+                if (remainingCash >= foodMarketPrice)
+                {
+                    numFoodToBid++;
+                    remainingCash -= foodMarketPrice;
+                    keepGoing = true;
+                }
+
+                if (remainingCash >= inputBatchCost && inputBatchCost > 0)
+                {
+                    numBatchInputToBid++;
+                    remainingCash -= inputBatchCost;
+                    keepGoing = true;
+                }
+            }
         }
-        numFoodToBid += additionalFood;
-        numBatchInputToBid += additionalInput;
 
         //for cases where can't afford to buy enough inputs this round, ends up spending all money to food
         //ends up never enough to produce, always broke
@@ -96,11 +124,12 @@ public partial class UserAgent
         }
         else
         {
-            cashForInputs = numBatchInputToBid * inputBatchCost;
+            var cashForInputs = numBatchInputToBid * inputBatchCost;
             FillInputBids(cashForInputs);
         }
     }
 
+    //taking current inventory into account, create bids to get even batches
     protected void FillInputBids(float allocatedFunds)
     {
         var _recipe = new Recipe();
@@ -131,7 +160,7 @@ public partial class UserAgent
             recompute = false;
             foreach (var (input, amount) in _recipe.ToList()) {
                 float amountNeeded = targetBatch * amount - inventory[input].Quantity;
-                if (amountNeeded <= 0) {     //more than needed, can discard and recompute w/o
+                if (amountNeeded < 0) {     //more than needed, can discard and recompute w/o
                     recompute = true;
                     _recipe.Remove(input);
                     continue;

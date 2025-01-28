@@ -437,8 +437,8 @@ public class InventoryItem {
         {
 	        var delta = 1 + agent.config.sellPriceDelta;
             if (moreDemand)  delta = 1.1f; 
-            if (equalDemand) delta = 1.01f;
-            if (moreSupply)  delta = 1f;
+            if (equalDemand) delta = 1.05f;
+            if (moreSupply)  delta = 1.02f;
             
             float minItems = 3; //minimum items before price belief explodes
             float scaler = minItems - Quantity;
@@ -456,6 +456,7 @@ public class InventoryItem {
 	        priceBelief *= delta;
 	        minPriceBelief *= delta;
         }
+        var tempPriceBelief = priceBelief;
         if (Quantity < agent.config.minItemRaiseBuyPrice)
         {
 	        // priceBelief = Mathf.Max(priceBelief, agent.book[name].marketPrice);
@@ -464,7 +465,13 @@ public class InventoryItem {
 	        minPriceBelief = priceBelief;
         }
 
-        Debug.Log(agent.auctionStats.round + " " + agent.name + " price belief update: " + name + " bid: " + trade.offerQuantity + " bought: " + quantityBought + " prev price " + prevPriceBelief.ToString("c2") + " current price belief " + priceBelief.ToString("c2"));
+        Debug.Log(agent.auctionStats.round + " " + agent.name + " price belief update: " + name 
+                  + " bid: " + trade.offerQuantity + " bought: " + quantityBought 
+                  + " prev price " + prevPriceBelief.ToString("c2") 
+                  + " new price belief " + priceBelief.ToString("c2")
+                  + " boughtRatio " + boughtRatio.ToString("n2")
+                  + " tempPriceBelief " + tempPriceBelief.ToString("c2")
+                  + " minItemRaiseBuyPrice " + agent.config.minItemRaiseBuyPrice.ToString("c2"));
         //SanePriceBeliefs();
         return;
 
@@ -521,48 +528,87 @@ public void UpdateSellerPriceBelief(String agentName, in Offer trade, in Resourc
         if (trade.offerQuantity == 0)
 	        return;
         
-	//SanePriceBeliefs();
+        if (name == "Tool")
+	        Debug.Log("Tool updatesellerpricebelief");
 
 		var meanBeliefPrice = (minPriceBelief + priceBelief) / 2;
 		var deltaMean = meanBeliefPrice - trade.clearingPrice; //TODO or use auction house mean price?
         var quantitySold = trade.offerQuantity - trade.remainingQuantity;
         var historicalMeanPrice = rsc.avgClearingPrice.LastAverage(10);
+        var minClearingPrice = rsc.minClearingPrice.Last();
         var market_share = quantitySold / rsc.trades[^1];
         var offer_price = trade.offerPrice;
-        var weight = quantitySold / trade.offerQuantity; //quantitySold / quantityAsked
+        var weight = quantitySold / trade.offerQuantity; 
         var displacement = (1 - weight) * meanBeliefPrice;
         var supply = rsc.asks.LastAverage(10);
         var demand = rsc.bids.LastAverage(10);
         float sdRatio = supply / demand;
+        var food = agent.inventory["Food"];
+        float priceDrop = priceBelief - minClearingPrice;
 
         var prevPriceBelief = priceBelief;
-        if (quantitySold == trade.offerQuantity) //sold it all
+        var tempPriceBelief = priceBelief;
+
+        // Case 1: Sold all quantity offered
+        if (quantitySold == trade.offerQuantity)
         {
 	        var delta = 1 + agent.config.sellPriceDelta;
 	        priceBelief *= delta;
 	        minPriceBelief *= delta;
         }
+        // Case 2: Did not sell any quantity and low food supply
+        else if (quantitySold == 0 && food.Quantity < 2)
+        {
+            // Calculate a discount based on starvation days
+	        var delta = 1 - Mathf.Pow(3f, agent.DaysStarving)/100f;
+            
+            // Apply discount to the minimum clearing price if available
+	        if (minClearingPrice > 0)
+	        {
+		        priceBelief = minClearingPrice * delta;
+		        minPriceBelief = priceBelief;
+	        }
+        } 
+        // General case: Adjust based on sell performance
         else
         {
 	        var denom = 2f;
 	        if (sdRatio < 1.2f)
 		        denom = 8f;
-	        var delta = 1 - agent.config.sellPriceDelta/denom;
-	        priceBelief *= delta;
-	        minPriceBelief *= delta;
+
+            var delta = 1 - agent.config.sellPriceDelta / denom;
+            if (priceDrop > delta)
+                delta = priceDrop;
+
+            priceBelief *= delta;
+            minPriceBelief *= delta;
+            tempPriceBelief = priceBelief;
+
+            // Additional constraint: Ensure minimum sell price based on costs
 	        if (agent.config.minSellPrice)
 	        {
+                // Calculate total input costs
 		        var otherCosts = agent.inventory.Values
 			        .Where(item => agent.inputs.Contains(item.name))
 			        .Sum(item => item.meanCost);
-		        var amortizedQuantity = Mathf.Max(rsc.productionPerBatch, Quantity * .8f);
-		        priceBelief = Mathf.Max(otherCosts/amortizedQuantity, priceBelief);
+                
+                // Compute amortized quantity for cost per unit
+                var amortizedQuantity = Mathf.Max(rsc.productionPerBatch, Quantity * 0.8f);
+
+                // Ensure price is at least the cost
+                priceBelief = Mathf.Max(otherCosts / amortizedQuantity, priceBelief);
 		        minPriceBelief = priceBelief;
 	        }
         }
-        Debug.Log(agent.auctionStats.round + " " + agent.name + " price belief update: " + name + " asked: " + trade.offerQuantity + " sold: " + quantitySold + " prev price " + prevPriceBelief.ToString("c2") + " current price belief " + priceBelief.ToString("c2"));
 
-        //SanePriceBeliefs();
+        // Log the update for debugging purposes
+        Debug.Log(agent.auctionStats.round + " " + agent.name + " price belief update: " + name +
+                  " asked: " + trade.offerQuantity + " sold: " + quantitySold +
+                  " prev price " + prevPriceBelief.ToString("c2") +
+                  " current price belief " + priceBelief.ToString("c2")
+                  + " sdRatio " + sdRatio.ToString("n2")
+                  + " priceDrop " + priceDrop.ToString("c2")
+                  + " tempPriceBelief " + tempPriceBelief.ToString("c2"));
         return;
         
         string reason_msg = "none";

@@ -126,6 +126,7 @@ public partial class QolAgent : QoLSimpleAgent
     }
     public float Produce(float numBatches)
     {
+        // return productionStrategy.Produce();
         var item = inventory[outputName];
         var numProduced = item.GetMaxProductionRate(numBatches);
         //produce less if sold less

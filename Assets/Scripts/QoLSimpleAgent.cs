@@ -30,18 +30,26 @@ public class QoLSimpleAgent : EconAgent
     {
 	    base.Init(cfg, at, b, initStock, maxstock);
     }
-    //produce
-    public override float Tick(Government gov, ref bool changedProfession, ref bool bankrupted, ref bool starving)
+
+    public bool IsDying(ref bool starving)
     {
-        if (Alive == false)
-            return 0;
         // starving = inventory.Values.Any(item => item.Quantity <= 5);
-        starving = Food() <= 0;
+        var farmerStarving = numProducedThisRound == 0 && outputName == "Food" && Food() <= 0;
+        var nonFarmerstarving = Food() <= 0 && outputName != "Food";
+        starving = farmerStarving || nonFarmerstarving;
         if (starving)
             DaysStarving++;
         else
             DaysStarving = 0;
-        var dying = (DaysStarving >= config.maxDaysStarving);// && (outputName != "Food");
+        var nonFarmerDying = (outputName != "Food" && DaysStarving >= config.maxDaysStarving);
+        var farmerDying = (outputName == "Food" && DaysStarving >= 2*config.maxDaysStarving);
+        return nonFarmerDying || farmerDying;
+    }
+    public override float Tick(Government gov, ref bool changedProfession, ref bool bankrupted, ref bool starving)
+    {
+        if (Alive == false)
+            return 0;
+        var dying = IsDying(ref starving);
 
         if (config.changeProfession && dying)
         {

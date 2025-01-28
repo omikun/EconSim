@@ -27,6 +27,7 @@ public class AuctionHouse : MonoBehaviour {
 	// public FiscalPolicy fiscalPolicy;
 
 
+	[HideInInspector]
 	public List<EconAgent> agents = new();
 	protected bool timeToQuit = false;
     protected OfferTable askTable, bidTable;
@@ -238,6 +239,15 @@ public class AuctionHouse : MonoBehaviour {
 	}
 	bool forestFire = false;
 
+	[PropertyOrder(5)]
+	[Title("Player Actions")]
+	[Button(ButtonSizes.Large), GUIColor(0.4f, 0.8f, 1)]
+	public void DoNextRound0()
+	{
+		DoNextRound();
+	}
+	
+	[PropertyOrder(6)]
 	[FormerlySerializedAs("AlwaysExpandedTable")] [TableList(AlwaysExpanded = true, DrawScrollView = false)]
 	public List<AgentEntry> AgentTable = new List<AgentEntry>();
 
@@ -452,8 +462,10 @@ public class AuctionHouse : MonoBehaviour {
 		Debug.Log(district.round + " " + rsc.name + " avgprice: " + averagePrice.ToString("c2") + " goods exchanged: " + stats.goodsExchangedThisRound.ToString("n2") + " money exchanged: " + stats.moneyExchangedThisRound.ToString("c2"));
 		Assert.IsTrue(averagePrice >= 0f);
 		rsc.avgClearingPrice.Add(averagePrice);
-		rsc.maxClearingPrice.Add(stats.maxClearingPrice);
-		rsc.minClearingPrice.Add(stats.minClearingPrice);
+		var maxClearingPrice = (stats.maxClearingPrice == 0f) ? rsc.maxClearingPrice.Last() : stats.maxClearingPrice;
+		rsc.maxClearingPrice.Add(maxClearingPrice );
+		var minClearingPrice = (stats.minClearingPrice == float.MaxValue) ? rsc.minClearingPrice.Last() : stats.minClearingPrice;
+		rsc.minClearingPrice.Add(minClearingPrice);
 		rsc.trades.Add(stats.goodsExchangedThisRound);
 		var marketPrice = averagePrice;
 		if (stats.goodsExchangedThisRound == 0)

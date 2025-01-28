@@ -54,7 +54,7 @@ public class ResourceController
 		baseProduction = bp;
 		batchRate = br;
 		productionMultiplier = pm;
-		setPrice = sp; //why can't setPrice and price be the same thing?
+		setPrice = sp; //initial price at start of simulation
 		marketPrice = sp;
 		recipe = r;
 		demand = 1;
@@ -68,9 +68,9 @@ public class ResourceController
 		cash.Add(1);
 		avgAskPrice.Add(1);
 		avgBidPrice.Add(1);
-		avgClearingPrice.Add(1);
-		minClearingPrice.Add(1);
-		maxClearingPrice.Add(1);
+		avgClearingPrice.Add(setPrice);
+		minClearingPrice.Add(setPrice);
+		maxClearingPrice.Add(setPrice);
 		profits.Add(1);
 		bankrupted.Add(1);
 		starving.Add(1);

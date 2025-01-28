@@ -162,10 +162,10 @@ public class ESStreamingGraph : MonoBehaviour
         InitGraph(cashGraph, "Cash");
         InitPerAgentGraph(perAgentGraph, "Per Agent Inventory");
         //InitPieChart(jobChart);
-        jobChart.DataSource.StartBatch();
-            jobChart.DataSource.RemoveCategory("Ore");
-            jobChart.DataSource.RemoveCategory("Metal");
-        jobChart.DataSource.EndBatch(); // finally we call EndBatch , this will cause the GraphChart to redraw itself
+        // jobChart.DataSource.StartBatch();
+        //     jobChart.DataSource.RemoveCategory("Ore");
+        //     jobChart.DataSource.RemoveCategory("Metal");
+        // jobChart.DataSource.EndBatch(); // finally we call EndBatch , this will cause the GraphChart to redraw itself
 
         lastX = 0;//TotalPoints;
         lastTime = Time.time;

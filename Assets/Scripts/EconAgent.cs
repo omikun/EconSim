@@ -501,8 +501,7 @@ public class EconAgent : MonoBehaviour
 		return consumer.CreateBids(book);
 	}
 	public virtual float Produce() {
-		numProducedThisRound = productionStrategy.Produce();
-		return numProducedThisRound;
+		return productionStrategy.Produce();
 	}
 	public float CalcMinProduction()
 	{
