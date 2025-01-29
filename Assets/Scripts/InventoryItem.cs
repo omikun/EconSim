@@ -443,7 +443,7 @@ public class InventoryItem {
             float minItems = 3; //minimum items before price belief explodes
             float scaler = minItems - Quantity;
             if (scaler > 0 && name == "Food")
-	            delta = Mathf.Pow(scaler, scaler);
+	            delta = Mathf.Pow(1.1f, scaler);
 	        priceBelief *= delta;
 	        minPriceBelief *= delta;
         }
@@ -465,11 +465,15 @@ public class InventoryItem {
 	        minPriceBelief = priceBelief;
         }
 
+        string demandstr = moreDemand ? "more demand" : equalDemand ? "equal demand" : "more supply";
+        
+        
         Debug.Log(agent.auctionStats.round + " " + agent.name + " price belief update: " + name 
                   + " bid: " + trade.offerQuantity + " bought: " + quantityBought 
                   + " prev price " + prevPriceBelief.ToString("c2") 
                   + " new price belief " + priceBelief.ToString("c2")
                   + " boughtRatio " + boughtRatio.ToString("n2")
+                  + " supply/demand " + demandstr 
                   + " tempPriceBelief " + tempPriceBelief.ToString("c2")
                   + " minItemRaiseBuyPrice " + agent.config.minItemRaiseBuyPrice.ToString("c2"));
         //SanePriceBeliefs();
