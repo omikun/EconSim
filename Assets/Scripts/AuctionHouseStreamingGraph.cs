@@ -27,6 +27,10 @@ public class ESStreamingGraph : MonoBehaviour
     [Required]
     public GraphChart perAgentGraph;
     [Required]
+    public GraphChart askChart;
+
+    private GraphObject askChartObject;
+    [Required]
     public PieChart jobChart;
     public int TotalPoints = 20;
     float lastTime = 0f;
@@ -154,12 +158,14 @@ public class ESStreamingGraph : MonoBehaviour
         vaxisInventoryGraph = inventoryGraph.transform.GetComponent<VerticalAxis>();
         vaxisCashGraph = cashGraph.transform.GetComponent<VerticalAxis>();
         vaxisPerAgentGraph = perAgentGraph.transform.GetComponent<VerticalAxis>();
+        askChartObject = new(askChart);
         Assert.IsFalse(vaxisPriceGraph == null);
 
         InitGraph(meanPriceGraph, "Changed Profession -test");
         InitGraph(tradeGraph, "Trades");
         InitGraph(inventoryGraph, "Inventory");
         InitGraph(cashGraph, "Cash");
+        InitGraph(askChartObject.chart, "Asks");
         InitPerAgentGraph(perAgentGraph, "Per Agent Inventory");
         //InitPieChart(jobChart);
         // jobChart.DataSource.StartBatch();
@@ -207,6 +213,8 @@ public class ESStreamingGraph : MonoBehaviour
         double newMaxY4 = 0;
         double newMaxY5 = 0;
 
+        askChartObject.Plot(auctionTracker.book, rsc => rsc.asks, lastX, SlideTime);
+        
         foreach (var rsc in auctionTracker.book.Values)
         {
             //var values = rsc.changedProfession;
@@ -221,10 +229,10 @@ public class ESStreamingGraph : MonoBehaviour
             inventoryGraph.DataSource.AddPointToCategoryRealtime(rsc.name, lastX,values3[^1], SlideTime);
             cashGraph.DataSource.AddPointToCategoryRealtime(rsc.name, lastX,values4[^1], SlideTime);
 
-            newMaxY  = Math.Max(newMaxY,  values.TakeLast(TotalPoints+2).Max());
-            newMaxY2 = Math.Max(newMaxY2, values2.TakeLast(TotalPoints+2).Max());
-            newMaxY3 = Math.Max(newMaxY3, values3.TakeLast(TotalPoints+2).Max());
-            newMaxY4 = Math.Max(newMaxY4, values4.TakeLast(TotalPoints+2).Max());
+            newMaxY  = Math.Max(newMaxY,  values.TakeLast(TotalPoints+1).Max());
+            newMaxY2 = Math.Max(newMaxY2, values2.TakeLast(TotalPoints+1).Max());
+            newMaxY3 = Math.Max(newMaxY3, values3.TakeLast(TotalPoints+1).Max());
+            newMaxY4 = Math.Max(newMaxY4, values4.TakeLast(TotalPoints+1).Max());
         }
 
         foreach (var agent in district.agents)
@@ -248,6 +256,7 @@ public class ESStreamingGraph : MonoBehaviour
         inventoryGraph.DataSource.VerticalViewSize = nearestBracket(vaxisInventoryGraph, newMaxY3);
         cashGraph.DataSource.VerticalViewSize = nearestBracket(vaxisCashGraph, newMaxY4);
         perAgentGraph.DataSource.VerticalViewSize = nearestBracket(vaxisPerAgentGraph, newMaxY5);
+        
         lastX += 1;
     }
 
