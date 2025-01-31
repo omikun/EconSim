@@ -31,12 +31,15 @@ public class Utilities
 public class ESList : List<float>
 {
     float avg;
+    private float ema = 0; //exponential moving average
     public ESList()
     {
     }
     new public void Add(float num)
     {
         base.Add(num);
+        float period = 3;
+        ema = (num - ema) * 2 / (period + 1) + ema;
     }
     public float LastHighest(int history)
     {
@@ -61,6 +64,11 @@ public class ESList : List<float>
         var index = Mathf.Max(0, base.Count - history);
         var count = Math.Min(history, base.Count);
         return base.GetRange(index, count).Average();
+    }
+
+    public float ExpAverage()
+    {
+        return ema;
     }
 
     public float LastSum(int history)

@@ -544,8 +544,9 @@ public void UpdateSellerPriceBelief(String agentName, in Offer trade, in Resourc
         var offer_price = trade.offerPrice;
         var weight = quantitySold / trade.offerQuantity; 
         var displacement = (1 - weight) * meanBeliefPrice;
-        var supply = rsc.asks.LastAverage(10);
-        var demand = rsc.bids.LastAverage(10);
+        var supply = rsc.asks.LastAverage(3);
+        var demand = rsc.bids.LastAverage(3);
+        var demandLastRound = rsc.bids.Last();
         float sdRatio = supply / demand;
         var food = agent.inventory["Food"];
         float priceDrop = priceBelief - minClearingPrice;
@@ -553,6 +554,10 @@ public void UpdateSellerPriceBelief(String agentName, in Offer trade, in Resourc
         var prevPriceBelief = priceBelief;
         var tempPriceBelief = priceBelief;
 
+        //don't bother adjusting ask price if there is no demand!
+        if (demandLastRound < 1f)
+	        return;
+        
         // Case 1: Sold all quantity offered
         if (quantitySold == trade.offerQuantity)
         {

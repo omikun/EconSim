@@ -182,10 +182,9 @@ public class AuctionStats : MonoBehaviour
 		picker.Clear();
 		foreach (var c in book)
 		{
-			var asks = c.Value.asks.LastAverage(historySize);
-			// var asks = c.Value.asks[^1];
-			var bids = c.Value.bids.LastAverage(historySize);
-			// var bids = c.Value.bids[^1];
+			var asks = c.Value.asks.ExpAverage();
+			asks = Mathf.Max(asks, 0.1f);
+			var bids = c.Value.bids.ExpAverage();
 			var ratio = bids / asks;
 
 			if (best_ratio < ratio)
