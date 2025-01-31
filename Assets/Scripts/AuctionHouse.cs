@@ -169,7 +169,7 @@ public class AuctionHouse : MonoBehaviour {
 		LatchBids();
 		Tick();
 		district.nextRound();
-		streamingGraphs.UpdateGraph();
+		streamingGraphs.UpdateGraphs();
 		UpdateAgentTable();
 	}
 	//latch bid values in AgentTable to agent inventory offers

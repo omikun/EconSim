@@ -41,7 +41,7 @@ public partial class UserAgent
         var minInputBatches = productionStrategy.NumBatchesProduceable(output, foodItem);
         
         //allocate fund for min food, then min inputs for low cash situation
-        if (false)
+        if (true)
         {
             (numFoodToBid, remainingCash) = allocateFund(numFoodToBid, foodMarketPrice, Cash);
 
@@ -49,9 +49,7 @@ public partial class UserAgent
             {
                 (numBatchInputToBid, remainingCash) = allocateFund(numBatchInputToBid, inputBatchCost, remainingCash);
             }
-        }
-        else
-        {
+        } else {
             numFoodToBid = 0;
             numBatchInputToBid = 0;
             remainingCash = Cash;
@@ -219,15 +217,8 @@ public partial class UserAgent
         int daysToDeath = config.maxDaysStarving - DaysStarving;
         Assert.IsTrue(daysToDeath >= 0);
         var numFood =  (int)inventory["Food"].Quantity;
-        float minFoodToBuy = (numFood <= 2) ? 1 : 0;
-        if (daysToDeath == 1)
-        {
-            var foodToBuy = Mathf.Min(DaysStarving, 1);
-            if (numFood == 0)
-                minFoodToBuy = foodToBuy;
-            if (numFood <= 1 && foodEquivalent.GetOutputFood() < 1)
-                minFoodToBuy = foodToBuy;
-        }
+        float minFoodToBuy = (numFood <= 3) ? 1 : 0;
+        //TODO buy more food if can afford it?
 
         return minFoodToBuy;
     }

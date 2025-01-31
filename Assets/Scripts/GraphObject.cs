@@ -27,6 +27,9 @@ public class GraphObject : MonoBehaviour
     public void Plot(AuctionBook book, Func<ResourceController, ESList> selector, 
                      float lastX, float SlideTime)
     {
+        if (!chart.gameObject.activeSelf)
+            return;
+        
         newMaxY = 0;
         foreach (var rsc in book.Values)
         {

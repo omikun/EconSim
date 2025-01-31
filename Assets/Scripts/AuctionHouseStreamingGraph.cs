@@ -28,8 +28,15 @@ public class ESStreamingGraph : MonoBehaviour
     public GraphChart perAgentGraph;
     [Required]
     public GraphChart askChart;
+    [Required]
+    public GraphChart bidChart;
 
+    private GraphObject meanPriceChartObject;
+    private GraphObject tradeChartObject;
+    private GraphObject inventoryChartObject;
+    private GraphObject cashChartObject;
     private GraphObject askChartObject;
+    private GraphObject bidChartObject;
     [Required]
     public PieChart jobChart;
     public int TotalPoints = 20;
@@ -158,14 +165,22 @@ public class ESStreamingGraph : MonoBehaviour
         vaxisInventoryGraph = inventoryGraph.transform.GetComponent<VerticalAxis>();
         vaxisCashGraph = cashGraph.transform.GetComponent<VerticalAxis>();
         vaxisPerAgentGraph = perAgentGraph.transform.GetComponent<VerticalAxis>();
+        
+        meanPriceChartObject = new(meanPriceGraph);
+        tradeChartObject = new(tradeGraph);
+        inventoryChartObject = new(inventoryGraph);
+        cashChartObject = new(cashGraph);
         askChartObject = new(askChart);
+        bidChartObject = new(bidChart);
         Assert.IsFalse(vaxisPriceGraph == null);
 
-        InitGraph(meanPriceGraph, "Changed Profession -test");
-        InitGraph(tradeGraph, "Trades");
-        InitGraph(inventoryGraph, "Inventory");
-        InitGraph(cashGraph, "Cash");
+        InitGraph(meanPriceChartObject.chart, "Changed Profession -test");
+        InitGraph(tradeChartObject.chart, "Trades");
+        InitGraph(inventoryChartObject.chart, "Inventory");
+        InitGraph(cashChartObject.chart, "Cash");
         InitGraph(askChartObject.chart, "Asks");
+        InitGraph(bidChartObject.chart, "Bids");
+        
         InitPerAgentGraph(perAgentGraph, "Per Agent Inventory");
         //InitPieChart(jobChart);
         // jobChart.DataSource.StartBatch();
@@ -204,37 +219,31 @@ public class ESStreamingGraph : MonoBehaviour
     //     }
     //     chart.DataSource.VerticalViewSize = nearestBracket(vaxis, newMaxY);
     // }
-    private ESList values5 = new();
-    public void UpdateGraph()
-    {
-        double newMaxY = 0;
-        double newMaxY2 = 0;
-        double newMaxY3 = 0;
-        double newMaxY4 = 0;
-        double newMaxY5 = 0;
+    private ESList perAgentValues = new();
 
+    public void UpdateGraphs()
+    {
+        meanPriceChartObject.Plot(auctionTracker.book, rsc => rsc.avgClearingPrice, lastX, SlideTime);
+        tradeChartObject.Plot(auctionTracker.book, rsc => rsc.trades, lastX, SlideTime);
+        inventoryChartObject.Plot(auctionTracker.book, rsc => rsc.inventory, lastX, SlideTime);
+        cashChartObject.Plot(auctionTracker.book, rsc => rsc.cash, lastX, SlideTime);
         askChartObject.Plot(auctionTracker.book, rsc => rsc.asks, lastX, SlideTime);
-        
+        bidChartObject.Plot(auctionTracker.book, rsc => rsc.bids, lastX, SlideTime);
+
         foreach (var rsc in auctionTracker.book.Values)
         {
-            //var values = rsc.changedProfession;
-            var values = rsc.avgClearingPrice;
-            var values2 = rsc.trades;
-            var values3 = rsc.inventory;
-            var values4 = rsc.cash;
             jobChart.DataSource.SetValue(rsc.name, rsc.numAgents);
-            
-            meanPriceGraph.DataSource.AddPointToCategoryRealtime(rsc.name, lastX, values[^1], SlideTime);
-            tradeGraph.DataSource.AddPointToCategoryRealtime(rsc.name, lastX,values2[^1], SlideTime);
-            inventoryGraph.DataSource.AddPointToCategoryRealtime(rsc.name, lastX,values3[^1], SlideTime);
-            cashGraph.DataSource.AddPointToCategoryRealtime(rsc.name, lastX,values4[^1], SlideTime);
-
-            newMaxY  = Math.Max(newMaxY,  values.TakeLast(TotalPoints+1).Max());
-            newMaxY2 = Math.Max(newMaxY2, values2.TakeLast(TotalPoints+1).Max());
-            newMaxY3 = Math.Max(newMaxY3, values3.TakeLast(TotalPoints+1).Max());
-            newMaxY4 = Math.Max(newMaxY4, values4.TakeLast(TotalPoints+1).Max());
         }
 
+        UpdatePerAgentInventoryGraph();
+        lastX += 1;
+    }
+    private void UpdatePerAgentInventoryGraph()
+    {
+        if (!perAgentGraph.gameObject.activeSelf)
+            return;
+        
+        double newMaxY = 0;
         foreach (var agent in district.agents)
         {
             if (agent is Government)
@@ -245,19 +254,14 @@ public class ESStreamingGraph : MonoBehaviour
                 var categoryName = agent.name + good;
                 
                 perAgentGraph.DataSource.AddPointToCategoryRealtime(categoryName, lastX, value, SlideTime);
-                newMaxY5 = Math.Max(newMaxY5, value);
+                newMaxY = Math.Max(newMaxY, value);
             }
         }
-        values5.Add((float)newMaxY5);
-        newMaxY5 = Math.Max(newMaxY5, values5.TakeLast(TotalPoints+2).Max());
+        perAgentValues.Add((float)newMaxY);
+        newMaxY = Math.Max(newMaxY, perAgentValues.TakeLast(TotalPoints+1).Max());
 
-        meanPriceGraph.DataSource.VerticalViewSize = nearestBracket(vaxisPriceGraph, newMaxY);
-        tradeGraph.DataSource.VerticalViewSize = nearestBracket(vaxisTradeGraph, newMaxY2);
-        inventoryGraph.DataSource.VerticalViewSize = nearestBracket(vaxisInventoryGraph, newMaxY3);
-        cashGraph.DataSource.VerticalViewSize = nearestBracket(vaxisCashGraph, newMaxY4);
-        perAgentGraph.DataSource.VerticalViewSize = nearestBracket(vaxisPerAgentGraph, newMaxY5);
+        perAgentGraph.DataSource.VerticalViewSize = nearestBracket(vaxisPerAgentGraph, newMaxY);
         
-        lastX += 1;
     }
 
     public bool EnableDynamicFit = false;
