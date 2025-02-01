@@ -30,6 +30,8 @@ public partial class UserAgent
         float minQuant = 3f;
         // float outputPressure = buyOutputPressure(minQuant);
         float numBatchInputToBid = minBatchInputToBid();
+        var inputFood = foodEquivalent.GetInputFood();
+        var outputFood = foodEquivalent.GetOutputFood();
 
         var numFoodToBid = minFoodToBid();
         var foodItem = inventory["Food"];
@@ -39,9 +41,10 @@ public partial class UserAgent
         var inputBatchCost = GetInputBatchCost();
         var output = book[outputName];
         var minInputBatches = productionStrategy.NumBatchesProduceable(output, foodItem);
-        
+
+        // Debug.Log(auctionStats.round + " " + name + " minFoodToBid: " + numFoodToBid + " minInputToBid: " + numBatchInputToBid);
         //allocate fund for min food, then min inputs for low cash situation
-        if (true)
+        if (false)
         {
             (numFoodToBid, remainingCash) = allocateFund(numFoodToBid, foodMarketPrice, Cash);
 
@@ -55,7 +58,23 @@ public partial class UserAgent
             remainingCash = Cash;
         }
 
-        if (foodItem.Quantity < 2f) //bid on food first if less quantity
+        //buy input first if no input and no output
+        //else buy food first
+        if (outputName == "Food")
+        {
+            bool keepGoing = true;
+            while (keepGoing)
+            {
+                keepGoing = false;
+                if (remainingCash >= inputBatchCost && inputBatchCost > 0)
+                {
+                    numBatchInputToBid++;
+                    remainingCash -= inputBatchCost;
+                    keepGoing = true;
+                }
+            }
+        }
+        else if (inputFood < 1f) //bid on food first if less quantity
         {
             bool keepGoing = true;
             while (keepGoing)
@@ -217,7 +236,7 @@ public partial class UserAgent
         int daysToDeath = config.maxDaysStarving - DaysStarving;
         Assert.IsTrue(daysToDeath >= 0);
         var numFood =  (int)inventory["Food"].Quantity;
-        float minFoodToBuy = (numFood <= 3) ? 1 : 0;
+        float minFoodToBuy = (DaysStarving > 0) ? 1 : 0;
         //TODO buy more food if can afford it?
 
         return minFoodToBuy;
