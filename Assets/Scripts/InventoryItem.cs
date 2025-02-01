@@ -558,8 +558,14 @@ public void UpdateSellerPriceBelief(String agentName, in Offer trade, in Resourc
         if (demandLastRound < 1f)
 	        return;
         
+        // if only seller, drive price up
+        if (market_share > .8f)
+        {
+	        priceBelief *= 1.05f;
+	        minPriceBelief *= 1.05f;
+        }
         // Case 1: Sold all quantity offered
-        if (quantitySold == trade.offerQuantity)
+        else if (quantitySold == trade.offerQuantity)
         {
 	        var delta = 1 + agent.config.sellPriceDelta;
 	        priceBelief *= delta;
