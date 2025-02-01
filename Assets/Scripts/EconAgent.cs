@@ -421,7 +421,8 @@ public class EconAgent : MonoBehaviour
 		          " --  bestGood: " + bestGood + " bestProfession: " + mostDemand);
 
 		string b = "";
-		if (mostDemand != "invalid")
+		var lastInProfession = book[Profession].numAgents == 1;
+		if (mostDemand != "invalid" && !lastInProfession)
 			b = mostDemand;
 		else
 			b = Profession;
