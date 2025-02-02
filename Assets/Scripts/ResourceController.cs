@@ -6,7 +6,12 @@ using System.Linq;
 using System;
 using Sirenix.OdinInspector;
 
-public class Recipe : Dictionary<string, float> {}
+public class Recipe : Dictionary<string, float>
+{
+	public Recipe() { }
+
+	public Recipe(Recipe recipe) : base(recipe) { }
+}
 public class ResourceController
 {
 	const float defaultPrice = 1;

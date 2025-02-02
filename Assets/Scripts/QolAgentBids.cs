@@ -29,34 +29,23 @@ public partial class UserAgent
             Debug.Log("Metal populateoffersfrominventory");
         float minQuant = 3f;
         // float outputPressure = buyOutputPressure(minQuant);
-        float numBatchInputToBid = minBatchInputToBid();
+        float numBatchInputToBid = 0;
         var inputFood = foodEquivalent.GetInputFood();
         var outputFood = foodEquivalent.GetOutputFood();
 
-        var numFoodToBid = minFoodToBid();
+        var numFoodToBid = 0;
         var foodItem = inventory["Food"];
         var foodMarketPrice = book["Food"].marketPrice;
         var foodCost = numFoodToBid * foodMarketPrice;
-        var remainingCash = 0f;
+        var remainingCash = Cash;
         var inputBatchCost = GetInputBatchCost();
         var output = book[outputName];
         var minInputBatches = productionStrategy.NumBatchesProduceable(output, foodItem);
-
-        // Debug.Log(auctionStats.round + " " + name + " minFoodToBid: " + numFoodToBid + " minInputToBid: " + numBatchInputToBid);
-        //allocate fund for min food, then min inputs for low cash situation
-        if (false)
-        {
-            (numFoodToBid, remainingCash) = allocateFund(numFoodToBid, foodMarketPrice, Cash);
-
-            if (numBatchInputToBid > 0)
-            {
-                (numBatchInputToBid, remainingCash) = allocateFund(numBatchInputToBid, inputBatchCost, remainingCash);
-            }
-        } else {
-            numFoodToBid = 0;
-            numBatchInputToBid = 0;
-            remainingCash = Cash;
-        }
+        
+        //if cash can't cover 1 inputBatch (inventory may have some stuff), borrow enough money to pay for cash
+        //need money equivalent of inputs that contributes towards one batch (say 3 wood 0 tool, only 2 of those woods contribute to a batch)
+        //if more than 1 batch in input inventory, this condition is void
+        DecideAndBorrow(ref remainingCash, inputBatchCost);
 
         //buy input first if no input and no output
         //else buy food first
@@ -142,24 +131,59 @@ public partial class UserAgent
         else
         {
             var cashForInputs = numBatchInputToBid * inputBatchCost;
-            FillInputBids(cashForInputs);
+            fillInputBids(cashForInputs);
         }
     }
 
-    //taking current inventory into account, create bids to get even batches
-    protected void FillInputBids(float allocatedFunds)
+    private bool DecideAndBorrow(ref float remainingCash, float inputBatchCost)
     {
-        var _recipe = new Recipe();
-        foreach (var (k,v) in book[outputName].recipe)
-            _recipe.Add(k,v);
+        var outputRecipe = book[outputName].recipe;
+        var inputCashEquivalent = inputInventoryCashEquivalent(outputRecipe);
+        var enoughCashForInput = remainingCash + inputCashEquivalent >= inputBatchCost;
+        var enoughOutput = inventory[outputName].Quantity < book[outputName].productionPerBatch;
+        //farmers don't care about food (usually)
+        var enoughFoodTarget = (enoughCashForInput) ? 0 : 1;
+        var enoughFood = inventory["Food"].Quantity > enoughFoodTarget || outputName == "Food";
+        bool enough = enoughCashForInput || enoughOutput || enoughFood;
+        bool doesBorrow = !enough;
+        if (doesBorrow)
+        {
+            //borrow money!
+            var loanAmount = inputBatchCost - inputCashEquivalent - remainingCash;
+            loanAmount *= 1.2f; //padding
+            auctionStats.bank.Borrow(this, loanAmount, "cash");
+            Assert.IsTrue(Cash == remainingCash + loanAmount);
+            remainingCash = Cash;
+        }
+
+        return doesBorrow;
+    }
+
+    protected float inputInventoryCashEquivalent(Recipe recipe)
+    {
+        float cashEquivalent = 0;
+        foreach (var input in recipe.Keys)
+        {
+            cashEquivalent += book[input].marketPrice * inventory[input].Quantity;
+        }
+        return cashEquivalent;
+    }
+    //taking current inventory into account, create bids to get even batches
+    protected void fillInputBids(float allocatedFunds)
+    {
+        var origRecipe = book[outputName].recipe;
+        if (origRecipe.Count == 0)
+            return;
+        var _recipe = new Recipe(origRecipe);
+        
         bool recompute;
 
-        if (_recipe.Count == 0)
-            return;
-        
         do {
             float cashEquivalent = 0;
             float batchCost = 0;
+            foreach (var com in origRecipe.Keys)
+                inventory[com].offersThisRound = 0;
+            
             foreach (var (input, amount) in _recipe)
             {
                 float priceOfGood = book[input].marketPrice;
@@ -167,16 +191,11 @@ public partial class UserAgent
                 batchCost += priceOfGood * amount;
             }
             float totalCashEquivalent = cashEquivalent + allocatedFunds;
-            float targetBatch = Mathf.Floor(totalCashEquivalent / batchCost);
-
-            foreach (var com in book[outputName].recipe.Keys)
-            {
-                inventory[com].offersThisRound = 0;
-            }
+            float bidNumBatches = Mathf.Floor(totalCashEquivalent / batchCost);
 
             recompute = false;
             foreach (var (input, amount) in _recipe.ToList()) {
-                float amountNeeded = targetBatch * amount - inventory[input].Quantity;
+                float amountNeeded = bidNumBatches * amount - inventory[input].Quantity;
                 if (amountNeeded < 0) {     //more than needed, can discard and recompute w/o
                     recompute = true;
                     _recipe.Remove(input);

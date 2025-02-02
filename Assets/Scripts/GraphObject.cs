@@ -11,7 +11,7 @@ using TMPro;
 using UnityEngine.Serialization;
 
 [Serializable]
-public class GraphObject : MonoBehaviour
+public class GraphObject 
 {
     public GraphChart chart;
     private VerticalAxis vaxis;
