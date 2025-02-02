@@ -41,7 +41,7 @@ public class AuctionHouse : MonoBehaviour {
 	{
 #if UNITY_EDITOR
 		QualitySettings.vSyncCount = 2;  // VSync must be disabled
-		Application.targetFrameRate = 15;
+		Application.targetFrameRate = 30;
 #endif
 		district = GetComponent<AuctionStats>();
 		config = GetComponent<SimulationConfig>();
@@ -451,13 +451,21 @@ public class AuctionHouse : MonoBehaviour {
 		rsc.buyers.Add(bids.Count);
 		rsc.sellers.Add(asks.Count);
 
-		var avgAskPrice = (quantityToSell == 0) ? 0 : asks.Sum((x) => x.offerPrice * x.offerQuantity) / quantityToSell;
+		var avgAskPrice = (quantityToSell == 0) ? rsc.avgAskPrice.Last() : asks.Sum((x) => x.offerPrice * x.offerQuantity) / quantityToSell;
 		rsc.avgAskPrice.Add(avgAskPrice);
+		var maxAskPrice = (stats.maxAskPrice == 0f) ? rsc.maxAskPrice.Last() : stats.maxAskPrice;
+		rsc.maxAskPrice.Add(maxAskPrice);
+		var minAskPrice = (stats.minAskPrice == float.MaxValue) ? rsc.minAskPrice.Last() : stats.minAskPrice;
+		rsc.minAskPrice.Add(minAskPrice);
 
-		var avgBidPrice = (quantityToBuy == 0) ? 0 : bids.Sum((x) => x.offerPrice * x.offerQuantity) / quantityToBuy;
+		var avgBidPrice = (quantityToBuy == 0) ? rsc.avgBidPrice.Last() : bids.Sum((x) => x.offerPrice * x.offerQuantity) / quantityToBuy;
 		rsc.avgBidPrice.Add(avgBidPrice);
+		var maxBidPrice = (stats.maxBidPrice == 0f) ? rsc.maxBidPrice.Last() : stats.maxBidPrice;
+		rsc.maxBidPrice.Add(maxBidPrice);
+		var minBidPrice = (stats.minBidPrice == float.MaxValue) ? rsc.minBidPrice.Last() : stats.minBidPrice;
+		rsc.minBidPrice.Add(minBidPrice);
 
-		var averagePrice = (stats.goodsExchangedThisRound == 0) ? 0 : stats.moneyExchangedThisRound / stats.goodsExchangedThisRound;
+		var averagePrice = (stats.goodsExchangedThisRound == 0) ? rsc.avgClearingPrice.Last() : stats.moneyExchangedThisRound / stats.goodsExchangedThisRound;
 
 		Debug.Log(district.round + " " + rsc.name + " avgprice: " + averagePrice.ToString("c2") + " goods exchanged: " + stats.goodsExchangedThisRound.ToString("n2") + " money exchanged: " + stats.moneyExchangedThisRound.ToString("c2"));
 		Assert.IsTrue(averagePrice >= 0f);

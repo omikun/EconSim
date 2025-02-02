@@ -400,6 +400,7 @@ public class InventoryItem {
 		var deltaMean = Mathf.Abs(meanBeliefPrice - trade.clearingPrice); //TODO or use auction house mean price?
         var quantityBought = trade.offerQuantity - trade.remainingQuantity;
         var historicalMeanPrice = rsc.avgClearingPrice.LastAverage(history);
+        var minAskPrice = rsc.minAskPrice.Last();
         var minPrice = rsc.minClearingPrice.Last();
         var maxPrice = rsc.maxClearingPrice.Last();
         var supply = rsc.asks.Last();
@@ -431,9 +432,13 @@ public class InventoryItem {
 	    bool equalDemand = (sdRatio <= 1.2f); 
 	    bool moreSupply = sdRatio > 1.2f;
 	    
-	    //how desperate?o
-			
-        if (boughtRatio < 0.8f) //didn't buy it all
+	    if (boughtRatio < .2f && supply > 0)
+	    {
+		    Debug.Log(agent.name + " bought no " + name + "; price belief: " + priceBelief.ToString("c2") 
+		              + " min ask price: " + minAskPrice.ToString("c2"));
+		    priceBelief = minAskPrice;
+		    minPriceBelief = priceBelief;
+	    } else if (boughtRatio < 0.8f) //didn't buy it all / potentially no supply, raise price to signal
         {
 	        var delta = 1 + agent.config.sellPriceDelta;
             if (moreDemand)  delta = 1.1f; 
@@ -540,6 +545,7 @@ public void UpdateSellerPriceBelief(String agentName, in Offer trade, in Resourc
         var quantitySold = trade.offerQuantity - trade.remainingQuantity;
         var historicalMeanPrice = rsc.avgClearingPrice.LastAverage(10);
         var minClearingPrice = rsc.minClearingPrice.Last();
+        var maxBidPrice = rsc.maxBidPrice.Last();
         var market_share = quantitySold / rsc.trades[^1];
         var offer_price = trade.offerPrice;
         var weight = quantitySold / trade.offerQuantity; 
@@ -561,8 +567,8 @@ public void UpdateSellerPriceBelief(String agentName, in Offer trade, in Resourc
         // if only seller, drive price up
         if (market_share > .8f)
         {
-	        priceBelief *= 1.05f;
-	        minPriceBelief *= 1.05f;
+	        priceBelief *= 1.01f;
+	        minPriceBelief *= 1.01f;
         }
         // Case 1: Sold all quantity offered
         else if (quantitySold == trade.offerQuantity)
@@ -578,9 +584,9 @@ public void UpdateSellerPriceBelief(String agentName, in Offer trade, in Resourc
 	        var delta = 1 - Mathf.Pow(3f, agent.DaysStarving)/100f;
             
             // Apply discount to the minimum clearing price if available
-	        if (minClearingPrice > 0)
+	        if (maxBidPrice > 0)
 	        {
-		        priceBelief = minClearingPrice * delta;
+		        priceBelief = maxBidPrice * delta;
 		        minPriceBelief = priceBelief;
 	        }
         } 

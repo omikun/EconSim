@@ -20,7 +20,11 @@ public class ResourceController
  	public ESList bids = new();
  	public ESList asks = new();
  	public ESList avgBidPrice = new();
+ 	public ESList minBidPrice = new();
+ 	public ESList maxBidPrice = new();
  	public ESList avgAskPrice = new();
+ 	public ESList minAskPrice = new();
+ 	public ESList maxAskPrice = new();
  	public ESList avgClearingPrice = new();
  	public ESList minClearingPrice = new();
  	public ESList maxClearingPrice = new();
@@ -71,8 +75,12 @@ public class ResourceController
 		trades.Add(1);
 		inventory.Add(1);
 		cash.Add(1);
-		avgAskPrice.Add(1);
-		avgBidPrice.Add(1);
+		avgAskPrice.Add(setPrice);
+		avgBidPrice.Add(setPrice);
+		minAskPrice.Add(setPrice);
+		minBidPrice.Add(setPrice);
+		maxAskPrice.Add(setPrice);
+		maxBidPrice.Add(setPrice);
 		avgClearingPrice.Add(setPrice);
 		minClearingPrice.Add(setPrice);
 		maxClearingPrice.Add(setPrice);

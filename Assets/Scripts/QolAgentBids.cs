@@ -36,7 +36,6 @@ public partial class UserAgent
         var numFoodToBid = 0;
         var foodItem = inventory["Food"];
         var foodMarketPrice = book["Food"].marketPrice;
-        var foodCost = numFoodToBid * foodMarketPrice;
         var remainingCash = Cash;
         var inputBatchCost = GetInputBatchCost();
         var output = book[outputName];
@@ -47,8 +46,6 @@ public partial class UserAgent
         //if more than 1 batch in input inventory, this condition is void
         DecideAndBorrow(ref remainingCash, inputBatchCost);
 
-        //buy input first if no input and no output
-        //else buy food first
         if (outputName == "Food")
         {
             bool keepGoing = true;
@@ -63,7 +60,9 @@ public partial class UserAgent
                 }
             }
         }
-        else if (inputFood < 1f) //bid on food first if less quantity
+        //buy input first if no input and no output
+        //else buy food first
+        else if (inputFood > 1f) //bid on input first if have enough food
         {
             bool keepGoing = true;
             while (keepGoing)
@@ -84,7 +83,7 @@ public partial class UserAgent
                 }
             }
         }
-        else //swap
+        else //bid on food first if less quantity
         {
             bool keepGoing = true;
             while (keepGoing)
@@ -139,16 +138,16 @@ public partial class UserAgent
     {
         var outputRecipe = book[outputName].recipe;
         var inputCashEquivalent = inputInventoryCashEquivalent(outputRecipe);
-        var enoughCashForInput = remainingCash + inputCashEquivalent >= inputBatchCost;
-        var enoughOutput = inventory[outputName].Quantity < book[outputName].productionPerBatch;
-        //farmers don't care about food (usually)
-        var enoughFoodTarget = (enoughCashForInput) ? 0 : 1;
-        var enoughFood = inventory["Food"].Quantity > enoughFoodTarget || outputName == "Food";
+        
+        var enoughCashForInput = (remainingCash + inputCashEquivalent) >= inputBatchCost * 1.2f;
+        var enoughOutput = inventory[outputName].Quantity >= book[outputName].productionPerBatch;
+        var enoughFoodTarget = (enoughCashForInput) ? 1 : 2;
+        var enoughFood = inventory["Food"].Quantity >= enoughFoodTarget || outputName == "Food"; //farmers don't care about food (usually)
         bool enough = enoughCashForInput || enoughOutput || enoughFood;
+        
         bool doesBorrow = !enough;
         if (doesBorrow)
         {
-            //borrow money!
             var loanAmount = inputBatchCost - inputCashEquivalent - remainingCash;
             loanAmount *= 1.2f; //padding
             auctionStats.bank.Borrow(this, loanAmount, "cash");
@@ -240,6 +239,7 @@ public partial class UserAgent
             var numNeeded = rsc.recipe[com];
             var cost = inventory[com].GetPrice();
             totalCost += numNeeded * cost;
+            Assert.IsTrue(totalCost < 20f, com + " shouldn't cost so much " + cost.ToString("c2"));
         }
 
         return totalCost;
