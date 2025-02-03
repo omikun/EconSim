@@ -32,6 +32,7 @@ public class InventoryItem {
 	public string name { get; private set; }
     protected EconAgent agent;
     protected AuctionStats auctionStats;
+    protected ResourceController rsc { get; private set; }
 	const float significant = 0.25f;
 	const float sig_imbalance = .33f;
 	const float lowInventory = .1f;
@@ -107,7 +108,7 @@ public class InventoryItem {
 	    if (numBatches == 0)
 		    return BaseProduction;
         //derate
-        float rate = ProductionPerBatch * numBatches * productionDeRate;
+        float rate = ProductionPerBatch * numBatches * productionDeRate * rsc.productionMultiplier;
         //random chance derate
         var chance = productionChance;
         realProductionRate = (UnityEngine.Random.value < chance) ? rate : 0;
@@ -164,12 +165,13 @@ public class InventoryItem {
     }
 
 	public InventoryItem (EconAgent a, AuctionStats at, string _name, float _quantity, float _maxQuantity, 
-					ResourceController rsc)
+					ResourceController _rsc)
 	{
-		var _meanPrice = rsc.marketPrice;
-		var _production = rsc.productionPerBatch;
-		var _baseProduction = rsc.baseProduction;
-		var _batchRate = rsc.batchRate;
+		var _meanPrice = _rsc.marketPrice;
+		var _production = _rsc.productionPerBatch;
+		var _baseProduction = _rsc.baseProduction;
+		var _batchRate = _rsc.batchRate;
+		rsc = _rsc;
 		agent = a;
         auctionStats = at;
 		buyHistory = new TransactionHistory();
@@ -432,11 +434,15 @@ public class InventoryItem {
 	    bool equalDemand = (sdRatio <= 1.2f); 
 	    bool moreSupply = sdRatio > 1.2f;
 	    
+	    if (name == "Wood")
+		    Debug.Log("wood buy");
+	    
 	    if (boughtRatio < .2f && supply > 0)
 	    {
 		    Debug.Log(agent.name + " bought no " + name + "; price belief: " + priceBelief.ToString("c2") 
-		              + " min ask price: " + minAskPrice.ToString("c2"));
-		    priceBelief = minAskPrice;
+		              + " max clearing price: " + maxPrice.ToString("c2"));
+		    var upbid = 1 + .01f * agent.DaysStarving;
+		    priceBelief = maxPrice * upbid;
 		    minPriceBelief = priceBelief;
 	    } else if (boughtRatio < 0.8f) //didn't buy it all / potentially no supply, raise price to signal
         {
@@ -581,7 +587,7 @@ public void UpdateSellerPriceBelief(String agentName, in Offer trade, in Resourc
         else if (quantitySold == 0 && food.Quantity < 2)
         {
             // Calculate a discount based on starvation days
-	        var delta = 1 - Mathf.Pow(3f, agent.DaysStarving)/100f;
+            var delta = Mathf.Pow(.9f, agent.DaysStarving);
             
             // Apply discount to the minimum clearing price if available
 	        if (maxBidPrice > 0)

@@ -116,7 +116,7 @@ public class Government : EconAgent {
 			var transferCash = config.initCash - agent.Cash;
 			
 			auctionStats.Transfer(this, agent, "Cash", transferCash);
-			agent.modify_cash(transferCash);
+			agent.AddToCash(transferCash);
 			Cash -= transferCash;
 		}
     }

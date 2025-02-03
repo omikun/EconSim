@@ -143,6 +143,7 @@ public abstract class TradeResolution
 			else if (cond == LoopState.ContinueBids) { bidIdx++; continue; }
     
 			var clearingPrice = tradePriceResolver.ResolvePrice(ask, bid);
+			Assert.IsTrue(clearingPrice > 0f, "no trade should be occuring at 0 price");
 			stats.maxClearingPrice = Mathf.Max(stats.maxClearingPrice, clearingPrice);
 			stats.minClearingPrice = Mathf.Min(stats.minClearingPrice, clearingPrice);
 			var tradeQuantity = Mathf.Min(bid.remainingQuantity, ask.remainingQuantity);

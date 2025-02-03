@@ -24,6 +24,8 @@ public partial class QolAgent : QoLSimpleAgent
         var numBatches = NumBatchesProduceable(rsc, stock);
         var numProduced = Produce(numBatches);
         ConsumeGoods(numBatches);
+        // var numProduced2 = productionStrategy.Produce();
+        // Assert.AreEqual(numProduced, numProduced2);
         Debug.Log(auctionStats.round + " " + name + " produced " + numProduced + " " + rsc.name);
     }
 
@@ -127,15 +129,15 @@ public partial class QolAgent : QoLSimpleAgent
     public float Produce(float numBatches)
     {
         // return productionStrategy.Produce();
-        var item = inventory[outputName];
-        var numProduced = item.GetMaxProductionRate(numBatches);
+        var output = inventory[outputName];
+        var numProduced = output.GetMaxProductionRate(numBatches);
         //produce less if sold less
         // var numSoldLastRound = item.saleHistory[^1].quantity;
         // var smoothedProduction = Mathf.Round((numSoldLastRound + maxProduction) / 2f);
         // var numProduced = Mathf.Min(smoothedProduction, maxProduction);
         // item.Increase(numProduced);
         //don't make any if missing a recipe ingredient
-        item.Increase(numProduced);
+        output.Increase(numProduced);
         return numProduced;
     }
 }

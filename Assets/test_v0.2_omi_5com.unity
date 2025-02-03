@@ -809,7 +809,7 @@ MonoBehaviour:
         - Key: Prod_multiplier
           Value: 1
         - Key: Prod_rate
-          Value: 10
+          Value: 12
         - Key: Base_rate
           Value: 0
         - Key: Batch_rate
@@ -837,7 +837,7 @@ MonoBehaviour:
         - Key: Prod_rate
           Value: 1
         - Key: Batch_rate
-          Value: 4
+          Value: 5
         - Key: Set_price
           Value: 14
     - Key: Ore
@@ -846,7 +846,7 @@ MonoBehaviour:
         - Key: Prod_multiplier
           Value: 1
         - Key: Prod_rate
-          Value: 3
+          Value: 4
         - Key: Batch_rate
           Value: 1
         - Key: Set_price
@@ -861,7 +861,7 @@ MonoBehaviour:
         - Key: Prod_rate
           Value: 1
         - Key: Batch_rate
-          Value: 4
+          Value: 5
         - Key: Set_price
           Value: 4.5
   starvationThreshold: 0.1

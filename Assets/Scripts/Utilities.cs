@@ -23,8 +23,8 @@ public class Utilities
     }
     public static void TransferQuantity(float quantity, EconAgent from, EconAgent to)
     {
-        from.modify_cash(-quantity);
-        to.modify_cash(quantity);
+        from.AddToCash(-quantity);
+        to.AddToCash(quantity);
     }
 }
 

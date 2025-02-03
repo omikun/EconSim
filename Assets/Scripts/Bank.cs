@@ -52,7 +52,7 @@ public class Bank
         }
         var loan = new Loan(curr, amount, regulations.interestRate, regulations.termInRounds);
         loans.Add(agent, loan);
-        agent.modify_cash(amount);
+        agent.AddToCash(amount);
         outstandingDebt += amount;
         return loan;
     }

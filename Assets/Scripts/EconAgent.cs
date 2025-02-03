@@ -436,7 +436,7 @@ public class EconAgent : MonoBehaviour
 	}
 
 	/*********** Trading ************/
-	public void modify_cash(float quant)
+	public void AddToCash(float quant)
 	{
 		Cash += quant;
 	}

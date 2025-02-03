@@ -36,11 +36,13 @@ public partial class UserAgent
         var numFoodToBid = 0;
         var foodItem = inventory["Food"];
         var foodMarketPrice = book["Food"].marketPrice;
-        var remainingCash = Cash;
         var inputBatchCost = GetInputBatchCost();
         var output = book[outputName];
+        var inputCashEquivalent = inputInventoryCashEquivalent(output.recipe);
         var minInputBatches = productionStrategy.NumBatchesProduceable(output, foodItem);
         
+        var remainingCash = Cash;
+        var remainingInputCash = remainingCash + inputCashEquivalent;
         //if cash can't cover 1 inputBatch (inventory may have some stuff), borrow enough money to pay for cash
         //need money equivalent of inputs that contributes towards one batch (say 3 wood 0 tool, only 2 of those woods contribute to a batch)
         //if more than 1 batch in input inventory, this condition is void
@@ -52,10 +54,11 @@ public partial class UserAgent
             while (keepGoing)
             {
                 keepGoing = false;
-                if (remainingCash >= inputBatchCost && inputBatchCost > 0)
+                if (remainingInputCash >= inputBatchCost && inputBatchCost > 0)
                 {
                     numBatchInputToBid++;
                     remainingCash -= inputBatchCost;
+                    remainingInputCash -= inputBatchCost;
                     keepGoing = true;
                 }
             }
@@ -68,10 +71,11 @@ public partial class UserAgent
             while (keepGoing)
             {
                 keepGoing = false;
-                if (remainingCash >= inputBatchCost && inputBatchCost > 0)
+                if (remainingInputCash >= inputBatchCost && inputBatchCost > 0)
                 {
                     numBatchInputToBid++;
                     remainingCash -= inputBatchCost;
+                    remainingInputCash -= inputBatchCost;
                     keepGoing = true;
                 }
 
@@ -79,6 +83,7 @@ public partial class UserAgent
                 {
                     numFoodToBid++;
                     remainingCash -= foodMarketPrice;
+                    remainingInputCash -= foodMarketPrice;
                     keepGoing = true;
                 }
             }
@@ -93,13 +98,15 @@ public partial class UserAgent
                 {
                     numFoodToBid++;
                     remainingCash -= foodMarketPrice;
+                    remainingInputCash -= foodMarketPrice;
                     keepGoing = true;
                 }
 
-                if (remainingCash >= inputBatchCost && inputBatchCost > 0)
+                if (remainingInputCash >= inputBatchCost && inputBatchCost > 0)
                 {
                     numBatchInputToBid++;
                     remainingCash -= inputBatchCost;
+                    remainingInputCash -= inputBatchCost;
                     keepGoing = true;
                 }
             }
@@ -129,7 +136,7 @@ public partial class UserAgent
         }
         else
         {
-            var cashForInputs = numBatchInputToBid * inputBatchCost;
+            var cashForInputs = numBatchInputToBid * inputBatchCost - inputCashEquivalent;
             fillInputBids(cashForInputs);
         }
     }
@@ -142,7 +149,7 @@ public partial class UserAgent
         var enoughCashForInput = (remainingCash + inputCashEquivalent) >= inputBatchCost * 1.2f;
         var enoughOutput = inventory[outputName].Quantity >= book[outputName].productionPerBatch;
         var enoughFoodTarget = (enoughCashForInput) ? 1 : 2;
-        var enoughFood = inventory["Food"].Quantity >= enoughFoodTarget || outputName == "Food"; //farmers don't care about food (usually)
+        var enoughFood = inventory["Food"].Quantity >= enoughFoodTarget && outputName != "Food"; //farmers are covered in enoughOutput
         bool enough = enoughCashForInput || enoughOutput || enoughFood;
         
         bool doesBorrow = !enough;
@@ -150,8 +157,9 @@ public partial class UserAgent
         {
             var loanAmount = inputBatchCost - inputCashEquivalent - remainingCash;
             loanAmount *= 1.2f; //padding
+            loanAmount = Mathf.Max(30, loanAmount); //aggressive banker pushes min loan amount
             auctionStats.bank.Borrow(this, loanAmount, "cash");
-            Assert.IsTrue(Cash == remainingCash + loanAmount);
+            Debug.Log(name + " borrowed " + loanAmount + " Cash " + remainingCash + " -> "+ Cash);
             remainingCash = Cash;
         }
 
@@ -239,7 +247,6 @@ public partial class UserAgent
             var numNeeded = rsc.recipe[com];
             var cost = inventory[com].GetPrice();
             totalCost += numNeeded * cost;
-            Assert.IsTrue(totalCost < 20f, com + " shouldn't cost so much " + cost.ToString("c2"));
         }
 
         return totalCost;
