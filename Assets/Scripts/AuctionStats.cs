@@ -46,7 +46,7 @@ public class AuctionStats : MonoBehaviour
 	[DisableInEditorMode]
 	public float gini;
 
-	void Start()
+	void Awake()
 	{
 		regulations = new BankRegulations(.1f, 30, .01f);
 		bank = new Bank(100, "cash", regulations);

@@ -26,12 +26,12 @@ public class Bank
     BankRegulations regulations;
 
     [ShowInInspector]
-    public float outstandingDebt { get; private set; }
+    public float liability { get; private set; }
     [ShowInInspector]
     public float Wealth { get; private set; }
     [ShowInInspector]
     private Dictionary<EconAgent, Loans> book = new();
-    private Dictionary<EconAgent, float> deposits;
+    private Dictionary<EconAgent, float> deposits = new();
 
     public float Monies()
     {
@@ -42,24 +42,26 @@ public class Bank
         currency = curr;
         TotalDeposits = initDeposits;
         regulations = reg;
-        outstandingDebt = 0;
+        liability = 0;
         Wealth = 0;
     }
 
     public Loan Borrow(EconAgent agent, float amount, string curr)
     {
         Debug.Log(agent.name + " bank borrowed " + amount.ToString("c2") + " " + curr);
-        if ((amount + outstandingDebt) / TotalDeposits > (1f - regulations.fractionalReserveRatio))
+        if ((amount + liability) / TotalDeposits > (1f - regulations.fractionalReserveRatio))
         {
             Assert.IsTrue(false);
             return null;
         }
 
-        var loans = book.GetValueOrDefault(agent, new Loans());
         var loan = new Loan(curr, amount, regulations.interestRate, regulations.termInRounds);
-        loans.Add(loan);
+        
+        book[agent] = book.GetValueOrDefault(agent, new Loans());
+        book[agent].Add(loan);
+        
         agent.AddToCash(amount);
-        outstandingDebt += amount;
+        liability += amount;
         return loan;
     }
 
@@ -70,9 +72,16 @@ public class Bank
         Debug.Log(agent.name + " deposited " + amount.ToString("c2") + " " + curr);
     }
 
+    public float CheckAccountBalance(EconAgent agent)
+    {
+        deposits[agent] = deposits.GetValueOrDefault(agent, 0);
+        return deposits[agent];
+    }
+
     public float Withdraw(EconAgent agent, float amount, string curr)
     {
-        amount = Mathf.Min(deposits[agent]);
+        deposits[agent] = deposits.GetValueOrDefault(agent, 0);
+        amount = Mathf.Min(deposits[agent], amount);
         //TODO automatic borrow if goes over?
         Debug.Log(agent.name + " withdrawing " + amount.ToString("c2") + " " + curr);
         Assert.IsTrue(TotalDeposits >= amount);
@@ -83,6 +92,8 @@ public class Bank
 
     public void CollectPayments()
     {
+        var prevDebt = liability;
+        var prevWealth = Wealth;
         foreach (var (agent, loans) in book)
         {
             float interest = 0f;
@@ -95,18 +106,34 @@ public class Bank
                 loan.Paid(amount);
             }
 
-            if (agent.Cash < amount)
+            var deposit = deposits[agent] = deposits.GetValueOrDefault(agent, 0);
+            if (agent.Cash + deposit < amount)
             {
                 Borrow(agent, amount * 1.2f, "cash");
                 Assert.IsTrue(agent.Cash >= amount);
             }
 
             Debug.Log(agent.name + " repaid " + amount.ToString("c2"));
-            agent.Pay(amount);
+            if (deposit < amount)
+            {
+                deposits[agent] = 0;
+                agent.Pay(amount - deposit);
+            }
+            else
+            {
+                deposits[agent] -= amount;
+            }
             
-            amount -= interest;
+            var principle = amount - interest;
             Wealth += interest;
-            outstandingDebt -= amount;
+            liability -= principle;
         }
+
+        var collectedDebt = prevDebt - liability;
+        var collectedInterest = Wealth - prevWealth;
+        var totalCollected = collectedDebt + collectedInterest;
+        Debug.Log("Collected total: " + totalCollected.ToString("c2") 
+                  + " collected debt: " + collectedDebt.ToString("c2")
+                  + " collected interest: " + collectedInterest.ToString("c2"));
     }
 }

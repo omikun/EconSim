@@ -39,18 +39,32 @@ public partial class UserAgent
 
         var numFoodToBid = 0;
         var foodItem = inventory["Food"];
-        var foodMarketPrice = book["Food"].marketPrice;
+        var foodMarketPrice = (outputName == "Food") ? 0 : book["Food"].marketPrice;
         var inputBatchCost = GetInputBatchCost();
         var output = book[outputName];
         var inputCashEquivalent = inputInventoryCashEquivalent(output.recipe);
         var minInputBatches = productionStrategy.NumBatchesProduceable(output, foodItem);
         
+        //deposit excess cash or withdraw as needed
+        var operatingCash = 3 * (inputBatchCost + foodMarketPrice);
+        if (Cash > operatingCash)
+        {
+            var deposit = Cash - operatingCash;
+            Cash -= deposit;
+            auctionStats.bank.Deposit(this, deposit, "cash");
+        }
+        else
+        {
+            Cash += auctionStats.bank.Withdraw(this, operatingCash, "cash");
+        }
+
         var remainingCash = Cash;
-        var remainingInputCash = remainingCash + inputCashEquivalent;
         //if cash can't cover 1 inputBatch (inventory may have some stuff), borrow enough money to pay for cash
         //need money equivalent of inputs that contributes towards one batch (say 3 wood 0 tool, only 2 of those woods contribute to a batch)
         //if more than 1 batch in input inventory, this condition is void
         DecideAndBorrow(ref remainingCash, inputBatchCost, foodMarketPrice);
+        var remainingInputCash = remainingCash + inputCashEquivalent;
+        
 
         if (outputName == "Food")
         {
