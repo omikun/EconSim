@@ -25,6 +25,10 @@ public partial class UserAgent
             item.CanOfferAdditionalThisRound = true;
         }
 
+        var reason = "";
+
+        if (name == "agent10")
+            Debug.Log("Agent10 bid logic");
         if (outputName == "Metal")
             Debug.Log("Metal populateoffersfrominventory");
         float minQuant = 3f;
@@ -46,7 +50,7 @@ public partial class UserAgent
         //if cash can't cover 1 inputBatch (inventory may have some stuff), borrow enough money to pay for cash
         //need money equivalent of inputs that contributes towards one batch (say 3 wood 0 tool, only 2 of those woods contribute to a batch)
         //if more than 1 batch in input inventory, this condition is void
-        DecideAndBorrow(ref remainingCash, inputBatchCost);
+        DecideAndBorrow(ref remainingCash, inputBatchCost, foodMarketPrice);
 
         if (outputName == "Food")
         {
@@ -62,11 +66,14 @@ public partial class UserAgent
                     keepGoing = true;
                 }
             }
+
+            reason += " is farmer ";
         }
         //buy input first if no input and no output
         //else buy food first
-        else if (inputFood > 1f) //bid on input first if have enough food
+        else if (foodItem.Quantity > 1f) //bid on input first if have enough food
         {
+            reason += " >1 food ";
             bool keepGoing = true;
             while (keepGoing)
             {
@@ -90,6 +97,7 @@ public partial class UserAgent
         }
         else //bid on food first if less quantity
         {
+            reason += " <=1 food ";
             bool keepGoing = true;
             while (keepGoing)
             {
@@ -114,9 +122,10 @@ public partial class UserAgent
 
         //for cases where can't afford to buy enough inputs this round, ends up spending all money to food
         //ends up never enough to produce, always broke
-        if (minInputBatches == 0 && numBatchInputToBid == 0)
+        if (minInputBatches == 0 && numBatchInputToBid == 0 && foodItem.Quantity > 0)
         {
             numFoodToBid = 0;
+            reason += " no bid food bc didn't bid on inputs when <1 batch inputs ";
         }
         //loop over each inventory item and update offersThisRound
         inventory["Food"].offersThisRound = numFoodToBid;
@@ -136,32 +145,51 @@ public partial class UserAgent
         }
         else
         {
-            var cashForInputs = numBatchInputToBid * inputBatchCost - inputCashEquivalent;
-            fillInputBids(cashForInputs);
+            var cashForInputs = Cash - numFoodToBid * foodMarketPrice;
+            // var cashForInputs = numBatchInputToBid * inputBatchCost - inputCashEquivalent;
+            var bids = fillInputBids(cashForInputs);
+            reason += " #inputs " + numBatchInputToBid.ToString("n2")  
+                                  + " addtl input$ " + cashForInputs.ToString("c2")
+                                  + " inputCost " + inputBatchCost.ToString("c2") 
+                                  + " input$eq " + inputCashEquivalent.ToString("c2");
         }
+        Debug.Log(name + " reason " + reason);
     }
 
-    private bool DecideAndBorrow(ref float remainingCash, float inputBatchCost)
+    private bool DecideAndBorrow(ref float remainingCash, float inputBatchCost, float foodMarketPrice)
     {
         var outputRecipe = book[outputName].recipe;
         var inputCashEquivalent = inputInventoryCashEquivalent(outputRecipe);
         
         var enoughCashForInput = (remainingCash + inputCashEquivalent) >= inputBatchCost * 1.2f;
+        var enoughCashForFood = (enoughCashForInput)
+            ? (remainingCash - inputBatchCost) > foodMarketPrice
+            : remainingCash > foodMarketPrice;
         var enoughOutput = inventory[outputName].Quantity >= book[outputName].productionPerBatch;
         var enoughFoodTarget = (enoughCashForInput) ? 1 : 2;
-        var enoughFood = inventory["Food"].Quantity >= enoughFoodTarget && outputName != "Food"; //farmers are covered in enoughOutput
-        bool enough = enoughCashForInput || enoughOutput || enoughFood;
+        var enoughFood = inventory["Food"].Quantity >= enoughFoodTarget || outputName != "Food"; //farmers are covered in enoughOutput
+        var enoughFoodOrCashForFood = (enoughFood || enoughCashForFood) && outputName != "Food";
+        bool enough = enoughCashForInput || enoughOutput || enoughFoodOrCashForFood;
         
         bool doesBorrow = !enough;
+        float loanAmount = 0;
         if (doesBorrow)
         {
-            var loanAmount = inputBatchCost - inputCashEquivalent - remainingCash;
+            loanAmount = inputBatchCost - inputCashEquivalent - remainingCash;
             loanAmount *= 1.2f; //padding
+            if (!enoughFoodOrCashForFood && outputName != "Food")
+                loanAmount += foodMarketPrice * 1.2f;
             loanAmount = Mathf.Max(30, loanAmount); //aggressive banker pushes min loan amount
             auctionStats.bank.Borrow(this, loanAmount, "cash");
-            Debug.Log(name + " borrowed " + loanAmount + " Cash " + remainingCash + " -> "+ Cash);
-            remainingCash = Cash;
         }
+
+        var reason = "";
+        reason += enoughFoodOrCashForFood ? "" : "!Food & !CashForFood ";
+        reason += enoughOutput ? "" : "!output ";
+        reason += enoughCashForInput ? "" : "!CashForInput ";
+        Debug.Log(name + " borrowed " + loanAmount + " Cash " + remainingCash + " -> "+ Cash 
+                  + " reason " + reason);
+        remainingCash = Cash;
 
         return doesBorrow;
     }
@@ -176,16 +204,19 @@ public partial class UserAgent
         return cashEquivalent;
     }
     //taking current inventory into account, create bids to get even batches
-    protected void fillInputBids(float allocatedFunds)
+    protected string fillInputBids(float allocatedFunds)
     {
         var origRecipe = book[outputName].recipe;
         if (origRecipe.Count == 0)
-            return;
+            return " none ";
         var _recipe = new Recipe(origRecipe);
         
         bool recompute;
+        var reason = "";
 
-        do {
+        do
+        {
+            reason = "";
             float cashEquivalent = 0;
             float batchCost = 0;
             foreach (var com in origRecipe.Keys)
@@ -193,7 +224,7 @@ public partial class UserAgent
             
             foreach (var (input, amount) in _recipe)
             {
-                float priceOfGood = book[input].marketPrice;
+                float priceOfGood = inventory[input].GetPrice();
                 cashEquivalent += priceOfGood * inventory[input].Quantity;
                 batchCost += priceOfGood * amount;
             }
@@ -211,6 +242,8 @@ public partial class UserAgent
                 inventory[input].offersThisRound = amountNeeded;
             }
         } while (recompute);
+
+        return reason;
     }
 
     //returns remaining fund and num bids that can be allocated given initial fund
@@ -245,7 +278,7 @@ public partial class UserAgent
         foreach (var com in rsc.recipe.Keys)
         {
             var numNeeded = rsc.recipe[com];
-            var cost = inventory[com].GetPrice();
+            var cost = inventory[com].GetPrice(); //rsc.avgBidPrice.Last();
             totalCost += numNeeded * cost;
         }
 
