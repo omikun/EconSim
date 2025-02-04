@@ -437,11 +437,11 @@ public class InventoryItem {
 	    if (name == "Wood")
 		    Debug.Log("wood buy");
 	    
-	    if (boughtRatio < .2f && supply > 0)
+	    if (boughtRatio < .2f)
 	    {
 		    Debug.Log(agent.name + " bought no " + name + "; price belief: " + priceBelief.ToString("c2") 
 		              + " max clearing price: " + maxPrice.ToString("c2"));
-		    var upbid = 1 + .01f * agent.DaysStarving;
+		    var upbid = Mathf.Pow(1.07f, agent.DaysStarving);
 		    priceBelief = maxPrice * upbid;
 		    minPriceBelief = priceBelief;
 	    } else if (boughtRatio < 0.8f) //didn't buy it all / potentially no supply, raise price to signal
@@ -546,22 +546,22 @@ public void UpdateSellerPriceBelief(String agentName, in Offer trade, in Resourc
         if (name == "Tool")
 	        Debug.Log("Tool updatesellerpricebelief");
 
-		var meanBeliefPrice = (minPriceBelief + priceBelief) / 2;
-		var deltaMean = meanBeliefPrice - trade.clearingPrice; //TODO or use auction house mean price?
+		var meanPriceBelief = (minPriceBelief + priceBelief) / 2;
+		var deltaMean = meanPriceBelief - trade.clearingPrice; //TODO or use auction house mean price?
         var quantitySold = trade.offerQuantity - trade.remainingQuantity;
-        var historicalMeanPrice = rsc.avgClearingPrice.LastAverage(10);
+        var historicalMeanPrice = rsc.avgClearingPrice.LastAverage(3);
         var minClearingPrice = rsc.minClearingPrice.Last();
         var maxBidPrice = rsc.maxBidPrice.Last();
         var market_share = quantitySold / rsc.trades[^1];
-        var offer_price = trade.offerPrice;
+        var offerPrice = trade.offerPrice;
         var weight = quantitySold / trade.offerQuantity; 
-        var displacement = (1 - weight) * meanBeliefPrice;
+        var displacement = (1 - weight) * meanPriceBelief;
         var supply = rsc.asks.LastAverage(3);
         var demand = rsc.bids.LastAverage(3);
         var demandLastRound = rsc.bids.Last();
-        float sdRatio = supply / demand;
+        float supplyRatio = supply / demand;
+        var soldRatio = quantitySold / trade.offerQuantity;
         var food = agent.inventory["Food"];
-        float priceDrop = priceBelief - minClearingPrice;
 
         var prevPriceBelief = priceBelief;
         var tempPriceBelief = priceBelief;
@@ -577,17 +577,17 @@ public void UpdateSellerPriceBelief(String agentName, in Offer trade, in Resourc
 	        minPriceBelief *= 1.01f;
         }
         // Case 1: Sold all quantity offered
-        else if (quantitySold == trade.offerQuantity)
+        else if (false && quantitySold == trade.offerQuantity)
         {
 	        var delta = 1 + agent.config.sellPriceDelta;
 	        priceBelief *= delta;
 	        minPriceBelief *= delta;
         }
-        // Case 2: Did not sell any quantity and low food supply
-        else if (quantitySold == 0 && food.Quantity < 2)
+        // Case 2: Did not sell any quantity, snap to highest bid
+        else if (quantitySold == 0)
         {
             // Calculate a discount based on starvation days
-            var delta = Mathf.Pow(.9f, agent.DaysStarving);
+            var delta = Mathf.Pow(.95f, agent.DaysStarving*2);
             
             // Apply discount to the minimum clearing price if available
 	        if (maxBidPrice > 0)
@@ -599,16 +599,12 @@ public void UpdateSellerPriceBelief(String agentName, in Offer trade, in Resourc
         // General case: Adjust based on sell performance
         else
         {
-	        var denom = 2f;
-	        if (sdRatio < 1.2f)
-		        denom = 8f;
-
-            var delta = 1 - agent.config.sellPriceDelta / denom;
-            if (priceDrop > delta)
-                delta = priceDrop;
-
-            priceBelief *= delta;
-            minPriceBelief *= delta;
+	        var translator = 2 * soldRatio - 1f;
+	        //TODO how does market price adjust this logic?
+	        var sellPriceMultiplier = 1 + agent.config.sellPriceDelta * translator;
+	        Assert.IsTrue(sellPriceMultiplier > .5f && sellPriceMultiplier < 1.5f);
+	        priceBelief *= sellPriceMultiplier;
+	        minPriceBelief *= sellPriceMultiplier;
             tempPriceBelief = priceBelief;
 
             // Additional constraint: Ensure minimum sell price based on costs
@@ -629,13 +625,13 @@ public void UpdateSellerPriceBelief(String agentName, in Offer trade, in Resourc
         }
 
         // Log the update for debugging purposes
-        Debug.Log(agent.auctionStats.round + " " + agent.name + " price belief update: " + name +
-                  " asked: " + trade.offerQuantity + " sold: " + quantitySold +
-                  " prev price " + prevPriceBelief.ToString("c2") +
-                  " current price belief " + priceBelief.ToString("c2")
-                  + " sdRatio " + sdRatio.ToString("n2")
-                  + " priceDrop " + priceDrop.ToString("c2")
-                  + " tempPriceBelief " + tempPriceBelief.ToString("c2"));
+        Debug.Log(agent.auctionStats.round + " " + agent.name + " price belief update: " + name
+                  + " asked: " + trade.offerQuantity + " sold: " + quantitySold
+                  + " prev price " + prevPriceBelief.ToString("c2")
+                  + " current price belief " + priceBelief.ToString("c2")
+                  + " supply ratio " + supplyRatio.ToString("n2")
+                  + " pre minSellPrice " + tempPriceBelief.ToString("c2")
+                  + " sold ratio " + soldRatio.ToString("n2"));
         return;
         
         string reason_msg = "none";
@@ -651,9 +647,9 @@ public void UpdateSellerPriceBelief(String agentName, in Offer trade, in Resourc
             minPriceBelief -= displacement / 7;
             reason_msg = "seller_market_share_<.75";
         }
-        else if (offer_price < trade.clearingPrice)
+        else if (offerPrice < trade.clearingPrice)
         {
-            var underbid = trade.clearingPrice - offer_price;
+            var underbid = trade.clearingPrice - offerPrice;
             priceBelief += underbid * 1.2f;
             minPriceBelief += underbid * 1.2f;
             reason_msg = "seller_under_bid";
