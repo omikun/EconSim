@@ -21,37 +21,43 @@ public class BankRegulations
 public class Bank
 {
     [ShowInInspector]
-    private float totalDeposits;
+    public float TotalDeposits { get; private set; }
     private string currency;
     BankRegulations regulations;
 
     [ShowInInspector]
     public float outstandingDebt { get; private set; }
     [ShowInInspector]
-    public float income { get; private set; }
+    public float Wealth { get; private set; }
     [ShowInInspector]
-    private Dictionary<EconAgent, Loan> loans = new();
+    private Dictionary<EconAgent, Loans> book = new();
     private Dictionary<EconAgent, float> deposits;
 
+    public float Monies()
+    {
+        return TotalDeposits + Wealth;
+    }
     public Bank(float initDeposits, string curr, BankRegulations reg)
     {
         currency = curr;
-        totalDeposits = initDeposits;
+        TotalDeposits = initDeposits;
         regulations = reg;
         outstandingDebt = 0;
-        income = 0;
+        Wealth = 0;
     }
 
     public Loan Borrow(EconAgent agent, float amount, string curr)
     {
-        Debug.Log(agent.name + " borrowed " + amount.ToString("c2") + " " + curr);
-        if ((amount + outstandingDebt) / totalDeposits > (1f - regulations.fractionalReserveRatio))
+        Debug.Log(agent.name + " bank borrowed " + amount.ToString("c2") + " " + curr);
+        if ((amount + outstandingDebt) / TotalDeposits > (1f - regulations.fractionalReserveRatio))
         {
             Assert.IsTrue(false);
             return null;
         }
+
+        var loans = book.GetValueOrDefault(agent, new Loans());
         var loan = new Loan(curr, amount, regulations.interestRate, regulations.termInRounds);
-        loans.Add(agent, loan);
+        loans.Add(loan);
         agent.AddToCash(amount);
         outstandingDebt += amount;
         return loan;
@@ -59,7 +65,7 @@ public class Bank
 
     public void Deposit(EconAgent agent, float amount, string curr)
     {
-        totalDeposits += amount;
+        TotalDeposits += amount;
         deposits[agent] = deposits.GetValueOrDefault(agent) + amount;
         Debug.Log(agent.name + " deposited " + amount.ToString("c2") + " " + curr);
     }
@@ -69,29 +75,37 @@ public class Bank
         amount = Mathf.Min(deposits[agent]);
         //TODO automatic borrow if goes over?
         Debug.Log(agent.name + " withdrawing " + amount.ToString("c2") + " " + curr);
-        Assert.IsTrue(totalDeposits >= amount);
-        totalDeposits -= amount;
+        Assert.IsTrue(TotalDeposits >= amount);
+        TotalDeposits -= amount;
         deposits[agent] -= amount;
         return amount;
     }
 
     public void CollectPayments()
     {
-        foreach (var (agent, loan) in loans)
+        foreach (var (agent, loans) in book)
         {
-            var interest = loan.Interest();
-            var amount = loan.Payment();
+            float interest = 0f;
+            float amount = 0f;
+
+            foreach (var loan in loans)
+            {
+                interest += loan.Interest();
+                amount += loan.Payment();
+                loan.Paid(amount);
+            }
+
             if (agent.Cash < amount)
             {
-                Borrow(agent, amount, "cash");
-                Assert.IsTrue(agent.Cash > amount);
+                Borrow(agent, amount * 1.2f, "cash");
+                Assert.IsTrue(agent.Cash >= amount);
             }
 
             Debug.Log(agent.name + " repaid " + amount.ToString("c2"));
-            amount -= interest;
-            income += interest;
             agent.Pay(amount);
-            loan.Paid(amount);
+            
+            amount -= interest;
+            Wealth += interest;
             outstandingDebt -= amount;
         }
     }

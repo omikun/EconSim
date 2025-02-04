@@ -1,7 +1,14 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
+[Serializable]
+public class Loans : List<Loan>
+{
+    public float Principle => this.Sum(loan => loan.principle);
+}
 [Serializable]
 public class Loan
 {

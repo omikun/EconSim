@@ -280,9 +280,11 @@ public class AuctionHouse : MonoBehaviour {
 	public void Tick()
 	{
 		//check total cash held by agents and government
-		var totalCash = agents.Sum(x => x.Cash);
+		var totalCash = agents.Sum(x => x.Cash) + district.bank.Monies();
 		Debug.Log("Auction House tick: Total cash: " + totalCash);
 
+		district.bank.CollectPayments();
+		
 		var book = district.book;
 		foreach (var agent in agents)
 		{
@@ -483,7 +485,7 @@ public class AuctionHouse : MonoBehaviour {
 		var totalInventory = agents.Sum(agent => (agent.inventory.Keys.Contains(rsc.name)) ? agent.inventory[rsc.name].Quantity : 0f);
 		rsc.inventory.Add(totalInventory);
 
-		var totalCash = agents.Sum(agent => (agent.outputName == rsc.name) ? agent.Cash : 0f);
+		var totalCash = agents.Sum(agent => (agent.outputName == rsc.name) ? agent.Cash : 0f) + district.bank.Monies();
 		string msg = "";
 		foreach (var agent in agents)
 		{
