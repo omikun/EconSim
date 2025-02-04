@@ -204,7 +204,7 @@ public class AuctionHouse : MonoBehaviour {
 		//do this in a new class
 		var wood = district.book["Wood"];
 		var weight = wood.productionMultiplier;
-		weight = .2f;
+		weight = .5f;
 
 		wood.ChangeProductionMultiplier(weight);
 
