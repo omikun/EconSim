@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Sirenix.OdinInspector;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 [Serializable]
 public class Loans : List<Loan>
@@ -33,22 +34,24 @@ public class Loan
 
     public float Payment()
     {
-        return Interest() + initialLoanAmount / termInRounds;
+        var amount = Interest() + initialLoanAmount / termInRounds;
+        Assert.IsTrue(amount > 0);
+        return amount;
     }
     public float Interest()
     {
         return principle * interestRate;
     }
 
-    public void Paid(float amount)
+    //returns if loan is paid off
+    public bool Paid(float amount)
     {
         var interest = Interest();
-        if (amount > interest)
-        {
-            principle -= amount - interest;
-        }
-
+        Assert.IsTrue(amount > interest);
         interestPaid += Mathf.Min(amount, interest);
-        //TODO what happens if amount is less than interest? penalty??
+        
+        principle -= amount - interest;
+        Debug.Log("Paid() " + principle + " -= " + amount + " - " + interest);
+        return (principle < 0.01f);
     }
 }

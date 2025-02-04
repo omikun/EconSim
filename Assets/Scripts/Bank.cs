@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.Assertions;
@@ -17,6 +18,14 @@ public class BankRegulations
         interestRate = interest;
     }
 }
+
+public class LoanBook : Dictionary<EconAgent, Loans>
+{
+    public LoanBook() { }
+    public LoanBook(LoanBook book) : base(book) { }
+    
+}
+
 [Serializable]
 public class Bank
 {
@@ -30,8 +39,8 @@ public class Bank
     [ShowInInspector]
     public float Wealth { get; private set; }
     [ShowInInspector]
-    private Dictionary<EconAgent, Loans> book = new();
-    private Dictionary<EconAgent, float> deposits = new();
+    private LoanBook book = new();
+    public Dictionary<EconAgent, float> deposits { get; private set; }
 
     public float Monies()
     {
@@ -44,11 +53,13 @@ public class Bank
         regulations = reg;
         liability = 0;
         Wealth = 0;
+        deposits = new();
     }
 
     public Loan Borrow(EconAgent agent, float amount, string curr)
     {
         Debug.Log(agent.name + " bank borrowed " + amount.ToString("c2") + " " + curr);
+        Assert.IsTrue(amount > 0);
         if ((amount + liability) / TotalDeposits > (1f - regulations.fractionalReserveRatio))
         {
             Assert.IsTrue(false);
@@ -67,6 +78,7 @@ public class Bank
 
     public void Deposit(EconAgent agent, float amount, string curr)
     {
+        Assert.IsTrue(amount > 0);
         TotalDeposits += amount;
         deposits[agent] = deposits.GetValueOrDefault(agent) + amount;
         Debug.Log(agent.name + " deposited " + amount.ToString("c2") + " " + curr);
@@ -80,6 +92,7 @@ public class Bank
 
     public float Withdraw(EconAgent agent, float amount, string curr)
     {
+        Assert.IsTrue(amount > 0);
         deposits[agent] = deposits.GetValueOrDefault(agent, 0);
         amount = Mathf.Min(deposits[agent], amount);
         //TODO automatic borrow if goes over?
@@ -94,40 +107,61 @@ public class Bank
     {
         var prevDebt = liability;
         var prevWealth = Wealth;
-        foreach (var (agent, loans) in book)
+        var tempLiability = liability;
+        foreach (var (agent, loans) in new LoanBook(book))
         {
-            float interest = 0f;
-            float amount = 0f;
+            float interestPaidByAgent = 0f;
+            float paymentByAgent = 0f;
 
+            var collectiveLoan = book.Values.Sum(loans => loans.Principle);
+            Debug.Log("check liability1: " + tempLiability.ToString("c2") + " vs " + collectiveLoan.ToString("c2"));
+            List<Loan> loansToRemove = new();
             foreach (var loan in loans)
             {
-                interest += loan.Interest();
-                amount += loan.Payment();
-                loan.Paid(amount);
+                var interest = loan.Interest();
+                var payment = loan.Payment();
+                tempLiability -= payment - interest;
+                
+                Debug.Log(agent.name + " repaid " + payment.ToString("c2") + " interest " + interest.ToString("c2"));
+                interestPaidByAgent += interest;
+                paymentByAgent += payment;
+                bool paidOff = loan.Paid(payment);
+                
+                collectiveLoan = book.Values.Sum(loans => loans.Principle);
+                Debug.Log("check liability2: " + tempLiability.ToString("c2") + " vs " + collectiveLoan.ToString("c2"));
+                if (paidOff)
+                    loansToRemove.Add(loan);
             }
+            
+            foreach (var loan in loansToRemove)
+                    book[agent].Remove(loan);
 
             var deposit = deposits[agent] = deposits.GetValueOrDefault(agent, 0);
-            if (agent.Cash + deposit < amount)
+            if (agent.Cash + deposit < paymentByAgent)
             {
-                Borrow(agent, amount * 1.2f, "cash");
-                Assert.IsTrue(agent.Cash >= amount);
+                Borrow(agent, paymentByAgent * 1.2f, "cash");
+                Assert.IsTrue(agent.Cash >= paymentByAgent);
             }
 
-            Debug.Log(agent.name + " repaid " + amount.ToString("c2"));
-            if (deposit < amount)
+            // Debug.Log(agent.name + " repaid " + amount.ToString("c2"));
+            if (deposit < paymentByAgent)
             {
                 deposits[agent] = 0;
-                agent.Pay(amount - deposit);
+                agent.Pay(paymentByAgent - deposit);
             }
             else
             {
-                deposits[agent] -= amount;
+                deposits[agent] -= paymentByAgent;
             }
+            Debug.Log("liability: " + liability + " " + agent.name + " repaid " + paymentByAgent.ToString("c2") + " interest " + interestPaidByAgent.ToString("c2"));
             
-            var principle = amount - interest;
-            Wealth += interest;
+            var principle = paymentByAgent - interestPaidByAgent;
+            Wealth += interestPaidByAgent;
             liability -= principle;
         }
+        var collectiveLoans = book.Values.Sum(loans => loans.Principle);
+        Debug.Log("check liability3: " + liability.ToString("c2") + " vs " + collectiveLoans.ToString("c2"));
+        //Assert.AreEqual(collectiveLoans, liability);
 
         var collectedDebt = prevDebt - liability;
         var collectedInterest = Wealth - prevWealth;
