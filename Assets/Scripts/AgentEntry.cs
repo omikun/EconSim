@@ -42,6 +42,9 @@ public class AgentEntry
 	[VerticalGroup("Stats"), LabelWidth(30), ReadOnly] [GUIColor("GetCashColor")]
 	public float Cash;
 
+	[VerticalGroup("Stats"), LabelWidth(30), ReadOnly] [GUIColor("GetCashColor")]
+	public float Deposit;
+	
 	[VerticalGroup("Stats"), LabelWidth(80), ReadOnly] [GUIColor("GetFoodColor")]
 	public int DaysStarving;
 
@@ -90,6 +93,7 @@ public class AgentEntry
 		
 		Agent = agent.name + "-" + agent.outputName;
 		Cash = agent.Cash;
+		Deposit = agent.auctionStats.bank.Deposits[agent];
 		DaysStarving = agent.DaysStarving;
 		var recipe = agent.book[agent.outputName].recipe;
 		if (agent is Government)
