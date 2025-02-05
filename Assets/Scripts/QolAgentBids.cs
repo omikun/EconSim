@@ -46,14 +46,14 @@ public partial class UserAgent
         var minInputBatches = productionStrategy.NumBatchesProduceable(output, foodItem);
         
         //deposit excess cash or withdraw as needed
-        var operatingCash = 3 * (inputBatchCost + foodMarketPrice);
+        var operatingCash = 5 * (inputBatchCost + foodMarketPrice);
         if (Cash > operatingCash)
         {
             var deposit = Cash - operatingCash;
             Cash -= deposit;
             auctionStats.bank.Deposit(this, deposit, "cash");
         }
-        else
+        else if (Cash < operatingCash)
         {
             Cash += auctionStats.bank.Withdraw(this, operatingCash, "cash");
         }
