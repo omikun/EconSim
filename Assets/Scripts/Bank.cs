@@ -98,7 +98,7 @@ public class Bank
         Assert.IsTrue(amount > 0);
         Deposits[agent] = Deposits.GetValueOrDefault(agent, 0);
         amount = Mathf.Min(Deposits[agent], amount);
-        //TODO automatic borrow if goes over?
+        
         Debug.Log(agent.name + " withdrawing " + amount.ToString("c2") + " " + curr);
         Assert.IsTrue(TotalDeposits >= amount);
         TotalDeposits -= amount;
@@ -116,6 +116,7 @@ public class Bank
             float interestPaidByAgent = 0f;
             float paymentByAgent = 0f;
 
+            //pretend all loan payments can be made
             var collectiveLoan = book.Values.Sum(loans => loans.Principle);
             Debug.Log("check liability1: " + tempLiability.ToString("c2") + " vs " + collectiveLoan.ToString("c2"));
             List<Loan> loansToRemove = new();
@@ -123,22 +124,26 @@ public class Bank
             {
                 var interest = loan.Interest();
                 var payment = loan.Payment();
-                tempLiability -= payment - interest;
+                bool paidOff = loan.Paid(payment);
                 
                 Debug.Log(agent.name + " repaid " + payment.ToString("c2") + " interest " + interest.ToString("c2"));
                 interestPaidByAgent += interest;
                 paymentByAgent += payment;
-                bool paidOff = loan.Paid(payment);
                 
+                tempLiability -= payment - interest;
                 collectiveLoan = book.Values.Sum(loans => loans.Principle);
                 Debug.Log("check liability2: " + tempLiability.ToString("c2") + " vs " + collectiveLoan.ToString("c2"));
                 if (paidOff)
+                {
+                    Debug.Log("paid off a loan!");
                     loansToRemove.Add(loan);
+                }
             }
-            
+            //pay off any loans
             foreach (var loan in loansToRemove)
                     book[agent].Remove(loan);
 
+            //if agent missing money, borrow more to cover shortfall
             var deposit = Deposits[agent] = Deposits.GetValueOrDefault(agent, 0);
             if (agent.Cash + deposit < paymentByAgent)
             {
@@ -146,9 +151,12 @@ public class Bank
                 Assert.IsTrue(agent.Cash >= paymentByAgent);
             }
 
-            // Debug.Log(agent.name + " repaid " + amount.ToString("c2"));
-            if (deposit < paymentByAgent)
+            //agent now makes all outstanding payment
+            if (Deposits[agent] < paymentByAgent)
             {
+                Debug.Log(agent.name + " repaid " + paymentByAgent.ToString("c2") 
+                          + " with deposits " + deposit.ToString("c2")
+                          + " and cash " + agent.Cash.ToString("c2"));
                 Deposits[agent] = 0;
                 agent.Pay(paymentByAgent - deposit);
             }
@@ -164,7 +172,7 @@ public class Bank
         }
         var collectiveLoans = book.Values.Sum(loans => loans.Principle);
         Debug.Log("check liability3: " + liability.ToString("c2") + " vs " + collectiveLoans.ToString("c2"));
-        //Assert.AreEqual(collectiveLoans, liability);
+        Assert.AreEqual((int)collectiveLoans, (int)liability);
 
         var collectedDebt = prevDebt - liability;
         var collectedInterest = Wealth - prevWealth;
