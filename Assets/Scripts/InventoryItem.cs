@@ -442,7 +442,7 @@ public class InventoryItem {
 	    {
 		    Debug.Log(agent.name + " bought no " + name + "; price belief: " + priceBelief.ToString("c2") 
 		              + " max clearing price: " + maxPrice.ToString("c2"));
-		    var upbid = Mathf.Pow(1.07f, agent.DaysStarving);
+		    var upbid = Mathf.Pow(1.07f, agent.DaysStarving*2);
 		    priceBelief = maxPrice * upbid;
 		    minPriceBelief = priceBelief;
 	    } else if (boughtRatio < 0.8f) //didn't buy it all / potentially no supply, raise price to signal
