@@ -386,9 +386,10 @@ public class InventoryItem {
 	{
 		//minPriceBelief = Mathf.Max(cost, minPriceBelief); TODO maybe consider this eventually?
 		minPriceBelief = Mathf.Clamp(minPriceBelief, 0.1f, 900f);
-		priceBelief = Mathf.Max(minPriceBelief*1.1f, priceBelief);
-		priceBelief = Mathf.Clamp(priceBelief, 1.1f, 1000f);
-        Assert.IsTrue(minPriceBelief < priceBelief);
+		priceBelief = minPriceBelief;
+		// priceBelief = Mathf.Max(minPriceBelief*1.1f, priceBelief);
+		// priceBelief = Mathf.Clamp(priceBelief, 1.1f, 1000f);
+        // Assert.IsTrue(minPriceBelief < priceBelief);
 	}
 	
     public void UpdateBuyerPriceBelief(String agentName, in Offer trade, in ResourceController rsc)
@@ -479,6 +480,7 @@ public class InventoryItem {
         string demandstr = moreDemand ? "more demand" : equalDemand ? "equal demand" : "more supply";
         
         
+        SanePriceBeliefs();
         Debug.Log(agent.auctionStats.round + " " + agent.name + " price belief update: " + name 
                   + " bid: " + trade.offerQuantity + " bought: " + quantityBought 
                   + " prev price " + prevPriceBelief.ToString("c2") 
@@ -487,7 +489,6 @@ public class InventoryItem {
                   + " supply/demand " + demandstr 
                   + " tempPriceBelief " + tempPriceBelief.ToString("c2")
                   + " minItemRaiseBuyPrice " + agent.config.minItemRaiseBuyPrice.ToString("c2"));
-        //SanePriceBeliefs();
         return;
 
         if ( quantityBought * 2 > trade.offerQuantity ) //at least 50% offer filled
@@ -624,6 +625,7 @@ public void UpdateSellerPriceBelief(String agentName, in Offer trade, in Resourc
 	        }
         }
 
+		SanePriceBeliefs();
         // Log the update for debugging purposes
         Debug.Log(agent.auctionStats.round + " " + agent.name + " price belief update: " + name
                   + " asked: " + trade.offerQuantity + " sold: " + quantitySold
