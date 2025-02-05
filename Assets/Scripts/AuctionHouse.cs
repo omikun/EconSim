@@ -486,7 +486,7 @@ public class AuctionHouse : MonoBehaviour {
 		rsc.inventory.Add(totalInventory);
 
 		var totalCash = agents.Sum(agent => (agent.outputName == rsc.name) ? agent.Cash : 0f)
-			+ district.bank.deposits.Sum(entry => (entry.Key.outputName == rsc.name) ? entry.Value : 0f);
+			+ district.bank.Deposits.Sum(entry => (entry.Key.outputName == rsc.name) ? entry.Value : 0f);
 		string msg = "";
 		foreach (var agent in agents)
 		{
