@@ -93,7 +93,7 @@ public class AgentEntry
 		
 		Agent = agent.name + "-" + agent.outputName;
 		Cash = agent.Cash;
-		Deposit = agent.auctionStats.bank.Deposits[agent];
+		Deposit = agent.auctionStats.bank.Deposits.GetValueOrDefault(agent, 0f);
 		DaysStarving = agent.DaysStarving;
 		var recipe = agent.book[agent.outputName].recipe;
 		if (agent is Government)
