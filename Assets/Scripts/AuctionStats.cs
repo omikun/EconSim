@@ -48,7 +48,7 @@ public class AuctionStats : MonoBehaviour
 
 	void Awake()
 	{
-		regulations = new BankRegulations(.1f, 30, .01f);
+		regulations = new BankRegulations(.1f, 30, .05f);
 		bank = new Bank(100, "cash", regulations);
 	}
 	public void ClearStats()
