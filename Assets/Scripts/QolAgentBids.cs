@@ -50,8 +50,8 @@ public partial class UserAgent
         if (Cash > operatingCash)
         {
             var deposit = Cash - operatingCash;
+            deposit = auctionStats.bank.Deposit(this, deposit, "cash");
             Cash -= deposit;
-            auctionStats.bank.Deposit(this, deposit, "cash");
         }
         else if (Cash < operatingCash)
         {
@@ -65,6 +65,18 @@ public partial class UserAgent
         DecideAndBorrow(ref remainingCash, inputBatchCost, foodMarketPrice);
         var remainingInputCash = remainingCash + inputCashEquivalent;
         
+        //TODO if not enough money, bid lower! change price proportionally 
+        //only needed if not borrowing money
+        if (Cash < inputBatchCost && Cash > .8f * inputBatchCost)
+        {
+            var ratio = Cash / inputBatchCost;
+            inputBatchCost = Cash;
+            //for each recipe item, reduce cost by ratio
+            foreach (var com in output.recipe.Keys)
+            {
+                inventory[com].priceBelief *= ratio;
+            }
+        }
 
         if (outputName == "Food")
         {
@@ -181,8 +193,8 @@ public partial class UserAgent
             : remainingCash > foodMarketPrice;
         var enoughOutput = inventory[outputName].Quantity >= book[outputName].productionPerBatch;
         var enoughFoodTarget = (enoughCashForInput) ? 1 : 2;
-        var enoughFood = inventory["Food"].Quantity >= enoughFoodTarget || outputName != "Food"; //farmers are covered in enoughOutput
-        var enoughFoodOrCashForFood = (enoughFood || enoughCashForFood) && outputName != "Food";
+        var enoughFood = inventory["Food"].Quantity >= enoughFoodTarget; 
+        var enoughFoodOrCashForFood = (enoughFood || enoughCashForFood) && outputName != "Food"; //farmers are covered in enoughOutput
         bool enough = enoughCashForInput || enoughOutput || enoughFoodOrCashForFood;
         
         bool doesBorrow = !enough;
