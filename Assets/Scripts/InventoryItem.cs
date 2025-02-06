@@ -80,7 +80,7 @@ public class InventoryItem {
 	float batchRate = 1; //num produced per batch
     float realProductionRate; //actual after modifiers
     float productionDeRate = 1; //if agent gets hurt/reduced productivity
-    float productionChance = 1; //if agent gets into an accident?
+    public float productionChance = 1; //if agent gets into an accident?
     List<string> debug_msgs = new();
     bool boughtThisRound = false;
     bool soldThisRound = false;
@@ -107,10 +107,12 @@ public class InventoryItem {
 
 	    if (numBatches == 0)
 		    return BaseProduction;
+	    if (rsc.productionMultiplier < 1)
+		    Debug.Log(name + " productionMultiplier " + rsc.productionMultiplier);
         //derate
         float rate = ProductionPerBatch * numBatches * productionDeRate * rsc.productionMultiplier;
         //random chance derate
-        var chance = productionChance;
+        var chance = rsc.productionChance;
         realProductionRate = (UnityEngine.Random.value < chance) ? rate : 0;
         
 		realProductionRate = Mathf.Min(realProductionRate, Deficit()); //can't produce more than max stock
@@ -443,7 +445,9 @@ public class InventoryItem {
 		    Debug.Log(agent.name + " bought no " + name + "; price belief: " + priceBelief.ToString("c2") 
 		              + " max clearing price: " + maxPrice.ToString("c2"));
 		    var upbid = Mathf.Pow(1.07f, agent.DaysStarving*2);
-		    priceBelief = maxPrice * upbid;
+		    if (maxPrice > priceBelief)
+			    priceBelief = maxPrice;
+		    priceBelief = priceBelief * upbid;
 		    minPriceBelief = priceBelief;
 	    } else if (boughtRatio < 0.8f) //didn't buy it all / potentially no supply, raise price to signal
         {
@@ -539,41 +543,45 @@ public class InventoryItem {
         Assert.IsTrue(minPriceBelief < priceBelief);
         debug_msgs.Add(reason_msg);
     }
-public void UpdateSellerPriceBelief(String agentName, in Offer trade, in ResourceController rsc)
+
+    public void UpdateSellerPriceBelief(String agentName, in Offer trade, in ResourceController rsc)
     {
-        if (trade.offerQuantity == 0)
-	        return;
-        
-        if (name == "Tool")
-	        Debug.Log("Tool updatesellerpricebelief");
+	    if (trade.offerQuantity == 0)
+		    return;
 
-		var meanPriceBelief = (minPriceBelief + priceBelief) / 2;
-		var deltaMean = meanPriceBelief - trade.clearingPrice; //TODO or use auction house mean price?
-        var quantitySold = trade.offerQuantity - trade.remainingQuantity;
-        var historicalMeanPrice = rsc.avgClearingPrice.LastAverage(3);
-        var minClearingPrice = rsc.minClearingPrice.Last();
-        var maxBidPrice = rsc.maxBidPrice.Last();
-        var market_share = quantitySold / rsc.trades[^1];
-        var offerPrice = trade.offerPrice;
-        var weight = quantitySold / trade.offerQuantity; 
-        var displacement = (1 - weight) * meanPriceBelief;
-        var supply = rsc.asks.LastAverage(3);
-        var demand = rsc.bids.LastAverage(3);
-        var demandLastRound = rsc.bids.Last();
-        float supplyRatio = supply / demand;
-        var soldRatio = quantitySold / trade.offerQuantity;
-        var food = agent.inventory["Food"];
+	    if (name == "Tool")
+		    Debug.Log("Tool updatesellerpricebelief");
 
-        var prevPriceBelief = priceBelief;
-        var tempPriceBelief = priceBelief;
+	    var meanPriceBelief = (minPriceBelief + priceBelief) / 2;
+	    var deltaMean = meanPriceBelief - trade.clearingPrice; //TODO or use auction house mean price?
+	    var quantitySold = trade.offerQuantity - trade.remainingQuantity;
+	    var historicalMeanPrice = rsc.avgClearingPrice.LastAverage(3);
+	    var minClearingPrice = rsc.minClearingPrice.Last();
+	    var maxBidPrice = rsc.maxBidPrice.Last();
+	    var avgBidPrice = rsc.avgBidPrice.Last();
+	    var market_share = quantitySold / rsc.trades[^1];
+	    var offerPrice = trade.offerPrice;
+	    var weight = quantitySold / trade.offerQuantity;
+	    var displacement = (1 - weight) * meanPriceBelief;
+	    var supply = rsc.asks.LastAverage(3);
+	    var demand = rsc.bids.LastAverage(3);
+	    var demandLastRound = rsc.bids.Last();
+	    float supplyRatio = supply / demand;
+	    var soldRatio = quantitySold / trade.offerQuantity;
+	    var food = agent.inventory["Food"];
 
-        //don't bother adjusting ask price if there is no demand!
-        if (demandLastRound < 1f)
-	        return;
-        
-        // if only seller, drive price up
-        if (market_share > .8f)
+	    var prevPriceBelief = priceBelief;
+	    var tempPriceBelief = priceBelief;
+
+	    string reason = "last bids: " + demandLastRound + " reason: ";
+	    //don't bother adjusting ask price if there is no demand!
+	    if (demandLastRound < 1f)
+	    {
+		    reason += " no demand ";
+	    } else if (market_share > .8f)
+		    // if only seller, drive price up
         {
+	        reason += "	market_share " + market_share.ToString("f2");
 	        priceBelief *= 1.01f;
 	        minPriceBelief *= 1.01f;
         }
@@ -588,18 +596,22 @@ public void UpdateSellerPriceBelief(String agentName, in Offer trade, in Resourc
         else if (quantitySold == 0)
         {
             // Calculate a discount based on starvation days
-            var delta = Mathf.Pow(.95f, agent.DaysStarving*2);
+            var power = 1 + agent.DaysStarving * Mathf.Log(supplyRatio*10);
+            var delta = Mathf.Pow(.99f, power);
+	        reason += " sold none / delta: " + delta + " .96 ^ " + power + " ";
             
             // Apply discount to the minimum clearing price if available
-	        if (maxBidPrice > 0)
+	        if (avgBidPrice < priceBelief)
 	        {
-		        priceBelief = maxBidPrice * delta;
-		        minPriceBelief = priceBelief;
+		        priceBelief = avgBidPrice;
 	        }
+	        priceBelief *= delta;
+	        minPriceBelief = priceBelief;
         } 
         // General case: Adjust based on sell performance
         else
         {
+	        reason += " sold " + quantitySold.ToString("f2") + " ratio " + soldRatio.ToString("f2");
 	        var translator = 2 * soldRatio - 1f;
 	        //TODO how does market price adjust this logic?
 	        var sellPriceMultiplier = 1 + agent.config.sellPriceDelta * translator;
@@ -618,9 +630,10 @@ public void UpdateSellerPriceBelief(String agentName, in Offer trade, in Resourc
                 
                 // Compute amortized quantity for cost per unit
                 var amortizedQuantity = Mathf.Max(rsc.productionPerBatch, Quantity * 0.8f);
-
+                var minCost = otherCosts / amortizedQuantity;
                 // Ensure price is at least the cost
-                priceBelief = Mathf.Max(otherCosts / amortizedQuantity, priceBelief);
+		        reason += " raise min cost " + minCost.ToString("c2") + " price belief: " + priceBelief.ToString("c2");
+                priceBelief = Mathf.Max(minCost, priceBelief);
 		        minPriceBelief = priceBelief;
 	        }
         }
@@ -633,7 +646,8 @@ public void UpdateSellerPriceBelief(String agentName, in Offer trade, in Resourc
                   + " current price belief " + priceBelief.ToString("c2")
                   + " supply ratio " + supplyRatio.ToString("n2")
                   + " pre minSellPrice " + tempPriceBelief.ToString("c2")
-                  + " sold ratio " + soldRatio.ToString("n2"));
+                  + " sold ratio " + soldRatio.ToString("n2")
+				  + reason);
         return;
         
         string reason_msg = "none";
