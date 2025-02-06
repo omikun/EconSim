@@ -462,7 +462,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1245365212765770244, guid: 3c167baeeb85a4d0fa0c702400cf122d, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 1305
+      value: 1248
       objectReference: {fileID: 0}
     - target: {fileID: 1245365212765770244, guid: 3c167baeeb85a4d0fa0c702400cf122d, type: 3}
       propertyPath: m_AnchoredPosition.y
@@ -487,6 +487,10 @@ PrefabInstance:
     - target: {fileID: 2461837534017184983, guid: 3c167baeeb85a4d0fa0c702400cf122d, type: 3}
       propertyPath: m_IsActive
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6395756026357423069, guid: 3c167baeeb85a4d0fa0c702400cf122d, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: -5
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -809,7 +813,7 @@ MonoBehaviour:
         - Key: Prod_multiplier
           Value: 1
         - Key: Prod_rate
-          Value: 12
+          Value: 10
         - Key: Base_rate
           Value: 0
         - Key: Batch_rate
@@ -1358,7 +1362,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5860133720375575324, guid: e3ff1f2d5633747db87f6ddc5f91c4ab, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 837
+      value: 1684
       objectReference: {fileID: 0}
     - target: {fileID: 5860133720375575324, guid: e3ff1f2d5633747db87f6ddc5f91c4ab, type: 3}
       propertyPath: m_AnchoredPosition.y
@@ -1987,6 +1991,10 @@ PrefabInstance:
       propertyPath: m_text
       value: Cash
       objectReference: {fileID: 0}
+    - target: {fileID: 6276223800083845008, guid: 6b1c7ef2e947a4f64a29265a17dfde1e, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 3
+      objectReference: {fileID: 0}
     - target: {fileID: 6530706629150797796, guid: 6b1c7ef2e947a4f64a29265a17dfde1e, type: 3}
       propertyPath: m_Name
       value: cashGraph
@@ -2065,11 +2073,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6794642542125820630, guid: 6b1c7ef2e947a4f64a29265a17dfde1e, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 1304
+      value: 1247
       objectReference: {fileID: 0}
     - target: {fileID: 6794642542125820630, guid: 6b1c7ef2e947a4f64a29265a17dfde1e, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: -804
+      value: -787
       objectReference: {fileID: 0}
     - target: {fileID: 6794642542125820630, guid: 6b1c7ef2e947a4f64a29265a17dfde1e, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -4435,6 +4443,10 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 6395756026357423069, guid: 3c167baeeb85a4d0fa0c702400cf122d, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: -3
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -6228,6 +6240,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1700845192}
     m_Modifications:
+    - target: {fileID: 6276223800083845008, guid: 6b1c7ef2e947a4f64a29265a17dfde1e, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 3
+      objectReference: {fileID: 0}
     - target: {fileID: 6530706629150797796, guid: 6b1c7ef2e947a4f64a29265a17dfde1e, type: 3}
       propertyPath: m_Name
       value: tradeGraph

@@ -83,7 +83,7 @@ public partial class QolAgent : QoLSimpleAgent
 	    numBatches = Mathf.Min(outputItem.GetMaxBatchRate(), numBatches);
         
 	    var realProductionRate = outputItem.GetMaxProductionRate(numBatches);
-	    var realBatchRate = Mathf.Floor(realProductionRate / outputItem.ProductionPerBatch);
+	    var realBatchRate = Mathf.Ceil(realProductionRate / outputItem.ProductionPerBatch);
 		Debug.Log(auctionStats.round + " " + name
 		          + " can ultimately produce " + realBatchRate + " batches of " + outputItem.name);
 
