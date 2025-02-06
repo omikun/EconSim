@@ -29,6 +29,7 @@ public class LoanBook : Dictionary<EconAgent, Loans>
 [Serializable]
 public class Bank
 {
+    [ShowInInspector] public bool Enable;
     [ShowInInspector]
     public float TotalDeposits { get; private set; }
     private string currency;
@@ -58,6 +59,9 @@ public class Bank
 
     public Loan Borrow(EconAgent agent, float amount, string curr)
     {
+        if (!Enable) 
+            return null;
+        
         Assert.IsTrue(amount > 0);
         var fraction = TotalDeposits / (amount + liability);
         var metric = (regulations.fractionalReserveRatio);
@@ -79,12 +83,16 @@ public class Bank
         return loan;
     }
 
-    public void Deposit(EconAgent agent, float amount, string curr)
+    public float Deposit(EconAgent agent, float amount, string curr)
     {
+        if (!Enable)
+            return 0;
+        
         Assert.IsTrue(amount > 0);
         TotalDeposits += amount;
         Deposits[agent] = Deposits.GetValueOrDefault(agent) + amount;
         Debug.Log(agent.name + " deposited " + amount.ToString("c2") + " " + curr);
+        return amount;
     }
 
     public float CheckAccountBalance(EconAgent agent)
@@ -95,6 +103,9 @@ public class Bank
 
     public float Withdraw(EconAgent agent, float amount, string curr)
     {
+        if (!Enable)
+            return 0;
+        
         Assert.IsTrue(amount > 0);
         Deposits[agent] = Deposits.GetValueOrDefault(agent, 0);
         amount = Mathf.Min(Deposits[agent], amount);
@@ -108,6 +119,9 @@ public class Bank
 
     public void CollectPayments()
     {
+        if (!Enable)
+            return;
+        
         var prevDebt = liability;
         var prevWealth = Wealth;
         var tempLiability = liability;
