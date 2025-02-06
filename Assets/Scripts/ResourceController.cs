@@ -114,6 +114,7 @@ public class ResourceController
 	public float baseProduction { get; private set; } //min production if no inputs
 	public float batchRate { get; private set; } //num batches per round
 	public float productionMultiplier { get; private set; } //forest fire or rich mineral vein
+	public float productionChance = 1;
 	public float resourceAmount { get; private set; } // for fish or finite ore
 	[DictionaryDrawerSettings(IsReadOnly = false, DisplayMode = DictionaryDisplayOptions.OneLine)]
 	public Recipe recipe { get; private set; }

@@ -207,6 +207,7 @@ public class AuctionHouse : MonoBehaviour {
 		weight = .5f;
 
 		wood.ChangeProductionMultiplier(weight);
+		wood.productionChance = 0.5f;
 
 		forestFire = true;
 	}
@@ -218,6 +219,7 @@ public class AuctionHouse : MonoBehaviour {
 		var weight = wood.productionMultiplier;
 		weight = 1f;
 		wood.ChangeProductionMultiplier(weight);
+		wood.productionChance = 1f;
 
 		forestFire = false;
 	}
