@@ -46,7 +46,7 @@ public partial class UserAgent
         var minInputBatches = productionStrategy.NumBatchesProduceable(output, foodItem);
         
         //deposit excess cash or withdraw as needed
-        var operatingCash = 5 * (inputBatchCost + foodMarketPrice);
+        var operatingCash = 30 * (inputBatchCost + foodMarketPrice);
         if (Cash > operatingCash)
         {
             var deposit = Cash - operatingCash;
@@ -59,9 +59,10 @@ public partial class UserAgent
         }
 
         var remainingCash = Cash;
-        //if cash can't cover 1 inputBatch (inventory may have some stuff), borrow enough money to pay for cash
-        //need money equivalent of inputs that contributes towards one batch (say 3 wood 0 tool, only 2 of those woods contribute to a batch)
-        //if more than 1 batch in input inventory, this condition is void
+        //if cash can't obtain 1 inputBatch (inventory may have some stuff), borrow enough money to pay for cash
+        //need money equivalent of inputs that contributes towards one batch
+        //(say 3 wood 0 tool, only 2 of those woods contribute to a batch)
+        //if more than 1 batch in input inventory, don't borrow
         DecideAndBorrow(ref remainingCash, inputBatchCost, foodMarketPrice);
         var remainingInputCash = remainingCash + inputCashEquivalent;
         

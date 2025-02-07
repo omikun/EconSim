@@ -4,11 +4,17 @@ using System.Linq;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.Assertions;
+using UnityEngine.Serialization;
 
 [Serializable]
 public class Loans : List<Loan>
 {
+    public int numDefaults => this.Sum(loan => loan.defaulted ? 1 : 0);
     public float Principle => this.Sum(loan => loan.principle);
+
+    public Loans(Loans loans) : base(loans) { }
+
+    public Loans() { }
 }
 [Serializable]
 public class Loan
@@ -20,8 +26,10 @@ public class Loan
     public float principle { get; private set;  }
     [ShowInInspector]
     public float interestPaid { get; private set; }
-    public bool defaulted { get; private set; }
+    public bool defaulted { get; set; }
     public int termInRounds{ get; }
+    public int missedPayments { get; private set; }
+    public bool paidOff { get; private set; }
 
     public Loan(string curr, float loanAmount, float interest, int term)
     {
@@ -47,11 +55,15 @@ public class Loan
     public bool Paid(float amount)
     {
         var interest = Interest();
-        Assert.IsTrue(amount > interest);
+        if (amount < Payment())
+        {
+            missedPayments++;
+        }
         interestPaid += Mathf.Min(amount, interest);
         
-        principle -= amount - interest;
+        principle -= Mathf.Max(0, amount - interest);
         Debug.Log("Paid() " + principle + " -= " + amount + " - " + interest);
-        return (principle < 0.01f);
+        paidOff = (principle < 0.01f);
+        return paidOff;
     }
 }
