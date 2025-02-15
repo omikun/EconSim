@@ -112,6 +112,10 @@ public partial class UserAgent
                     remainingInputCash -= inputBatchCost;
                     keepGoing = true;
                 }
+                else if (numFoodToBid > 0 && inputBatchCost > 0)
+                {
+                    break;
+                }
 
                 if (remainingCash >= foodMarketPrice)
                 {
@@ -119,6 +123,10 @@ public partial class UserAgent
                     remainingCash -= foodMarketPrice;
                     remainingInputCash -= foodMarketPrice;
                     keepGoing = true;
+                }
+                else
+                {
+                    break;
                 }
             }
         }
@@ -135,6 +143,9 @@ public partial class UserAgent
                     remainingCash -= foodMarketPrice;
                     remainingInputCash -= foodMarketPrice;
                     keepGoing = true;
+                } else if (numBatchInputToBid > 0)
+                {
+                    break;
                 }
 
                 if (remainingInputCash >= inputBatchCost && inputBatchCost > 0)
@@ -143,6 +154,10 @@ public partial class UserAgent
                     remainingCash -= inputBatchCost;
                     remainingInputCash -= inputBatchCost;
                     keepGoing = true;
+                }
+                else if (inputBatchCost > 0)
+                {
+                    break;
                 }
             }
         }
