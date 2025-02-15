@@ -5,11 +5,13 @@ using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.Assertions;
 
+[Serializable]
 public class BankRegulations
 {
     public float fractionalReserveRatio { get; }
     public int termInRounds { get; }
-    public float interestRate { get; }
+    [ShowInInspector]
+    public float interestRate { get; set; }
     public float maxMissedPayments { get; }
     public float maxPrinciple { get; }
     public int maxNumDefaults { get; }
@@ -42,6 +44,7 @@ public class Bank
     [ShowInInspector]
     public float TotalDeposits { get; private set; }
     private string currency;
+    [ShowInInspector]
     BankRegulations regulations;
 
     [ShowInInspector]
@@ -126,9 +129,6 @@ public class Bank
 
     public float Withdraw(EconAgent agent, float amount, string curr)
     {
-        if (!Enable)
-            return 0;
-        
         Assert.IsTrue(amount > 0);
         Deposits[agent] = Deposits.GetValueOrDefault(agent, 0);
         amount = Mathf.Min(Deposits[agent], amount);
@@ -142,9 +142,6 @@ public class Bank
 
     public void CollectPayments()
     {
-        if (!Enable)
-            return;
-        
         var prevDebt = liability;
         var prevWealth = Wealth;
         var tempLiability = liability;
