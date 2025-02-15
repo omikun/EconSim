@@ -171,14 +171,14 @@ public abstract class TradeResolution
 
 		foreach (var ask in asks)
 		{
-			ask.agent.UpdateSellerPriceBelief(ask, rsc);
+			// ask.agent.UpdateSellerPriceBelief(ask, rsc);
 			stats.minAskPrice = Mathf.Min(stats.minAskPrice, ask.offerPrice);
 			stats.maxAskPrice = Mathf.Max(stats.maxAskPrice, ask.offerPrice);
 		}
 
 		foreach (var bid in bids)
 		{
-			bid.agent.UpdateBuyerPriceBelief(bid, rsc);
+			// bid.agent.UpdateBuyerPriceBelief(bid, rsc);
 			stats.minBidPrice = Mathf.Min(stats.minBidPrice, bid.offerPrice);
 			stats.maxBidPrice = Mathf.Max(stats.maxBidPrice, bid.offerPrice);
 		}
