@@ -19,6 +19,7 @@ public class AuctionHouse : MonoBehaviour {
 	public SimulationConfig config;
 	[FormerlySerializedAs("auctionTracker")] public AuctionStats district;
 
+	[ShowInInspector] public int FrameRate = 60;
 	[ShowInInspector]
 	FiscalPolicy fiscalPolicy;
 	public ProgressivePolicy progressivePolicy;
@@ -41,7 +42,7 @@ public class AuctionHouse : MonoBehaviour {
 	{
 #if UNITY_EDITOR
 		QualitySettings.vSyncCount = 2;  // VSync must be disabled
-		Application.targetFrameRate = 30;
+		Application.targetFrameRate = FrameRate;
 #endif
 		district = GetComponent<AuctionStats>();
 		config = GetComponent<SimulationConfig>();
@@ -498,6 +499,11 @@ public class AuctionHouse : MonoBehaviour {
 
 		Debug.Log(district.round + ": " + rsc.name + " cash list:\n " + msg);
 		rsc.cash.Add(totalCash);
+		
+		foreach (var ask in asks)
+			ask.agent.UpdateSellerPriceBelief(ask, rsc);
+		foreach (var bid in bids)
+			bid.agent.UpdateBuyerPriceBelief(bid, rsc);
 		
 		//update price beliefs if still a thing
 		asks.Clear();
