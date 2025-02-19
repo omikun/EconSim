@@ -39,13 +39,16 @@ public class AgentEntry
 	[TableColumnWidth(50), VerticalGroup("Agent"), HideLabel, LabelWidth(42), ReadOnly]
 	public string Agent;
 
-	[VerticalGroup("Stats"), LabelWidth(30), ReadOnly] [GUIColor("GetCashColor")]
+	[VerticalGroup("Stats"), LabelWidth(50), ReadOnly] [GUIColor("GetCashColor")]
 	public float Cash;
 
-	[VerticalGroup("Stats"), LabelWidth(30), ReadOnly] [GUIColor("GetCashColor")]
+	[VerticalGroup("Stats"), LabelWidth(50), ReadOnly] [GUIColor("GetCashColor")]
 	public float Deposit;
 	
-	[VerticalGroup("Stats"), LabelWidth(80), ReadOnly] [GUIColor("GetFoodColor")]
+	[VerticalGroup("Stats"), LabelWidth(50), ReadOnly] [GUIColor("GetCashColor")]
+	public float Debt;
+	
+	[VerticalGroup("Stats"), LabelWidth(50), ReadOnly] [GUIColor("GetFoodColor")]
 	public int DaysStarving;
 
 	[VerticalGroup("Inventory"), ReadOnly, HideLabel]
@@ -93,7 +96,8 @@ public class AgentEntry
 		
 		Agent = agent.name + "-" + agent.outputName;
 		Cash = agent.Cash;
-		Deposit = agent.auctionStats.bank.Deposits.GetValueOrDefault(agent, 0f);
+		Deposit = agent.auctionStats.bank.CheckAccountBalance(agent);
+		Debt = agent.auctionStats.bank.QueryLoans(agent);
 		DaysStarving = agent.DaysStarving;
 		var recipe = agent.book[agent.outputName].recipe;
 		if (agent is Government)
