@@ -16,7 +16,7 @@ public partial class UserAgent
     //  - decide how much cash to spend
     //    - already done in previous step?
     //  - split cash for inputs into each input
-    protected override void PopulateOffersFromInventory()
+    protected void PopulateOffersFromInventory()
     {
         foreach (var item in inventory.Values)
         {

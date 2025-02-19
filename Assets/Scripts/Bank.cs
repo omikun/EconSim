@@ -39,7 +39,7 @@ public class LoanBook : Dictionary<EconAgent, Loans>
 public class Bank
 {
     [ShowInInspector] 
-    public bool Enable;
+    public bool Enable = true;
     
     [ShowInInspector]
     public float TotalDeposits { get; private set; }
@@ -125,6 +125,11 @@ public class Bank
     {
         Deposits[agent] = Deposits.GetValueOrDefault(agent, 0);
         return Deposits[agent];
+    }
+
+    public float QueryLoans(EconAgent agent)
+    {
+        return book.TryGetValue(agent, out var entry) ? entry.Principle : 0f;
     }
 
     public float Withdraw(EconAgent agent, float amount, string curr)
@@ -218,6 +223,8 @@ public class Bank
             var borrowAmount = BorrowAmount(paymentByAgent, agentMonies);
             tempLiability += borrowAmount;
             Borrow(agent, borrowAmount, "cash");
+            //what happens if agent defaults? can't borrow anymore
+            //kill off agent? 
             Assert.IsTrue(agent.Cash >= paymentByAgent, " cash " + agent.Cash.ToString("c2") + " payment " + paymentByAgent.ToString("c2"));
         }
         DebugLiability(tempLiability);

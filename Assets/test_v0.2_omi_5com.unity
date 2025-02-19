@@ -643,6 +643,7 @@ MonoBehaviour:
   info: {fileID: 1010474683}
   config: {fileID: 0}
   district: {fileID: 0}
+  FrameRate: 3
   progressivePolicy:
     config: {fileID: 0}
     auctionStats: {fileID: 0}
@@ -790,19 +791,19 @@ MonoBehaviour:
   initGovCash: 1000
   randomInitStock: 1
   initStock: 4
-  maxStock: 4000
+  maxStock: 50
   numAgents:
     _serializedList:
     - Key: Food
-      Value: 3
+      Value: 6
     - Key: Wood
-      Value: 2
+      Value: 4
     - Key: Ore
-      Value: 2
+      Value: 4
     - Key: Metal
-      Value: 2
+      Value: 4
     - Key: Tool
-      Value: 2
+      Value: 4
   initialization:
     _serializedList:
     - Key: Food
@@ -817,7 +818,7 @@ MonoBehaviour:
         - Key: Prod_rate
           Value: 10
         - Key: Base_rate
-          Value: 0
+          Value: 1
         - Key: Batch_rate
           Value: 2
         - Key: Set_price
@@ -828,11 +829,11 @@ MonoBehaviour:
         - Key: Prod_multiplier
           Value: 1
         - Key: Prod_rate
-          Value: 2
+          Value: 4
         - Key: Batch_rate
           Value: 1
         - Key: Set_price
-          Value: 2
+          Value: 1
     - Key: Tool
       Value:
         _serializedList:
@@ -845,14 +846,14 @@ MonoBehaviour:
         - Key: Batch_rate
           Value: 5
         - Key: Set_price
-          Value: 14
+          Value: 7
     - Key: Ore
       Value:
         _serializedList:
         - Key: Prod_multiplier
           Value: 1
         - Key: Prod_rate
-          Value: 4
+          Value: 8
         - Key: Batch_rate
           Value: 1
         - Key: Set_price
@@ -861,15 +862,15 @@ MonoBehaviour:
       Value:
         _serializedList:
         - Key: Ore
-          Value: 2
+          Value: 3
         - Key: Prod_multiplier
           Value: 1
         - Key: Prod_rate
-          Value: 1
+          Value: 2
         - Key: Batch_rate
           Value: 5
         - Key: Set_price
-          Value: 4.5
+          Value: 2
   starvationThreshold: 0.1
   maxDaysStarving: 5
   foodConsumption: 1
