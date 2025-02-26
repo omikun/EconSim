@@ -13,7 +13,7 @@ using Sirenix.Serialization;
 using Sirenix.OdinInspector.Editor.ValueResolvers;
 using UnityEngine.Serialization;
 
-public class AuctionHouse : MonoBehaviour {
+public partial class AuctionHouse : MonoBehaviour {
 	[Required]
 	public InfoDisplay info;
 	public SimulationConfig config;
@@ -209,33 +209,6 @@ public class AuctionHouse : MonoBehaviour {
 			t++;
 		}
 	}
-	[HideIf("forestFire")]
-	[Button(ButtonSizes.Large), GUIColor(0.4f, 0.8f,1)]
-	public void ForestFire()
-	{
-		//TODO rapid decline (*.6 every round) for 2-5 rounds, then regrow at 1.1 until reaches back to 1 multiplier
-		//do this in a new class
-		var wood = district.book["Wood"];
-		var weight = wood.productionMultiplier;
-		weight = .5f;
-
-		wood.ChangeProductionMultiplier(weight);
-		wood.productionChance = 0.5f;
-
-		forestFire = true;
-	}
-	[ShowIf("forestFire")]
-	[Button(ButtonSizes.Large), GUIColor(1, 0.4f, 0.4f)]
-	public void StopForestFire()
-	{
-		var wood = district.book["Wood"];
-		var weight = wood.productionMultiplier;
-		weight = 1f;
-		wood.ChangeProductionMultiplier(weight);
-		wood.productionChance = 1f;
-
-		forestFire = false;
-	}
 	private static string[] comOptions = new string[] { "Food","Wood","Ore","Metal","Tool" };
 	[PropertyOrder(4)]
 	[HorizontalGroup("InsertBid")]
@@ -251,15 +224,6 @@ public class AuctionHouse : MonoBehaviour {
 	public void InsertBid() 
 	{
 		((Government)gov).InsertBid(bidCom, bidQuant, 0f);
-	}
-	bool forestFire = false;
-
-	[PropertyOrder(5)]
-	[Title("Player Actions")]
-	[Button(ButtonSizes.Large), GUIColor(0.4f, 0.8f, 1)]
-	public void DoNextRound0()
-	{
-		DoNextRound();
 	}
 	
 	[PropertyOrder(6)]
@@ -296,7 +260,9 @@ public class AuctionHouse : MonoBehaviour {
 	{
 		//check total cash held by agents and government
 		var totalCash = agents.Sum(x => x.Cash) + district.bank.Monies();
-		Debug.Log("Auction House tick: Total cash: " + totalCash);
+		var totalDebt = agents.Sum(x => district.bank.QueryLoans(x));
+
+		Debug.Log("Auction House tick: Total cash: " + totalCash + " Total debt: " + totalDebt + " net: " + (totalCash - totalDebt));
 
 		district.bank.CollectPayments();
 		

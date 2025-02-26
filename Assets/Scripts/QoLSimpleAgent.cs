@@ -75,11 +75,11 @@ public class QoLSimpleAgent : EconAgent
                 return 0;
             numRoundsSinceLastBirth = 0;
 
-            if (Cash >= 50)
-            {
-                Cash -= 25;
-                return 25;
-            }
+            // if (Cash >= 50)
+            // {
+            //     Cash -= 25;
+            //     return 25;
+            // }
 
             return 1;
         }
