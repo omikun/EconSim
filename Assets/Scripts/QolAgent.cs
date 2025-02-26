@@ -5,10 +5,6 @@ using System.Linq;
 //medium agent
 public partial class QolAgent : QoLSimpleAgent
 {
-    public override void Init(SimulationConfig cfg, AuctionStats at, string b, float initStock, float maxstock)
-    {
-	    base.Init(cfg, at, b, initStock, maxstock);
-    }
     protected float numBatchesConsumed = 0;
 
     public override void Decide()
@@ -19,6 +15,8 @@ public partial class QolAgent : QoLSimpleAgent
     }
     protected void decideProduction()
     {
+        if (outputName == "None")
+            return;
         var rsc = book[outputName];
         var stock = inventory[outputName];
         var numBatches = NumBatchesProduceable(rsc, stock);

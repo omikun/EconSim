@@ -16,7 +16,7 @@ public class EconAgent : MonoBehaviour
 {
 	protected internal SimulationConfig config;
 	public static int uid_idx = 0;
-	protected int uid;
+	public int uid { get; protected set; }
 	public float Cash { get; protected set; }
 
 	public void ResetCash()
@@ -115,7 +115,7 @@ public class EconAgent : MonoBehaviour
 		Cash -= amount;
 	}
 
-	public virtual void Init(SimulationConfig cfg, AuctionStats at, string b, float _initStock, float maxstock)
+	public virtual void Init(SimulationConfig cfg, AuctionStats at, string b, float _initStock, float maxstock, float cash=-1f)
 	{
 		Alive = true;
 		config = cfg;
@@ -130,12 +130,21 @@ public class EconAgent : MonoBehaviour
 		//list of commodities self can produce
 		//get initial stockpiles
 		outputName = b;
-		Cash = config.initCash;
+		
+		Cash = (cash == -1f) ? config.initCash : cash;
 		prevCash = Cash;
 		inputs.Clear();
 		//foreach (var buildable in outputName)
 		var buildable = outputName;
 		{
+			if (buildable != "Food")
+			{
+				var commodity = "Food";
+				AddToInventory(commodity, initStock, maxStock, book[commodity]);
+			}
+			
+			if (buildable == "None")
+				return;
 
 			if (!book.ContainsKey(buildable))
 				Debug.Log("commodity not recognized: " + buildable);
@@ -151,14 +160,9 @@ public class EconAgent : MonoBehaviour
 				AddToInventory(commodity, initStock, maxStock, book[commodity]);
 			}
 
-			if (buildable != "Food")
-			{
-				var commodity = "Food";
-				AddToInventory(commodity, initStock, maxStock, book[commodity]);
-			}
 
 			AddToInventory(buildable, 0, maxStock, book[buildable]);
-			Debug.Log("New " + gameObject.name + " has " + inventory[buildable].Quantity + " " + buildable);
+			Debug.Log(auctionStats.round + " New agent " + gameObject.name + " uid: " + uid + " cash: " + Cash.ToString("c2") + " has " + inventory[buildable].Quantity + " " + buildable);
 		}
 	}
 
@@ -226,6 +230,8 @@ public class EconAgent : MonoBehaviour
 
     protected bool inRecipe(string itemName)
     {
+	    if (outputName == "None")
+		    return false;
 	    return (book[outputName].recipe.ContainsKey(itemName));
     }
 	public void Respawn(bool bankrupted, string buildable, Government gov = null)

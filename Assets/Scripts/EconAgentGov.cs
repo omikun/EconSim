@@ -10,7 +10,7 @@ using DG.Tweening;
 
 public class Government : EconAgent {
 	public float FoodTarget = 000;
-	public override void Init(SimulationConfig cfg, AuctionStats at, string b, float _initStock, float maxstock) {
+	public override void Init(SimulationConfig cfg, AuctionStats at, string b, float _initStock, float maxstock, float cash=-1f) {
 		config = cfg;
 		uid = uid_idx++;
 		initStock = _initStock;

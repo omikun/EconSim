@@ -99,10 +99,10 @@ public class AgentEntry
 		Deposit = agent.auctionStats.bank.CheckAccountBalance(agent);
 		Debt = agent.auctionStats.bank.QueryLoans(agent);
 		DaysStarving = agent.DaysStarving;
-		var recipe = agent.book[agent.outputName].recipe;
-		if (agent is Government)
+		if (agent is Government || agent.outputName == "None")
 			return;
 		
+		var recipe = agent.book[agent.outputName].recipe;
 		//all inventory
 		foreach (var (com, numDepends) in agent.inventory)
 		{

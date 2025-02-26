@@ -26,10 +26,6 @@ public class QoLSimpleAgent : EconAgent
     //can't even use the auction model??
     protected Offers asks = new Offers();
     protected Offers bids = new Offers();
-    public override void Init(SimulationConfig cfg, AuctionStats at, string b, float initStock, float maxstock)
-    {
-	    base.Init(cfg, at, b, initStock, maxstock);
-    }
 
     public bool IsDying(ref bool starving)
     {
@@ -68,11 +64,37 @@ public class QoLSimpleAgent : EconAgent
             Debug.Log(auctionStats.round + " " + name + " has died with " + msg);
             Alive = false;
             outputName = "Dead";
+            return 0;
+        } 
+        
+        //chance of reproducing
+        Debug.Log(auctionStats.round + " " + name + " since last birth " + numRoundsSinceLastBirth +  " fmaily planning " + numRoundsPlanFamily);
+        if (numRoundsSinceLastBirth > 5 && numRoundsPlanFamily > 5)
+        {
+            if (UnityEngine.Random.Range(0, 1f) > .1f)
+                return 0;
+            numRoundsSinceLastBirth = 0;
+
+            if (Cash >= 50)
+            {
+                Cash -= 25;
+                return 25;
+            }
+
+            return 1;
         }
-        //die
-        //birth conditions? enough food for 5 rounds?
+        else
+        {
+            numRoundsPlanFamily = (Cash > 0) 
+                ? numRoundsPlanFamily + 1 : 0;
+            numRoundsSinceLastBirth++;
+        }
+        
         return 0;
     }
+
+    private int numRoundsSinceLastBirth = 0;
+    private int numRoundsPlanFamily = 0;
 
     public override float EvaluateHappiness()
     {

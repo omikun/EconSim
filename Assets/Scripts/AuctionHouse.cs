@@ -109,7 +109,8 @@ public class AuctionHouse : MonoBehaviour {
         
 		agents.Add(gov);
 	}
-	void InitAgents()
+
+	GameObject GetAgentPrefab()
 	{
 		GameObject prefab;
 		if (config.agentType == AgentType.Simple)
@@ -125,24 +126,35 @@ public class AuctionHouse : MonoBehaviour {
 		{
 			prefab = (GameObject)Resources.Load("Agent");
 		}
+
+		return prefab;
+	}
+	void InitAgents()
+	{
+		GameObject prefab = GetAgentPrefab();
 		var professions = config.numAgents.Keys;
-		int agentId = 0;
 		foreach (string profession in professions)
 		{
 			for (int i = 0; i < config.numAgents[profession]; ++i)
 			{
-				GameObject go = Instantiate(prefab) as GameObject;
-				go.transform.parent = transform;
-				go.name = "agent" + agentId.ToString();
-			
-				var agent = go.GetComponent<EconAgent>();
-				InitAgent(agent, profession);
+				var agent = NewAgent(prefab, profession);
 				agents.Add(agent);
-				agentId++;
 			}
 		}
 	}
-	void InitAgent(EconAgent agent, string type)
+
+	EconAgent NewAgent(GameObject prefab, string profession, float cash=-1f)
+	{
+		GameObject go = Instantiate(prefab) as GameObject;
+		go.transform.parent = transform;
+			
+		var agent = go.GetComponent<EconAgent>();
+		InitAgent(agent, profession, cash);
+		go.name = "agent" + agent.uid; //uid only initialized after agent.Init
+		return agent;
+
+	}
+	void InitAgent(EconAgent agent, string type, float cash=-1f)
 	{
         string buildable = type;
 		float initStock = config.initStock;
@@ -155,7 +167,7 @@ public class AuctionHouse : MonoBehaviour {
 		// This may cause uneven maxStock between agents
 		var maxStock = Mathf.Max(initStock, config.maxStock);
 
-        agent.Init(config, district, buildable, initStock, maxStock);
+        agent.Init(config, district, buildable, initStock, maxStock, cash);
 	}
 
 	void OnApplicationQuit() 
@@ -345,6 +357,8 @@ public class AuctionHouse : MonoBehaviour {
 		var approval = 0f;
 		
 		Debug.Log(district.round + " gov outputs: " + gov.outputName);
+		var newAgents = new List<EconAgent>();
+		var deadAgents = new List<EconAgent>();
         foreach (var agent in agents)
         {
 			if (agent.Alive == false)
@@ -358,37 +372,76 @@ public class AuctionHouse : MonoBehaviour {
 			string profession = agent.Profession;
 
 
-			book[profession].numAgents++;
-
-			approval += agent.EvaluateHappiness();
-
-			if (agent.Cash < 0.0f)
-				book[profession].numBankrupted++;
-
-			if (agent.CalcMinProduction() < 1)
-				book[profession].numNoInput++;
-			
-			if (agent.Profit < 0)
-				book[profession].numNegProfit++;
-
-			book[profession].profits[^1] += agent.Profit;
-			
-			var amount = agent.Tick(gov, ref changedProfession, ref bankrupted, ref starving);
-			gov.Pay(amount); //welfare?
-
-			if (starving)
+			if (profession != "None")
 			{
-				book[profession].starving[^1]++;
-				book[profession].numStarving++;
+				book[profession].numAgents++;
+
+				approval += agent.EvaluateHappiness();
+
+				if (agent.Cash < 0.0f)
+					book[profession].numBankrupted++;
+
+				if (agent.CalcMinProduction() < 1)
+					book[profession].numNoInput++;
+			
+				if (agent.Profit < 0)
+					book[profession].numNegProfit++;
+
+				book[profession].profits[^1] += agent.Profit;
 			}
-			if (bankrupted)
-				book[profession].bankrupted[^1]++;
-			if (changedProfession)
-				book[profession].changedProfession[^1]++;
+			
+			var cash = agent.Tick(gov, ref changedProfession, ref bankrupted, ref starving);
+			if (agent.Alive == false)
+			{
+				agent.gameObject.SetActive(false);
+				deadAgents.Add(agent);
+				continue;
+			} else if (cash > 0)
+			{
+				if (cash == 1f)
+					cash = 0;
+				var prefab = GetAgentPrefab();
+				var chance = UnityEngine.Random.Range(0f, 1f);
+				var prof = (chance < .5f) ? "Wood" : "Ore";
+				// spawn new agent! if 1 spawn as wood worker or ore miner
+				// else spawn as most profitable profession
+				// var newAgent = NewAgent(prefab, agent.Profession, amount);
+				GameObject go = Instantiate(prefab) as GameObject;
+				go.transform.parent = transform;
+			
+				var newAgent = go.GetComponent<EconAgent>();
+				// InitAgent(newAgent, profession, cash);
+				newAgent.Init(config, district, "None", 0, 50, cash);  //available for hire
+				go.name = "agent" + newAgent.uid.ToString(); //uid only initialized after agent.Init
+				newAgents.Add(newAgent);
+				Debug.Log(district.round + " new agent: " + go.name + " uid: " + newAgent.uid.ToString());
+			// Debug.Log(auctionStats.round + " New agent " + gameObject.name + " uid: " + uid + " cash: " + Cash.ToString("c2") + " has " + inventory[buildable].Quantity + " " + buildable);
+			}
+			// gov.Pay(amount); //welfare?
+
+			if (profession != "None")
+			{
+				if (starving)
+				{
+					book[profession].starving[^1]++;
+					book[profession].numStarving++;
+				}
+				if (bankrupted)
+					book[profession].bankrupted[^1]++;
+				if (changedProfession)
+					book[profession].changedProfession[^1]++;
+			}
 			// Debug.Log(agent.name + " total cash line: " + agents.Sum(x => x.cash).ToString("c2") + amount.ToString("c2"));
 
 			agent.ClearRoundStats();
 		}
+
+        foreach (var agent in deadAgents)
+        {
+	        agents.Remove(agent);
+        }
+        foreach (var agent in newAgents)
+	        agents.Add(agent);
 
 		float inflation = 0;
 		foreach (var rsc in book.Values)

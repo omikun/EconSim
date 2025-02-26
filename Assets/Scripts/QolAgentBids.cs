@@ -18,6 +18,9 @@ public partial class UserAgent
     //  - split cash for inputs into each input
     protected void PopulateOffersFromInventory()
     {
+        if (outputName == "None")
+            return;
+        
         foreach (var item in inventory.Values)
         {
             item.offersThisRound = 0;
