@@ -643,7 +643,7 @@ MonoBehaviour:
   info: {fileID: 1010474683}
   config: {fileID: 0}
   district: {fileID: 0}
-  FrameRate: 3
+  FrameRate: 10
   progressivePolicy:
     config: {fileID: 0}
     auctionStats: {fileID: 0}
@@ -781,7 +781,7 @@ MonoBehaviour:
       Value: 0
   starvation: 1
   clearInventory: 0
-  changeProfession: 1
+  changeProfession: 0
   earlyProfessionChange: 0
   changeProfessionAfterNDays: 10
   declareBankruptcy: 1
@@ -795,15 +795,15 @@ MonoBehaviour:
   numAgents:
     _serializedList:
     - Key: Food
-      Value: 6
+      Value: 3
     - Key: Wood
-      Value: 4
+      Value: 2
     - Key: Ore
-      Value: 4
+      Value: 2
     - Key: Metal
-      Value: 4
+      Value: 2
     - Key: Tool
-      Value: 4
+      Value: 2
   initialization:
     _serializedList:
     - Key: Food
@@ -816,7 +816,7 @@ MonoBehaviour:
         - Key: Prod_multiplier
           Value: 1
         - Key: Prod_rate
-          Value: 10
+          Value: 6
         - Key: Base_rate
           Value: 1
         - Key: Batch_rate
@@ -829,7 +829,7 @@ MonoBehaviour:
         - Key: Prod_multiplier
           Value: 1
         - Key: Prod_rate
-          Value: 4
+          Value: 2
         - Key: Batch_rate
           Value: 1
         - Key: Set_price
@@ -853,7 +853,7 @@ MonoBehaviour:
         - Key: Prod_multiplier
           Value: 1
         - Key: Prod_rate
-          Value: 8
+          Value: 2
         - Key: Batch_rate
           Value: 1
         - Key: Set_price
@@ -4058,7 +4058,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 224390226033679502, guid: 3dbd4bc71acbb1145b6e80827b858127, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 55.27
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 224390226033679502, guid: 3dbd4bc71acbb1145b6e80827b858127, type: 3}
       propertyPath: m_SizeDelta.y
@@ -4194,7 +4194,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3155788890126894321, guid: 3dbd4bc71acbb1145b6e80827b858127, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 55.27
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3155788890126894321, guid: 3dbd4bc71acbb1145b6e80827b858127, type: 3}
       propertyPath: m_SizeDelta.y
@@ -4222,7 +4222,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4484771780012352589, guid: 3dbd4bc71acbb1145b6e80827b858127, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 55.27
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4484771780012352589, guid: 3dbd4bc71acbb1145b6e80827b858127, type: 3}
       propertyPath: m_SizeDelta.y
@@ -4246,7 +4246,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4866549897623903779, guid: 3dbd4bc71acbb1145b6e80827b858127, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 135.27
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4866549897623903779, guid: 3dbd4bc71acbb1145b6e80827b858127, type: 3}
       propertyPath: m_SizeDelta.y

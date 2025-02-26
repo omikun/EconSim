@@ -181,7 +181,7 @@ public class ESStreamingGraph : MonoBehaviour
         InitGraph(askChartObject.chart, "Asks");
         InitGraph(bidChartObject.chart, "Bids");
         
-        InitPerAgentGraph(perAgentGraph, "Per Agent Inventory");
+        //InitPerAgentGraph(perAgentGraph, "Per Agent Inventory");
         //InitPieChart(jobChart);
         // jobChart.DataSource.StartBatch();
         //     jobChart.DataSource.RemoveCategory("Ore");
