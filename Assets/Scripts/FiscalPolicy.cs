@@ -132,9 +132,9 @@ Reduction of social welfare spending: Cutting back on social programs, which all
     [InfoBox("Marginal Income Tax", "@!EnableIncomeTax")]
     public bool EnableIncomeTax = true;
 
-    [ShowInInspector, DictionaryDrawerSettings(DisplayMode = DictionaryDisplayOptions.OneLine, KeyLabel = "Income Bracket", ValueLabel = "Marginal Tax Rate")]
+    [HideInInspector, DictionaryDrawerSettings(DisplayMode = DictionaryDisplayOptions.OneLine, KeyLabel = "Income Bracket", ValueLabel = "Marginal Tax Rate")]
     [SerializedDictionary("Income Bracket", "Marginal Tax Rate")]
-    public SerializedDictionary<Range, float> taxBracket = new();
+    private SerializedDictionary<Range, float> taxBracket = new();
     public ProgressivePolicy(SimulationConfig cfg, AuctionStats at, Government g) : base(cfg, at, g)
     {
     }
