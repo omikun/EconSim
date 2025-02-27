@@ -410,6 +410,7 @@ public partial class AuctionHouse : MonoBehaviour {
 	        agents.Add(agent);
 
 		float inflation = 0;
+		district.numStarving = agents.Sum(agent => (agent.DaysStarving > 0) ? 1 : 0);
 		foreach (var rsc in book.Values)
 		{
 			rsc.happiness /= rsc.numAgents;
@@ -417,7 +418,7 @@ public partial class AuctionHouse : MonoBehaviour {
 			district.gdp += rsc.gdp;
 
 			district.numBankrupted += rsc.numBankrupted;
-			district.numStarving += rsc.numStarving;
+			//district.numStarving += rsc.numStarving;
 			district.numNoInput += rsc.numNoInput;
 			district.numNegProfit += rsc.numNegProfit;
 			rsc.numChangedProfession = (int)rsc.changedProfession[^1];
