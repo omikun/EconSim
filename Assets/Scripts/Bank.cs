@@ -5,28 +5,6 @@ using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.Assertions;
 
-[Serializable]
-public class BankRegulations
-{
-    public float fractionalReserveRatio { get; }
-    public int termInRounds { get; }
-    [ShowInInspector]
-    public float interestRate { get; set; }
-    public float maxMissedPayments { get; }
-    public float maxPrinciple { get; }
-    public int maxNumDefaults { get; }
-
-    public BankRegulations(float ratio, int termsInRounds, float interest, int _maxMissedPayments, float _maxPrinciple, int _maxNumDefaults)
-    {
-        fractionalReserveRatio = ratio;
-        termInRounds = termsInRounds;
-        interestRate = interest;
-        maxPrinciple = _maxPrinciple;
-        maxMissedPayments = _maxMissedPayments;
-        maxNumDefaults = _maxNumDefaults;
-        Assert.IsTrue(maxMissedPayments > maxNumDefaults);
-    }
-}
 
 public class LoanBook : Dictionary<EconAgent, Loans>
 {
@@ -36,39 +14,75 @@ public class LoanBook : Dictionary<EconAgent, Loans>
 }
 
 [Serializable]
-public class Bank
+public class Bank : EconAgent
 {
+    [ShowInInspector]
+    public float interestRate { get; set; }
+    [ShowInInspector] [FoldoutGroup("Regulations")] public float fractionalReserveRatio { get; protected set; }
+    [ShowInInspector] [FoldoutGroup("Regulations")] public int termInRounds { get; private set; } 
+    [ShowInInspector] [FoldoutGroup("Regulations")] public float maxMissedPayments { get; private set; }
+    [ShowInInspector] [FoldoutGroup("Regulations")] public float maxPrinciple { get; private set; }
+    [ShowInInspector] [FoldoutGroup("Regulations")] public int maxNumDefaults { get; private set; }
+ 
     [ShowInInspector] 
     public bool Enable = true;
     
     [ShowInInspector]
     public float TotalDeposits { get; private set; }
     private string currency;
-    [ShowInInspector]
-    BankRegulations regulations;
 
     [ShowInInspector]
     public float liability { get; private set; }
     [ShowInInspector]
     public float Wealth { get; private set; }
     [ShowInInspector]
-    private LoanBook book = new();
+    private LoanBook loanBook = new();
     public Dictionary<EconAgent, float> Deposits { get; private set; }
 
     public float Monies()
     {
         return TotalDeposits + Wealth;
     }
-    public Bank(float initDeposits, string curr, BankRegulations reg)
+    public void BankInit(float initDeposits, string curr)
     {
         currency = curr;
         TotalDeposits = initDeposits;
-        regulations = reg;
         liability = 0;
         Wealth = 0;
         Deposits = new();
     }
+    
+    public void BankRegulations(float ratio, int termsInRounds, float interest, int _maxMissedPayments, float _maxPrinciple, int _maxNumDefaults) {
+        fractionalReserveRatio = ratio;
+        termInRounds = termsInRounds;
+        interestRate = interest;
+        maxPrinciple = _maxPrinciple;
+        maxMissedPayments = _maxMissedPayments;
+        maxNumDefaults = _maxNumDefaults;
+        Assert.IsTrue(maxMissedPayments > maxNumDefaults);
+    }
 
+	public override void Init(SimulationConfig cfg, AuctionStats at, string b, float _initStock, float maxstock, float cash=-1f) {
+		config = cfg;
+		uid = uid_idx++;
+		initStock = _initStock;
+		maxStock = maxstock;
+
+		book = at.book;
+		auctionStats = at;
+		//list of commodities self can produce
+		//get initial stockpiles
+		outputName = b;
+        Cash = 0;
+		prevCash = Cash;
+		inputs.Clear();
+        foreach(var good in book)
+        {
+            var name = good.Key;
+            inputs.Add(name);
+            AddToInventory(name, 0, maxstock, good.Value);
+        }
+    }
     public Loan Borrow(EconAgent agent, float amount, string curr)
     {
         if (!Enable) 
@@ -83,7 +97,7 @@ public class Bank
         }
         
         var fraction = TotalDeposits / (amount + liability);
-        var metric = (regulations.fractionalReserveRatio);
+        var metric = (fractionalReserveRatio);
         Debug.Log(agent.name + " bank borrowed " + amount.ToString("c2") + " " + curr
         + " deposit/liability ratio: " + fraction + " reserve ratio: "+ metric.ToString("c2"));
         if (fraction < metric)
@@ -92,8 +106,8 @@ public class Bank
             return null;
         }
 
-        var account = book[agent] = book.GetValueOrDefault(agent, new Loans());
-        var loan = new Loan(curr, amount, regulations.interestRate, regulations.termInRounds);
+        var account = loanBook[agent] = loanBook.GetValueOrDefault(agent, new Loans());
+        var loan = new Loan(curr, amount, interestRate, termInRounds);
         account.Add(loan);
         
         agent.AddToCash(amount);
@@ -103,9 +117,9 @@ public class Bank
 
     public bool CheckIfCanBorrow(EconAgent agent, float amount)
     {
-        var account = book[agent] = book.GetValueOrDefault(agent, new Loans());
-        var canBorrow = account.Principle + amount <= regulations.maxPrinciple || account.numDefaults > regulations.maxNumDefaults;
-        Debug.Log(agent.name + " potential principle " + (account.Principle + amount).ToString("c2") + " / " + regulations.maxPrinciple.ToString("c2") + " defaults " + account.numDefaults + " / " + regulations.maxNumDefaults);
+        var account = loanBook[agent] = loanBook.GetValueOrDefault(agent, new Loans());
+        var canBorrow = account.Principle + amount <= maxPrinciple || account.numDefaults > maxNumDefaults;
+        Debug.Log(agent.name + " potential principle " + (account.Principle + amount).ToString("c2") + " / " + maxPrinciple.ToString("c2") + " defaults " + account.numDefaults + " / " + maxNumDefaults);
         return canBorrow;
     }
 
@@ -129,7 +143,7 @@ public class Bank
 
     public float QueryLoans(EconAgent agent)
     {
-        return book.TryGetValue(agent, out var entry) ? entry.Principle : 0f;
+        return loanBook.TryGetValue(agent, out var entry) ? entry.Principle : 0f;
     }
 
     public float Withdraw(EconAgent agent, float amount, string curr)
@@ -150,7 +164,7 @@ public class Bank
         var prevDebt = liability;
         var prevWealth = Wealth;
         var tempLiability = liability;
-        foreach (var (agent, loans) in new LoanBook(book))
+        foreach (var (agent, loans) in new LoanBook(loanBook))
         {
             CollectPaymentsFromAgent(agent, ref tempLiability, loans);
         }
@@ -203,7 +217,7 @@ public class Bank
             tempLiability -= payment - interest;
             DebugLiability(tempLiability);
             
-            if (loan.missedPayments >= regulations.maxMissedPayments - loans.numDefaults)
+            if (loan.missedPayments >= maxMissedPayments - loans.numDefaults)
                 loan.defaulted = true; //NOTE numDefaults could be larger than maxNumDefaults
         }
         //pay off any loans
@@ -212,7 +226,7 @@ public class Bank
             {
                 tempLiability -= loan.principle;
                 liability -= loan.principle;
-                book[agent].Remove(loan);
+                loanBook[agent].Remove(loan);
                 Debug.Log("paid off a loan!");
             }
         DebugLiability(tempLiability);
@@ -259,7 +273,7 @@ public class Bank
     private void DebugLiability(float tempLiability)
     {
         float collectiveLoan;
-        collectiveLoan = book.Values.Sum(loans => loans.Principle);
+        collectiveLoan = loanBook.Values.Sum(loans => loans.Principle);
         Debug.Log("check liability2: " + tempLiability + " vs " + collectiveLoan);
         Assert.AreEqual((int)collectiveLoan, (int)tempLiability);
     }

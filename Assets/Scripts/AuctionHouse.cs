@@ -48,6 +48,7 @@ public partial class AuctionHouse : MonoBehaviour {
 		config = GetComponent<SimulationConfig>();
 		district.config = config;
 		district.Init();
+		InitBank();
 	}
 	void Start()
 	{
@@ -108,6 +109,28 @@ public partial class AuctionHouse : MonoBehaviour {
         gov.Init(config, district, buildable, initStock, maxStock);
         
 		agents.Add(gov);
+	}
+	
+	void InitBank()
+	{
+		var go = transform.Find("Bank").gameObject;
+		var bank = go.GetComponent<Bank>();
+		bank.name = "Bank";
+		bank.BankRegulations(config.fractionalReserveRatio, 
+							 config.termInRounds, 
+						 	 config.interestRate, 
+						  	 config.maxMissedPayments, 
+						  	 config.maxPrinciple,
+						  	 config.maxNumDefaults);
+        string buildable = "Bank";
+        bank.Init(config, district, buildable, 0, 1200000);
+		// var builtinregulations = go.GetComponent<BankRegulations>();
+		// builtinregulations = regulations;
+		bank.BankInit(100, "cash");
+		Debug.Log(bank.name + " 1outputs: " + string.Join(", ", bank.outputName));
+        
+		district.bank = bank;
+		agents.Add(bank);
 	}
 
 	GameObject GetAgentPrefab()
@@ -196,11 +219,11 @@ public partial class AuctionHouse : MonoBehaviour {
 			var agent = agents[a];
 			var entry = AgentTable[t];
 			
-			if (agent is not UserAgent) { a++; continue; }
-			
 			string msg = agent.name + " offering ";
 			foreach (var c in entry.Bids)
 			{
+				if (agent.inventory.ContainsKey(c.name) == false)
+					Debug.Log("no key found");
 				agent.inventory[c.name].offersThisRound = c.quantity;
 				msg += c.name + ": " + c.quantity + " ";
 			}
@@ -309,11 +332,8 @@ public partial class AuctionHouse : MonoBehaviour {
 		AgentTable.Clear();
 		foreach (var agent in agents)
 		{
-			if (agent is Government)
-				continue;
-			if (agent is not UserAgent)
-				continue;
-			((UserAgent)agent).UserTriggeredPopulateOffersFromInventory();
+			if (agent is UserAgent)
+				((UserAgent)agent).UserTriggeredPopulateOffersFromInventory();
 			AgentTable.Add(new (agent));
 		}
 	}

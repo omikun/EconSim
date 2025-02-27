@@ -93,16 +93,25 @@ public class AgentEntry
 		{
 			// item.offersThisRound = 0;
 		}
-		
-		Agent = agent.name + "-" + agent.outputName;
-		Cash = agent.Cash;
-		Deposit = agent.auctionStats.bank.CheckAccountBalance(agent);
-		Debt = agent.auctionStats.bank.QueryLoans(agent);
+
+		if (agent is Bank)
+		{
+			Agent = agent.name;
+			Cash = agent.auctionStats.bank.Wealth;
+			Deposit = agent.auctionStats.bank.TotalDeposits;
+			Debt = agent.auctionStats.bank.liability;
+		}
+		else
+		{
+			Agent = agent.name + "-" + agent.outputName;
+			Cash = agent.Cash;
+			Deposit = agent.auctionStats.bank.CheckAccountBalance(agent);
+			Debt = agent.auctionStats.bank.QueryLoans(agent);
+		}
 		DaysStarving = agent.DaysStarving;
-		if (agent is Government || agent.outputName == "None")
+		if (agent.outputName == "None")
 			return;
 		
-		var recipe = agent.book[agent.outputName].recipe;
 		//all inventory
 		foreach (var (com, numDepends) in agent.inventory)
 		{
@@ -115,6 +124,19 @@ public class AgentEntry
 			}
 		}
 
+		if (agent.book.ContainsKey(agent.outputName) == false)
+		{
+			foreach (var (com, numDepends) in agent.inventory)
+			{
+				var item = agent.inventory[com];
+				Bids.Add(new (com, item.offersThisRound, item.GetPrice()));
+			}
+
+			return;
+		}
+		//TODO add asks to entry
+		
+		var recipe = agent.book[agent.outputName].recipe;
 		//bids (inputs + food if output is not food)
 		foreach (var (com, numDepends) in recipe)
 		{

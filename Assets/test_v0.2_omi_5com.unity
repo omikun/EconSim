@@ -866,8 +866,7 @@ MonoBehaviour:
   historySize: 10
   changeToHighestBidPrice: 0
   probabilisticHottestGood: 0
-  bank:
-    Enable: 1
+  bank: {fileID: 0}
   config: {fileID: 0}
   inflation: 0
   happiness: 0
@@ -891,7 +890,8 @@ Transform:
   m_LocalPosition: {x: -11.9, y: 0.91, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1146431788}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &194909953
@@ -956,6 +956,12 @@ MonoBehaviour:
   changeProfessionAfterNDays: 10
   declareBankruptcy: 1
   historySize: 10
+  fractionalReserveRatio: 0.1
+  termInRounds: 30
+  interestRate: 0.02
+  maxMissedPayments: 5
+  maxPrinciple: 500
+  maxNumDefaults: 3
   agentType: 3
   initCash: 30
   initGovCash: 1000
@@ -3607,6 +3613,64 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1077058266}
   m_CullTransparentMesh: 1
+--- !u!1 &1146431787
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1146431788}
+  - component: {fileID: 1146431789}
+  m_Layer: 0
+  m_Name: Bank
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1146431788
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1146431787}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 194909951}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1146431789
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1146431787}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b013f14f3874d1b9112e3ca0708d7af, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  numProducedThisRound: 0
+  foodToHappy:
+    serializedVersion: 2
+    m_Curve: []
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  cashToHappy:
+    serializedVersion: 2
+    m_Curve: []
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  Enable: 1
 --- !u!1001 &1169851876
 PrefabInstance:
   m_ObjectHideFlags: 0

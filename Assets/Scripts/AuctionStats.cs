@@ -21,7 +21,6 @@ public class AuctionStats : MonoBehaviour
 
 	public AuctionBook book { get; private set; }
 	public Bank bank;
-	public BankRegulations regulations { get; private set; }
 	public SimulationConfig config;
 	public Dictionary<string, List<GenericTransaction>> transactions = new();
 	public int round { get; private set; }
@@ -48,8 +47,8 @@ public class AuctionStats : MonoBehaviour
 
 	void Awake()
 	{
-		regulations = new BankRegulations(.1f, 30, .05f, 5, 500f, 3);
-		bank = new Bank(100, "cash", regulations);
+		// regulations = new BankRegulations(.1f, 30, .05f, 5, 500f, 3);
+		// bank = new Bank(100, "cash", regulations);
 	}
 	public void ClearStats()
 	{

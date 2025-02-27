@@ -127,14 +127,12 @@ public class SimulationConfig : MonoBehaviour{
 	public int numRoundsNoTrade = 100;
 	
 	//init conditions
-	[FormerlySerializedAs("bidSortType")]
 	[TabGroup("Auction Trade")]
 	public TradeResolutionType tradeResolution = TradeResolutionType.XEven;
 	[TabGroup("Auction Trade")]
 	public OfferSortOrder bidSortOrder = OfferSortOrder.Ascending;
 	[TabGroup("Auction Trade")]
 	public OfferSortBy bidSortBy = OfferSortBy.OfferPrice;
-	[FormerlySerializedAs("askSortType")]
 	[TabGroup("Auction Trade")]
 	public OfferSortOrder askSortOrder = OfferSortOrder.Ascending;
 	[TabGroup("Auction Trade")]
@@ -176,18 +174,19 @@ public class SimulationConfig : MonoBehaviour{
 	[Tooltip("for looking into recent past on different metrics, like most profitable good")]
 	public int historySize = 10;
 
-	[TabGroup("tab2", "Agent Initialization")]
-	public AgentType agentType = AgentType.Default;
-	[TabGroup("tab2", "Agent Initialization")]
-	public float initCash = 100;
-	[TabGroup("tab2", "Agent Initialization")]
-	public float initGovCash = 1000;
-	[TabGroup("tab2", "Agent Initialization")]
-	public bool randomInitStock = false;
-	[TabGroup("tab2", "Agent Initialization")]
-	public float initStock = 10;
-	[TabGroup("tab2", "Agent Initialization")]
-	public float maxStock = 20;
+	[TabGroup("Banking")] public float fractionalReserveRatio = 0.1f;
+	[TabGroup("Banking")] public int termInRounds = 30;
+	[TabGroup("Banking")] public float interestRate = 0.02f;
+	[TabGroup("Banking")] public int maxMissedPayments = 5;
+	[TabGroup("Banking")] public float maxPrinciple = 500f;
+	[TabGroup("Banking")] public int maxNumDefaults = 5;
+	
+	[TabGroup("tab2", "Agent Initialization")] public AgentType agentType = AgentType.Default;
+	[TabGroup("tab2", "Agent Initialization")] public float initCash = 100;
+	[TabGroup("tab2", "Agent Initialization")] public float initGovCash = 1000;
+	[TabGroup("tab2", "Agent Initialization")] public bool randomInitStock = false;
+	[TabGroup("tab2", "Agent Initialization")] public float initStock = 10;
+	[TabGroup("tab2", "Agent Initialization")] public float maxStock = 20;
 	[TabGroup("tab2", "Agent Initialization")]
 	[SerializedDictionary("Comm", "numAgents")]
 	public SerializedDictionary<string, int> numAgents = new()
@@ -235,19 +234,19 @@ public class SimulationConfig : MonoBehaviour{
 	public bool randomizeSellPrice = false;
 
 	[TabGroup("tab2", "Agent Trade")] public bool sellPriceMinFoodExpense = true;
-	[FormerlySerializedAs("baselineSellPriceMinCost")] [TabGroup("tab2", "Agent Trade")] 
+	[TabGroup("tab2", "Agent Trade")] 
 	public bool sellPriceMinCost = false;
 
-	[FormerlySerializedAs("baselineSellPriceDelta")] [TabGroup("tab2", "Agent Trade")]
+	[TabGroup("tab2", "Agent Trade")]
 	public bool minSellPrice = true;
 	[InfoBox("priced to afford 1 of every other rsc after selling this many output")]
-	[FormerlySerializedAs("baselineSellPriceDelta")] [TabGroup("tab2", "Agent Trade")]
+	[TabGroup("tab2", "Agent Trade")]
 	public float minSellToAffordOthers = 10f;
-	[FormerlySerializedAs("baselineSellPriceDelta")] [TabGroup("tab2", "Agent Trade")]
+	[TabGroup("tab2", "Agent Trade")]
 	public float minItemRaiseBuyPrice = 3f;
-	[FormerlySerializedAs("baselineSellPriceDelta")] [TabGroup("tab2", "Agent Trade")] 
+	[TabGroup("tab2", "Agent Trade")] 
 	public float sellPriceDelta = 0.05f;
-	[FormerlySerializedAs("baselineBuyPriceDelta")] [TabGroup("tab2", "Agent Trade")] 
+	[TabGroup("tab2", "Agent Trade")] 
 	public float buyPriceDelta = 0.05f;
 	[TabGroup("tab2", "Agent Trade")] 
     public float profitMarkup = 1.05f;
