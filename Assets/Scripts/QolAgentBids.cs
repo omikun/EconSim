@@ -2,7 +2,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.Assertions;
 
-public partial class UserAgent 
+public partial class QolAgent 
 {
     //only buys essential goods and inputs
     //  - essential goods are food or other goods in the future
@@ -30,10 +30,6 @@ public partial class UserAgent
 
         var reason = "";
 
-        if (name == "agent10")
-            Debug.Log("Agent10 bid logic");
-        if (outputName == "Metal")
-            Debug.Log("Metal populateoffersfrominventory");
         float minQuant = 3f;
         // float outputPressure = buyOutputPressure(minQuant);
         float numBatchInputToBid = 0;
