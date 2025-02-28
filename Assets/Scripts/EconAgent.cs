@@ -12,6 +12,10 @@ using EconSim;
 using UnityEditor;
 using UnityEngine.UIElements;
 
+public class Inventory : Dictionary<string, InventoryItem>
+{
+}
+
 public class EconAgent : MonoBehaviour
 {
 	protected internal SimulationConfig config;
@@ -34,7 +38,7 @@ public class EconAgent : MonoBehaviour
 	protected float maxStock = 1;
 	public float Profit { get; protected set; }
 	public float TaxableProfit { get; protected set; }
-	public Dictionary<string, InventoryItem> inventory = new();
+	public Inventory inventory = new();
 	float taxesPaidThisRound = 0;
 	WaitNumRoundsNotTriggered noSaleIn = new();
 	WaitNumRoundsNotTriggered noPurchaseIn = new();
@@ -412,6 +416,10 @@ public class EconAgent : MonoBehaviour
 		return Mathf.Log10(numFoodEq);
 	}
 
+	public void BecomesUnemployed()
+	{
+		outputName = "None";
+	}
 	public virtual void ChangeProfession(Government gov, bool bankrupted = true)
 	{
 		string bestGood = auctionStats.GetHottestGood();

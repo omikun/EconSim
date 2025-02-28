@@ -181,11 +181,84 @@ public class Bank : EconAgent
     private void CollectPaymentsFromAgent(EconAgent agent, ref float tempLiability, Loans loans)
     {
         var deposit = Deposits[agent] = Deposits.GetValueOrDefault(agent, 0);
+        
+        //pay off loans to the extent possible with additional predicted potential borrows
+        var agentMonies = PayOffLoans(agent, ref tempLiability, loans, deposit, out var interestPaidByAgent, out var paymentByAgent);
+        
+        //mark any paid off loans, wipe off from the books
+        MarkOffPaidLoans(agent, ref tempLiability, loans);
+        DebugLiability(tempLiability);
+
+        //if agent missing money, borrow more to cover shortfall
+        if (agentMonies < paymentByAgent)
+        {
+            AgentBorrowsShortfall(agent, ref tempLiability, paymentByAgent, agentMonies);
+        }
+        DebugLiability(tempLiability);
+
+        //agent now makes all outstanding payment
+        AgentPays(agent, paymentByAgent, deposit, interestPaidByAgent);
+
+        var principle = paymentByAgent - interestPaidByAgent;
+        Wealth += interestPaidByAgent;
+        liability -= principle;
+
+        if (loans.numDefaults > maxNumDefaults)
+        {
+            //bank gets to own all assets, agent becomes unemployed
+            agent.BecomesUnemployed();
+            LiquidInventory(agent.inventory);
+        }
+    }
+
+    private void AgentBorrowsShortfall(EconAgent agent, ref float tempLiability, float paymentByAgent, float agentMonies)
+    {
+        var borrowAmount = BorrowAmount(paymentByAgent, agentMonies);
+        tempLiability += borrowAmount;
+        Borrow(agent, borrowAmount, "cash");
+        //what happens if agent defaults? can't borrow anymore
+        //kill off agent? 
+        Assert.IsTrue(agent.Cash >= paymentByAgent, " cash " + agent.Cash.ToString("c2") + " payment " + paymentByAgent.ToString("c2"));
+    }
+
+    private void AgentPays(EconAgent agent, float paymentByAgent, float deposit, float interestPaidByAgent)
+    {
+        if (Deposits[agent] < paymentByAgent)
+        {
+            Debug.Log(agent.name + " repaid " + paymentByAgent.ToString("c2") 
+                      + " with deposits " + deposit.ToString("c2")
+                      + " and cash " + agent.Cash.ToString("c2"));
+            Deposits[agent] = 0;
+            agent.Pay(paymentByAgent - deposit);
+        }
+        else
+        {
+            Deposits[agent] -= paymentByAgent;
+        }
+
+        Debug.Log("liability: " + liability + " " + agent.name + " repaid " + paymentByAgent.ToString("c2") + " interest " + interestPaidByAgent.ToString("c2"));
+    }
+
+    private void MarkOffPaidLoans(EconAgent agent, ref float tempLiability, Loans loans)
+    {
+        foreach (var loan in new Loans(loans))
+            if (loan.paidOff)
+            {
+                tempLiability -= loan.principle;
+                liability -= loan.principle;
+                loanBook[agent].Remove(loan);
+                Debug.Log("paid off a loan!");
+            }
+    }
+
+    private float PayOffLoans(EconAgent agent, ref float tempLiability, Loans loans, float deposit,
+        out float interestPaidByAgent, out float paymentByAgent)
+    {
         float agentMonies = agent.Cash + deposit;
 
         bool canBorrowMore = true;
-        float interestPaidByAgent = 0f;
-        float paymentByAgent = 0f;
+        interestPaidByAgent = 0f;
+        paymentByAgent = 0f;
         DebugLiability(tempLiability);
         //accumulate total payment, borrow if short
         foreach (var loan in loans)
@@ -202,10 +275,14 @@ public class Bank : EconAgent
                 canBorrowMore = CheckIfCanBorrow(agent, borrowAmount);
             }
 
-            if (!enoughToPay && !canBorrowMore)
+            if (!enoughToPay && !canBorrowMore) //missed payment
             {
-                payment = 0;
-                interest = 0;
+                Debug.Log(agent.name + " unable to repay " + payment.ToString("c2") + " interest " + interest.ToString("c2"));
+                loan.Paid(0); //marks missed payment if 0
+                
+                if (loan.missedPayments >= maxMissedPayments - loans.numDefaults)
+                    loan.defaulted = true; //NOTE numDefaults could be larger than maxNumDefaults
+                continue;
             }
             
             loan.Paid(payment); //marks missed payment if 0
@@ -216,51 +293,18 @@ public class Bank : EconAgent
                 
             tempLiability -= payment - interest;
             DebugLiability(tempLiability);
-            
-            if (loan.missedPayments >= maxMissedPayments - loans.numDefaults)
-                loan.defaulted = true; //NOTE numDefaults could be larger than maxNumDefaults
         }
-        //pay off any loans
-        foreach (var loan in new Loans(loans))
-            if (loan.paidOff)
-            {
-                tempLiability -= loan.principle;
-                liability -= loan.principle;
-                loanBook[agent].Remove(loan);
-                Debug.Log("paid off a loan!");
-            }
-        DebugLiability(tempLiability);
 
-        //if agent missing money, borrow more to cover shortfall
-        if (agentMonies < paymentByAgent)
-        {
-            var borrowAmount = BorrowAmount(paymentByAgent, agentMonies);
-            tempLiability += borrowAmount;
-            Borrow(agent, borrowAmount, "cash");
-            //what happens if agent defaults? can't borrow anymore
-            //kill off agent? 
-            Assert.IsTrue(agent.Cash >= paymentByAgent, " cash " + agent.Cash.ToString("c2") + " payment " + paymentByAgent.ToString("c2"));
-        }
-        DebugLiability(tempLiability);
+        return agentMonies;
+    }
 
-        //agent now makes all outstanding payment
-        if (Deposits[agent] < paymentByAgent)
+    void LiquidInventory(Inventory agentInventory)
+    {
+        foreach (var (good, item) in agentInventory)
         {
-            Debug.Log(agent.name + " repaid " + paymentByAgent.ToString("c2") 
-                      + " with deposits " + deposit.ToString("c2")
-                      + " and cash " + agent.Cash.ToString("c2"));
-            Deposits[agent] = 0;
-            agent.Pay(paymentByAgent - deposit);
+            inventory[good].Increase(item.Quantity);
+            item.Decrease(item.Quantity);
         }
-        else
-        {
-            Deposits[agent] -= paymentByAgent;
-        }
-        Debug.Log("liability: " + liability + " " + agent.name + " repaid " + paymentByAgent.ToString("c2") + " interest " + interestPaidByAgent.ToString("c2"));
-            
-        var principle = paymentByAgent - interestPaidByAgent;
-        Wealth += interestPaidByAgent;
-        liability -= principle;
     }
 
     private static float BorrowAmount(float paymentByAgent, float agentMonies)
