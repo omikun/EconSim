@@ -230,6 +230,12 @@ public class ESStreamingGraph : MonoBehaviour
         askChartObject.Plot(auctionTracker.book, rsc => rsc.asks, lastX, SlideTime);
         bidChartObject.Plot(auctionTracker.book, rsc => rsc.bids, lastX, SlideTime);
 
+        for (int i = 0; i < 5; i++)
+        {
+            var name = jobChart.DataSource.GetCategoryName(i);
+            jobChart.DataSource.SetValue(name, 0);
+        }
+            
         foreach (var rsc in auctionTracker.book.Values)
         {
             jobChart.DataSource.SetValue(rsc.name, rsc.numAgents);

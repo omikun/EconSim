@@ -38,27 +38,5 @@ public partial class UserAgent : QolAgent
             if (selling)
                 item.offersThisRound = item.Quantity;
         }
-        return;
-        var output = inventory[outputName];
-        string msg = auctionStats.round + " " + name 
-                     + " cash: " + CashString
-                     + " output: " + output.Quantity + " " + output.name + " " + output.GetPrice();
-        foreach (var (com, item) in inventory)
-        {
-            if (com != outputName)
-            {
-                msg += " " + item.Quantity + " " + com + item.GetPrice();
-            }
-        }
-        Console.WriteLine(msg);
-        foreach (var (com, item) in inventory)
-        {
-            if (isConsumable(com))
-                Console.WriteLine("#bid " + com + ":");
-            else
-                Console.WriteLine("#ask " + com + ":");
-            string numOffers = Console.ReadLine();
-            item.offersThisRound = int.Parse(numOffers);
-        }
     }
 }

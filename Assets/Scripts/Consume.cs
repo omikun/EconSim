@@ -68,7 +68,7 @@ public class SanityCheckConsumer : Consumer
 {
 	public SanityCheckConsumer(EconAgent a) : base(a) { }
 
-	public virtual float SelectPrice(string com)
+	public override float SelectPrice(string com)
 	{
 		return agent.book[com].setPrice;
 	}
@@ -91,7 +91,7 @@ public class QoLConsumer : Consumer
 {
 	public QoLConsumer(EconAgent a) : base(a) { }
 
-	public virtual float SelectPrice(string com)
+	public override float SelectPrice(string com)
 	{
 		return agent.book[com].setPrice;
 	}
@@ -102,7 +102,6 @@ public class QoLConsumer : Consumer
 	    if (agent.Cash <= 0)
 		    return bids;
 	    //if not profiting, just buy food if needed
-	    var buyInputs = 0f;
 	    if (agent.Profit > 0)
 	    {
 		    //how many days of food left?
@@ -174,7 +173,6 @@ public class QoLConsumer : Consumer
 		//QoL of wood vs tool, 2 wood to 1 tool
 		float numBids = 0;
 		var recipe = agent.book[agent.outputName].recipe;
-		var bestUtility = 0f; //item.value / mktprice
 		//find utility of each input and output item from 1 to quantity
 		//ex for wood, want to buy wood w/ all money maybe
 		//find utility of each additional wood from 1 to affordable quant

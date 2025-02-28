@@ -32,7 +32,6 @@ public partial class QolAgent : QoLSimpleAgent
     {
         //decide how much to buy and sell
         //how many inputs to buy at their respective price beliefs?
-        float buyPress = 0f; //PopulateOffersFromInventory();
         //if input price is high, can current sell price be worth it?
         //how much was sold last round?
         //TODO what if none was sold last round??

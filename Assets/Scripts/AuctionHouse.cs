@@ -265,7 +265,6 @@ public partial class AuctionHouse : MonoBehaviour {
 #else
         Application.Quit();
 #endif
-			return;
 		}
 
 		if (config.autoNextRound && Time.time - lastTick > config.tickInterval)

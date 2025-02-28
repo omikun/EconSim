@@ -16,7 +16,7 @@ public partial class QolAgent
     //  - decide how much cash to spend
     //    - already done in previous step?
     //  - split cash for inputs into each input
-    protected void PopulateOffersFromInventory()
+    protected override void PopulateOffersFromInventory()
     {
         if (outputName == "None")
             return;
@@ -30,7 +30,7 @@ public partial class QolAgent
 
         var reason = "";
 
-        float minQuant = 3f;
+        // float minQuant = 3f;
         // float outputPressure = buyOutputPressure(minQuant);
         float numBatchInputToBid = 0;
         var inputFood = foodEquivalent.GetInputFood();
@@ -173,18 +173,6 @@ public partial class QolAgent
         //only buy missing inputs to get to numBatchInput
         //determine how many batches of each input in current inventory
         //add numBatchInput - item.numbatches + minbatch
-        if (false)
-        {
-            foreach (var (com, numNeeded) in output.recipe)
-            {
-                var numBatches = Mathf.Floor(inventory[com].NumProduceable(output));
-                var additionalBatches = numBatchInputToBid - numBatches + minInputBatches;
-                additionalBatches = Mathf.Max(0, additionalBatches);
-                inventory[com].offersThisRound = additionalBatches * numNeeded;
-            }
-
-        }
-        else
         {
             var cashForInputs = Cash - numFoodToBid * foodMarketPrice;
             // var cashForInputs = numBatchInputToBid * inputBatchCost - inputCashEquivalent;
@@ -345,7 +333,6 @@ public partial class QolAgent
     //if low on cash and inputs, buy at least 1 batch of inputs
     private float minBatchInputToBid()
     {
-        float buyPressureInput = 0f;
         var inputFood = foodEquivalent.GetInputFood();
         var outputFood = 0f;//foodEquivalent.GetOutputFood();
         return (inputFood == 0 && outputFood == 0) ? 1 : 0;

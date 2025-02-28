@@ -58,7 +58,7 @@ public class FoodEquivalent
 		var numOutputs = Mathf.Min(numBatches, outputItem.GetMaxProductionRate(numBatches));
 		var numFood = numOutputs * numFoodPerOutput;
 		return numBatches;
-		return numFood;
+		// return numFood;
 	}
 	public float GetNumFoodPerOutput()
 	{

@@ -499,7 +499,7 @@ public class InventoryItem {
                   + " minItemRaiseBuyPrice " + agent.config.minItemRaiseBuyPrice.ToString("c2")
                   + reason_msg);
         return;
-
+/*
         if ( quantityBought * 2 > trade.offerQuantity ) //at least 50% offer filled
         {
             // move limits inward by 10 of upper limit%
@@ -542,6 +542,7 @@ public class InventoryItem {
         // UnityEngine.Debug.Log("buyer " + agentName + " stock: " + commodityName + " max price belief: " + prevMaxPriceBelief + " -> " + maxPriceBelief);
         // Assert.IsTrue(minPriceBelief < priceBelief);
         debug_msgs.Add(reason_msg);
+        */
     }
 
     float logRatio(float x, float scaler=10)
@@ -657,7 +658,7 @@ public class InventoryItem {
                   + " sold ratio " + soldRatio.ToString("n2")
 				  + reason);
         return;
-        
+       /* 
         string reason_msg = "none";
         if (weight == 0)
         {
@@ -694,6 +695,7 @@ public class InventoryItem {
         // UnityEngine.Debug.Log("seller " + agentName + " stock: " + commodityName + " max price belief: " + prevMaxPriceBelief + " -> " + maxPriceBelief);
         // Assert.IsTrue(minPriceBelief < priceBelief);
         debug_msgs.Add(reason_msg);
+        */
 	}
 	//TODO change quantity based on historical price ranges & deficit
 	public float Deficit() { 

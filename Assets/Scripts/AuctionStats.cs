@@ -140,7 +140,7 @@ public class AuctionStats : MonoBehaviour
 	//get price of good
 	int gotHottestGoodRound = 0;
 	string hottestGood = "invalid";
-	string mostProfitable = "invalid";
+	// string mostProfitable = "invalid";
 	WeightedRandomPicker<string> picker = new ();
 	public string GetHottestGood()
 	{
