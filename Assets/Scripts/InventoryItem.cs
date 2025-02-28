@@ -32,7 +32,7 @@ public class InventoryItem {
 	public string name { get; private set; }
     protected EconAgent agent;
     protected AuctionStats auctionStats;
-    protected ResourceController rsc { get; private set; }
+    public ResourceController rsc { get; private set; }
 	const float significant = 0.25f;
 	const float sig_imbalance = .33f;
 	const float lowInventory = .1f;

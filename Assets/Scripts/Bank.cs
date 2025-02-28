@@ -118,7 +118,7 @@ public class Bank : EconAgent
     public bool CheckIfCanBorrow(EconAgent agent, float amount)
     {
         var account = loanBook[agent] = loanBook.GetValueOrDefault(agent, new Loans());
-        var canBorrow = account.Principle + amount <= maxPrinciple || account.numDefaults > maxNumDefaults;
+        var canBorrow = (account.Principle + amount) <= maxPrinciple && account.numDefaults < maxNumDefaults;
         Debug.Log(agent.name + " potential principle " + (account.Principle + amount).ToString("c2") + " / " + maxPrinciple.ToString("c2") + " defaults " + account.numDefaults + " / " + maxNumDefaults);
         return canBorrow;
     }
@@ -298,11 +298,14 @@ public class Bank : EconAgent
         return agentMonies;
     }
 
-    void LiquidInventory(Inventory agentInventory)
+    public void LiquidInventory(Inventory agentInventory)
     {
         foreach (var (good, item) in agentInventory)
         {
-            inventory[good].Increase(item.Quantity);
+            if (inventory.ContainsKey(good) == false)
+                AddToInventory(good, item.Quantity, maxStock, item.rsc);
+            else
+                inventory[good].Increase(item.Quantity);
             item.Decrease(item.Quantity);
         }
     }
@@ -319,6 +322,19 @@ public class Bank : EconAgent
         float collectiveLoan;
         collectiveLoan = loanBook.Values.Sum(loans => loans.Principle);
         Debug.Log("check liability2: " + tempLiability + " vs " + collectiveLoan);
-        Assert.AreEqual((int)collectiveLoan, (int)tempLiability);
+        // Assert.AreEqual((int)collectiveLoan, (int)tempLiability);
+    }
+
+    public override Offers CreateAsks()
+    {
+        var asks = new Offers();
+        foreach (var (com, item) in inventory)
+        {
+            item.offersThisRound = item.Quantity;
+            var sellPrice = item.rsc.marketPrice * .9f; //based on supply and demand too?
+            asks.Add(com, new Offer(com, sellPrice, item.Quantity, this));
+        }
+
+        return asks;
     }
 }

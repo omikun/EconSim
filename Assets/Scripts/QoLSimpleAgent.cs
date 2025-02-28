@@ -64,6 +64,11 @@ public class QoLSimpleAgent : EconAgent
             Debug.Log(auctionStats.round + " " + name + " has died with " + msg);
             Alive = false;
             outputName = "Dead";
+            if (auctionStats.bank.QueryLoans(this) > 0f)
+            {
+                //liquidate assets
+                auctionStats.bank.LiquidInventory(inventory);
+            }
             return 0;
         } 
         
