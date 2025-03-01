@@ -88,12 +88,14 @@ public class Government : EconAgent {
 
         foreach (var (com,item) in inventory)
 		{
-			if ((int)item.TargetQuantity >= (int)item.Quantity)
-				continue;
+			// if ((int)item.TargetQuantity >= (int)item.Quantity)
+				// continue;
 
-			var offerQuantity = item.TargetQuantity - item.Quantity;
-			var offerPrice = book[com].marketPrice * 1.15f;
-			if (item.OfferQuantity > 0)
+			// var offerQuantity = item.TargetQuantity - item.Quantity;
+			var offerQuantity = item.Quantity;
+			var offerPrice = book[com].marketPrice * 1.1f;
+			// if (item.OfferQuantity > 0)
+			if (offerQuantity > 0)
 			{
 				asks.Add(com, new Offer(com, offerPrice, offerQuantity, this));
 				Debug.Log(auctionStats.round + " gov asked " + offerQuantity.ToString("n2") + " " + item.name);

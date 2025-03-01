@@ -198,16 +198,6 @@ public partial class AuctionHouse : MonoBehaviour {
 		//CloseWriteFile();
 	}
 
-	[Title("Player Actions")]
-	[Button(ButtonSizes.Large), GUIColor(0.4f, 0.8f,1)]
-	public void DoNextRound()
-	{
-		LatchBids();
-		Tick();
-		district.nextRound();
-		streamingGraphs.UpdateGraphs();
-		UpdateAgentTable();
-	}
 	//latch bid values in AgentTable to agent inventory offers
 	public void LatchBids()
 	{
@@ -230,26 +220,7 @@ public partial class AuctionHouse : MonoBehaviour {
 			Debug.Log(msg);
 		}
 	}
-	private static string[] comOptions = new string[] { "Food","Wood","Ore","Metal","Tool" };
-	[PropertyOrder(4)]
-	[HorizontalGroup("InsertBid")]
-	[ValueDropdown("comOptions")]
-	public string bidCom = "Food";
-
-	[PropertyOrder(4)]
-	[HorizontalGroup("InsertBid")]
-	public float bidQuant = 0;
-	[PropertyOrder(4)]
-	[HorizontalGroup("InsertBid")]
-	[Button]
-	public void InsertBid() 
-	{
-		((Government)gov).InsertBid(bidCom, bidQuant, 0f);
-	}
 	
-	[PropertyOrder(6)]
-	[FormerlySerializedAs("AlwaysExpandedTable")] [TableList(AlwaysExpanded = true, DrawScrollView = false)]
-	public List<AgentEntry> AgentTable = new List<AgentEntry>();
 
 	void Update () {
 		if (district.round > config.maxRounds || timeToQuit)
@@ -323,17 +294,6 @@ public partial class AuctionHouse : MonoBehaviour {
 		//print agent to inspector
 	}
 
-	[Button]
-	public void UpdateAgentTable()
-	{
-		AgentTable.Clear();
-		foreach (var agent in agents)
-		{
-			if (agent is UserAgent)
-				((UserAgent)agent).UserTriggeredPopulateOffersFromInventory();
-			AgentTable.Add(new (agent));
-		}
-	}
 	protected void TickAgent()
 	{
 		var book = district.book;
