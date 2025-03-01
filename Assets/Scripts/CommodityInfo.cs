@@ -40,7 +40,7 @@ public class CommodityInfo : MonoBehaviour
             var asks = rsc.asks.Last();
             var bids = rsc.bids.Last();
             var trades = rsc.trades.Last();
-            var tmp = postPad(com + ":", ref maxLength) + postPad(price, ref maxLength2) + asks + "/" + postPad(bids.ToString(), ref maxLength3) + trades + "\n";
+            var tmp = postPad(com + ": ", ref maxLength) + postPad(price, ref maxLength2) + asks + "/" + postPad(bids.ToString()+" ", ref maxLength3) + trades + "\n";
         }
         foreach (var (com, rsc) in district.book)
         {
@@ -48,7 +48,7 @@ public class CommodityInfo : MonoBehaviour
             var asks = rsc.asks.Last();
             var bids = rsc.bids.Last();
             var trades = rsc.trades.Last();
-            msg += postPad(com + ":", ref maxLength) + postPad(price, ref maxLength2) + asks + "/" + postPad(bids.ToString(), ref maxLength3) + trades + "\n";
+            msg += postPad(com + ":", ref maxLength) + postPad(price, ref maxLength2) + " asks/bids: " + asks + "/" + postPad(bids.ToString(), ref maxLength3) + trades + "\n";
         }
 
         text.text = msg;

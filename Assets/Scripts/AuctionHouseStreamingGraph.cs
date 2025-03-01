@@ -233,7 +233,7 @@ public class ESStreamingGraph : MonoBehaviour
         for (int i = 0; i < 5; i++)
         {
             var name = jobChart.DataSource.GetCategoryName(i);
-            jobChart.DataSource.SetValue(name, 0);
+            jobChart.DataSource.SetValue(name, 0.1);
         }
             
         foreach (var rsc in auctionTracker.book.Values)
