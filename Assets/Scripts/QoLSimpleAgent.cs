@@ -67,7 +67,7 @@ public class QoLSimpleAgent : EconAgent
             if (auctionStats.bank.QueryLoans(this) > 0f)
             {
                 //liquidate assets
-                auctionStats.bank.LiquidInventory(inventory);
+                auctionStats.bank.LiquidateInventory(inventory);
             }
             return 0;
         } 

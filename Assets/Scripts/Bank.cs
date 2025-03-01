@@ -67,6 +67,7 @@ public class Bank : EconAgent
 		uid = uid_idx++;
 		initStock = _initStock;
 		maxStock = maxstock;
+        Alive = true;
 
 		book = at.book;
 		auctionStats = at;
@@ -207,7 +208,7 @@ public class Bank : EconAgent
         {
             //bank gets to own all assets, agent becomes unemployed
             agent.BecomesUnemployed();
-            LiquidInventory(agent.inventory);
+            LiquidateInventory(agent.inventory);
         }
     }
 
@@ -279,9 +280,16 @@ public class Bank : EconAgent
             {
                 Debug.Log(agent.name + " unable to repay " + payment.ToString("c2") + " interest " + interest.ToString("c2"));
                 loan.Paid(0); //marks missed payment if 0
-                
+
                 if (loan.missedPayments >= maxMissedPayments - loans.numDefaults)
+                {
                     loan.defaulted = true; //NOTE numDefaults could be larger than maxNumDefaults
+                    if (loans.numDefaults > maxNumDefaults)
+                    {
+                        agent.BecomesUnemployed();
+                        LiquidateInventory(agent.inventory);
+                    }
+                }
                 continue;
             }
             
@@ -298,7 +306,7 @@ public class Bank : EconAgent
         return agentMonies;
     }
 
-    public void LiquidInventory(Inventory agentInventory)
+    public void LiquidateInventory(Inventory agentInventory)
     {
         foreach (var (good, item) in agentInventory)
         {
@@ -325,16 +333,26 @@ public class Bank : EconAgent
         // Assert.AreEqual((int)collectiveLoan, (int)tempLiability);
     }
 
+    public override Offers CreateBids(AuctionBook book)
+    {
+        return new Offers();
+    }
     public override Offers CreateAsks()
     {
         var asks = new Offers();
         foreach (var (com, item) in inventory)
         {
+            if (item.Quantity == 0)
+                continue;
             item.offersThisRound = item.Quantity;
             var sellPrice = item.rsc.marketPrice * .9f; //based on supply and demand too?
             asks.Add(com, new Offer(com, sellPrice, item.Quantity, this));
         }
 
         return asks;
+    }
+
+    public override void Decide()
+    {
     }
 }

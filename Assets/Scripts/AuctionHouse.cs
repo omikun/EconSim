@@ -214,10 +214,10 @@ public partial class AuctionHouse : MonoBehaviour {
 		Debug.Log("Latching bids");
 		// var entriesAgent = AgentTable.Zip(agents, (e, a) => new { entry = e, agent = a });
 		// foreach(var ea in entriesAgent)
-		for (int t = 0, a = 0; t < AgentTable.Count && a < agents.Count; )
+		for (int a = 0; a < AgentTable.Count && a < agents.Count; a++)
 		{
 			var agent = agents[a];
-			var entry = AgentTable[t];
+			var entry = AgentTable[a];
 			
 			string msg = agent.name + " offering ";
 			foreach (var c in entry.Bids)
@@ -228,8 +228,6 @@ public partial class AuctionHouse : MonoBehaviour {
 				msg += c.name + ": " + c.quantity + " ";
 			}
 			Debug.Log(msg);
-			a++;
-			t++;
 		}
 	}
 	private static string[] comOptions = new string[] { "Food","Wood","Ore","Metal","Tool" };
@@ -349,7 +347,7 @@ public partial class AuctionHouse : MonoBehaviour {
 			if (agent.Alive == false)
 				continue;
 //	        Debug.Log("TickAgent() " + agent.name);
-			if (agent is Government)
+			if (agent is Government || agent is Bank)
 				continue;
 			bool changedProfession = false;
 			bool bankrupted = false;
@@ -380,6 +378,10 @@ public partial class AuctionHouse : MonoBehaviour {
 			{
 				agent.gameObject.SetActive(false);
 				deadAgents.Add(agent);
+				if (district.bank.QueryLoans(agent) > 0)
+					district.bank.LiquidateInventory(agent.inventory);
+				else
+					gov.LiquidateInventory(agent.inventory);
 				continue;
 			} else if (cash > 0)
 			{
@@ -612,7 +614,9 @@ public partial class AuctionHouse : MonoBehaviour {
         if (n == 0) return district.gini;
 
         float totalWealth = values.Sum();
-        Assert.IsTrue(totalWealth != 0);
+        if (totalWealth == 0)
+	        return 0;
+        
         float cumulativeWealth = 0;
         float weightedSum = 0;
         for (int i = 0; i < n; i++)

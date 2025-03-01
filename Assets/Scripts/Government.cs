@@ -15,6 +15,7 @@ public class Government : EconAgent {
 		uid = uid_idx++;
 		initStock = _initStock;
 		maxStock = maxstock;
+		Alive = true;
 
 		book = at.book;
 		auctionStats = at;
@@ -35,8 +36,7 @@ public class Government : EconAgent {
 		inventory["Food"].TargetQuantity = FoodTarget;
     }
 
-    public override float Produce() {
-        return 0;
+    public override void Decide() {
     }
 	public override float EvaluateHappiness()
     {
@@ -93,7 +93,7 @@ public class Government : EconAgent {
 
 			var offerQuantity = item.TargetQuantity - item.Quantity;
 			var offerPrice = book[com].marketPrice * 1.15f;
-			if (item.OfferQuantity < 0)
+			if (item.OfferQuantity > 0)
 			{
 				asks.Add(com, new Offer(com, offerPrice, offerQuantity, this));
 				Debug.Log(auctionStats.round + " gov asked " + offerQuantity.ToString("n2") + " " + item.name);
@@ -102,6 +102,17 @@ public class Government : EconAgent {
 		return asks;
 	}
 
+    public void LiquidateInventory(Inventory agentInventory)
+    {
+        foreach (var (good, item) in agentInventory)
+        {
+            if (inventory.ContainsKey(good) == false)
+                AddToInventory(good, item.Quantity, maxStock, item.rsc);
+            else
+                inventory[good].Increase(item.Quantity);
+            item.Decrease(item.Quantity);
+        }
+    }
     public override float Tick(Government gov, ref bool changedProfession, ref bool bankrupted, ref bool starving)
     {
 	    Debug.Log(name + " outputs: " + outputName);
