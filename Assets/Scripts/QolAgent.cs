@@ -15,16 +15,21 @@ public partial class QolAgent : QoLSimpleAgent
     }
     protected void decideProduction()
     {
-        if (outputName == "None")
-            return;
-        var rsc = book[outputName];
-        var stock = inventory[outputName];
-        var numBatches = NumBatchesProduceable(rsc, stock);
-        var numProduced = Produce(numBatches);
-        ConsumeGoods(numBatches);
+        if (book.ContainsKey(outputName) == true)
+        {
+            var rsc = book[outputName];
+            var stock = inventory[outputName];
+            var numBatches = NumBatchesProduceable(rsc, stock);
+            var numProduced = Produce(numBatches);
+            ConsumeGoods(numBatches);
+            Debug.Log(auctionStats.round + " " + name + " produced " + numProduced + " " + rsc.name);
+        }
+        else
+        {
+            ConsumeGoods(0);
+        }
         // var numProduced2 = productionStrategy.Produce();
         // Assert.AreEqual(numProduced, numProduced2);
-        Debug.Log(auctionStats.round + " " + name + " produced " + numProduced + " " + rsc.name);
     }
 
     // public virtual void decideOffers()
@@ -111,12 +116,16 @@ public partial class QolAgent : QoLSimpleAgent
             else if (item.Quantity <= 0) //can't go below 0
                 continue;
 
-            var recipe = book[outputName].recipe;
-            if (recipe.ContainsKey(item.name))
+            if (numBatches > 0)
             {
-                float consumedByBatch = recipe[item.name] * numBatches;
-                amountConsumed = Mathf.Max(amountConsumed, consumedByBatch);
+                var recipe = book[outputName].recipe;
+                if (recipe.ContainsKey(item.name))
+                {
+                    float consumedByBatch = recipe[item.name] * numBatches;
+                    amountConsumed = Mathf.Max(amountConsumed, consumedByBatch);
+                }
             }
+            
             amountConsumed = Mathf.Min(item.Quantity, amountConsumed);
             Debug.Log(auctionStats.round + " " + name + " has " + item.Quantity + " " + item.name + " remaining, consumed " + amountConsumed + " " + item.name);
             item.Decrease(amountConsumed);

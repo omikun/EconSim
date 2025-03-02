@@ -1,4 +1,5 @@
 using System.Linq;
+using Michsky.MUIP;
 using UnityEngine;
 using UnityEngine.Assertions;
 
@@ -16,10 +17,38 @@ public partial class QolAgent
     //  - decide how much cash to spend
     //    - already done in previous step?
     //  - split cash for inputs into each input
+    protected void PopulateOffersLaborers()
+    {
+        if (outputName == "Unemployed")
+        {
+            Assert.IsTrue(inventory["Labor"].Quantity > 0);
+            var item = inventory["Labor"];
+            item.offersThisRound = item.Quantity;
+        }
+        
+        //TODO farm laborers also don't need food!
+        var foodMarketPrice = (outputName == "Food") ? 0 : book["Food"].marketPrice;
+        var targetNumFood = 10f;
+        var numFoodToBuy = Mathf.Max(0, targetNumFood - inventory["Food"].Quantity);
+        //deposit excess cash or withdraw as needed
+        var operatingCash = numFoodToBuy * foodMarketPrice;
+        if (Cash > operatingCash)
+        {
+            var deposit = Cash - operatingCash;
+            deposit = auctionStats.bank.Deposit(this, deposit, "Cash");
+            Cash -= deposit;
+        }
+        
+        //bid for food
+        inventory["Food"].offersThisRound = Mathf.Floor(Cash / foodMarketPrice);
+    }
     protected override void PopulateOffersFromInventory()
     {
-        if (outputName == "None")
+        if (outputName == "Unemployed" || outputName == "Labor")
+        {
+            PopulateOffersLaborers();
             return;
+        }
         
         foreach (var item in inventory.Values)
         {
@@ -33,8 +62,8 @@ public partial class QolAgent
         // float minQuant = 3f;
         // float outputPressure = buyOutputPressure(minQuant);
         float numBatchInputToBid = 0;
-        var inputFood = foodEquivalent.GetInputFood();
-        var outputFood = foodEquivalent.GetOutputFood();
+        // var inputFood = foodEquivalent.GetInputFood();
+        // var outputFood = foodEquivalent.GetOutputFood();
 
         var numFoodToBid = 0;
         var foodItem = inventory["Food"];
@@ -49,12 +78,12 @@ public partial class QolAgent
         if (Cash > operatingCash)
         {
             var deposit = Cash - operatingCash;
-            deposit = auctionStats.bank.Deposit(this, deposit, "cash");
+            deposit = auctionStats.bank.Deposit(this, deposit, "Cash");
             Cash -= deposit;
         }
         else if (Cash < operatingCash)
         {
-            Cash += auctionStats.bank.Withdraw(this, operatingCash, "cash");
+            Cash += auctionStats.bank.Withdraw(this, operatingCash, "Cash");
         }
 
         var remainingCash = Cash;
@@ -198,18 +227,18 @@ public partial class QolAgent
         var enoughFoodTarget = (enoughCashForInput) ? 1 : 2;
         var enoughFood = inventory["Food"].Quantity >= enoughFoodTarget; 
         var enoughFoodOrCashForFood = (enoughFood || enoughCashForFood) && outputName != "Food"; //farmers are covered in enoughOutput
+        float loanAmount = inputBatchCost - inputCashEquivalent - remainingCash;
+        
         bool enough = enoughCashForInput || enoughOutput || enoughFoodOrCashForFood;
         
         bool doesBorrow = !enough;
-        float loanAmount = 0;
         if (doesBorrow)
         {
-            loanAmount = inputBatchCost - inputCashEquivalent - remainingCash;
             loanAmount *= 1.2f; //padding
             if (!enoughFoodOrCashForFood && outputName != "Food")
                 loanAmount += foodMarketPrice * 1.2f;
             loanAmount = Mathf.Max(30, loanAmount); //aggressive banker pushes min loan amount
-            auctionStats.bank.Borrow(this, loanAmount, "cash");
+            auctionStats.bank.Borrow(this, loanAmount, "Cash");
         }
 
         var reason = "";
@@ -301,6 +330,9 @@ public partial class QolAgent
     }
     private float GetInputBatchCost()
     {
+        if (book.ContainsKey(outputName) == false)
+            return 0;
+        
         //get numNeeded of each input for batch
         var rsc = book[outputName];
         var totalCost = 0f;

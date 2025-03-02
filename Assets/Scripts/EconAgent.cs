@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Assertions;
@@ -50,6 +50,20 @@ public class EconAgent : MonoBehaviour
 	//private AskQuantityStrategy askQuantityStrategy;
 	//private bidQuantityStrategy bidQuantityStrategy;
 	//private BidPriceStrategy bidPriceStrategy;
+	
+	//////////////// NOTE FOR FIRMS ONLY //////////////////////
+	protected Dictionary<EconAgent, float> employees { get; set; }
+	public int NumEmployees
+	{
+		get { return (employees != null) ? employees.Count : 0; }
+	}
+	public void Hire(EconAgent agent, float wage)
+	{
+		Assert.IsTrue(employees != null);
+		employees[agent] = wage;
+		agent.SetEmployed();
+		agent.inventory["Labor"].Decrease(1);
+	}
 
 	public string Profession
 	{
@@ -118,6 +132,10 @@ public class EconAgent : MonoBehaviour
 	{
 		Cash -= amount;
 	}
+	public void Earn(float amount)
+	{
+		Cash += amount;
+	}
 
 	public virtual void Init(SimulationConfig cfg, AuctionStats at, string b, float _initStock, float maxstock, float cash=-1f)
 	{
@@ -139,24 +157,32 @@ public class EconAgent : MonoBehaviour
 		prevCash = Cash;
 		inputs.Clear();
 		//foreach (var buildable in outputName)
-		var buildable = outputName;
 		{
-			if (buildable != "Food")
+			if (outputName != "Food")
 			{
 				var commodity = "Food";
 				AddToInventory(commodity, initStock, maxStock, book[commodity]);
 			}
-			
-			if (buildable == "None")
+
+			if (outputName == "Unemployed")
+			{
+				var labor = "Labor";
+				AddToInventory(labor, 1, 1, book[labor]);
 				return;
+			}
+			else
+			{
+				var com = "Labor";
+				AddToInventory(com, 0, 1, book[com]);
+			}
 
-			if (!book.ContainsKey(buildable))
-				Debug.Log("commodity not recognized: " + buildable);
+			if (!book.ContainsKey(outputName))
+				Debug.Log("commodity not recognized: " + outputName);
 
-			if (book[buildable].recipe == null)
-				Debug.Log(buildable + ": null dep!");
+			if (book[outputName].recipe == null)
+				Debug.Log(outputName + ": null dep!");
 
-			foreach (var dep in book[buildable].recipe)
+			foreach (var dep in book[outputName].recipe)
 			{
 				var commodity = dep.Key;
 				inputs.Add(commodity);
@@ -165,8 +191,8 @@ public class EconAgent : MonoBehaviour
 			}
 
 
-			AddToInventory(buildable, 0, maxStock, book[buildable]);
-			Debug.Log(auctionStats.round + " New agent " + gameObject.name + " uid: " + uid + " cash: " + Cash.ToString("c2") + " has " + inventory[buildable].Quantity + " " + buildable);
+			AddToInventory(outputName, 0, maxStock, book[outputName]);
+			Debug.Log(auctionStats.round + " New agent " + gameObject.name + " uid: " + uid + " cash: " + Cash.ToString("c2") + " has " + inventory[outputName].Quantity + " " + outputName);
 		}
 	}
 
@@ -234,7 +260,7 @@ public class EconAgent : MonoBehaviour
 
     protected bool inRecipe(string itemName)
     {
-	    if (outputName == "None")
+	    if (book.ContainsKey(outputName) == false)
 		    return false;
 	    return (book[outputName].recipe.ContainsKey(itemName));
     }
@@ -418,7 +444,12 @@ public class EconAgent : MonoBehaviour
 
 	public void BecomesUnemployed()
 	{
-		outputName = "None";
+		outputName = "Unemployed";
+	}
+
+	public void SetEmployed()
+	{
+		outputName = "Labor";
 	}
 	public virtual void ChangeProfession(Government gov, bool bankrupted = true)
 	{
