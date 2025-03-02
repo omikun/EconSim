@@ -15,8 +15,9 @@ public partial class QolAgent : QoLSimpleAgent
     }
     protected void decideProduction()
     {
-        if (outputName == "None")
+        if (book.ContainsKey(outputName) == false)
             return;
+        
         var rsc = book[outputName];
         var stock = inventory[outputName];
         var numBatches = NumBatchesProduceable(rsc, stock);

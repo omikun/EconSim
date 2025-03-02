@@ -72,9 +72,9 @@ public partial class AuctionHouse : MonoBehaviour {
 		progressivePolicy.auctionStats = district;
 		fiscalPolicy = progressivePolicy;
 
-		var com = district.book;
-		askTable = new OfferTable(com);
-        bidTable = new OfferTable(com);
+		var book = district.book;
+		askTable = new OfferTable(book);
+        bidTable = new OfferTable(book);
 
         switch (config.tradeResolution)
         {
@@ -126,7 +126,7 @@ public partial class AuctionHouse : MonoBehaviour {
         bank.Init(config, district, buildable, 0, 1200000);
 		// var builtinregulations = go.GetComponent<BankRegulations>();
 		// builtinregulations = regulations;
-		bank.BankInit(100, "cash");
+		bank.BankInit(100, "Cash");
 		Debug.Log(bank.name + " 1outputs: " + string.Join(", ", bank.outputName));
         
 		district.bank = bank;
@@ -315,9 +315,10 @@ public partial class AuctionHouse : MonoBehaviour {
 			string profession = agent.Profession;
 
 
-			if (profession != "None")
+			if (profession != "Unemployed" && profession != "Labor")
 			{
 				book[profession].numAgents++;
+				book[profession].numAgents += agent.NumEmployees;
 
 				approval += agent.EvaluateHappiness();
 
@@ -358,7 +359,7 @@ public partial class AuctionHouse : MonoBehaviour {
 			
 				var newAgent = go.GetComponent<EconAgent>();
 				// InitAgent(newAgent, profession, cash);
-				newAgent.Init(config, district, "None", 0, 50, cash);  //available for hire
+				newAgent.Init(config, district, "Unemployed", 0, 50, cash);  //available for hire
 				go.name = "agent" + newAgent.uid.ToString(); //uid only initialized after agent.Init
 				newAgents.Add(newAgent);
 				Debug.Log(district.round + " new agent: " + go.name + " uid: " + newAgent.uid.ToString());
@@ -366,7 +367,7 @@ public partial class AuctionHouse : MonoBehaviour {
 			}
 			// gov.Pay(amount); //welfare?
 
-			if (profession != "None")
+			if (profession != "Unemployed" && profession != "Labor")
 			{
 				if (starving)
 				{

@@ -4,6 +4,8 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.Assertions;
 using EconSim;
+using Sirenix.OdinInspector;
+
 public abstract class OfferSorter
 {
 	public abstract void SortOffer(ref OfferList offers);
@@ -153,7 +155,11 @@ public abstract class TradeResolution
     
 			// =========== trade ============== 
 			//bought quantity may be lower than trade quantity (buyer can buy less depending on clearing price)
-			var boughtQuantity = Trade(rsc, clearingPrice, tradeQuantity, ref bid, ask);
+			float boughtQuantity = 0;
+			if (rsc.name == "Labor")
+				boughtQuantity = Hire(rsc, clearingPrice, tradeQuantity, ref bid, ask);
+			else
+				boughtQuantity = Trade(rsc, clearingPrice, tradeQuantity, ref bid, ask);
 			Assert.IsTrue(boughtQuantity >= 0);
     
 			stats.moneyExchangedThisRound += clearingPrice * boughtQuantity;
@@ -210,6 +216,11 @@ public abstract class TradeResolution
 		return quantity;
 	}
 
+	protected float Hire(ResourceController rsc, float clearingPrice, float tradeQuantity, ref Offer bid, Offer ask)
+	{
+		bid.agent.Hire(ask.agent, clearingPrice);
+		return 1;
+	}
 	protected float Trade(ResourceController rsc, float clearingPrice, float tradeQuantity, ref Offer bid, Offer ask)
 	{
 		tradeQuantity = OnlyBuyAffordable(ask, ref bid, tradeQuantity, clearingPrice);

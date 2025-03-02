@@ -109,8 +109,6 @@ public class AgentEntry
 			Debt = agent.auctionStats.bank.QueryLoans(agent);
 		}
 		DaysStarving = agent.DaysStarving;
-		if (agent.outputName == "None")
-			return;
 		
 		//all inventory
 		foreach (var (com, numDepends) in agent.inventory)
@@ -124,6 +122,7 @@ public class AgentEntry
 			}
 		}
 
+		//if bank/gov/unemployed/employed
 		if (agent.book.ContainsKey(agent.outputName) == false)
 		{
 			foreach (var (com, numDepends) in agent.inventory)
