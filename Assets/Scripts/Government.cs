@@ -7,10 +7,20 @@ using UnityEngine.XR;
 using System;
 using Sirenix.Reflection.Editor;
 using DG.Tweening;
+using Sirenix.OdinInspector;
+using UnityEngine.Serialization;
 
 public class Government : EconAgent {
 	public float FoodTarget = 000;
-	public override void Init(SimulationConfig cfg, AuctionStats at, string b, float _initStock, float maxstock, float cash=-1f) {
+	[ShowInInspector]
+	public int EmploymentTarget = 4;  //should vary with tax base
+
+	[FormerlySerializedAs("marketPriceCoefficient")] [ShowInInspector]
+	public float payCoefficient = .9f; //low pay to force employees to find a real job?
+
+	public override void Init(SimulationConfig cfg, AuctionStats at, string b, float _initStock, float maxstock, float cash=-1f)
+	{
+		employees = new();
 		config = cfg;
 		uid = uid_idx++;
 		initStock = _initStock;
@@ -32,11 +42,20 @@ public class Government : EconAgent {
             AddToInventory(name, 0, maxstock, good.Value);
         }
 		
+        var com = "Labor";
+        AddToInventory(com, 1, 1, book[com]);
 		inventory["Food"].Increase(FoodTarget);
 		inventory["Food"].TargetQuantity = FoodTarget;
     }
 
     public override void Decide() {
+	    //pay employees
+	    foreach (var (employee,wage) in employees)
+	    {
+		    var pay = book["Food"].marketPrice * payCoefficient;
+		    employee.Earn(pay);
+		    Cash -= pay;
+	    }
     }
 	public override float EvaluateHappiness()
     {
@@ -67,9 +86,16 @@ public class Government : EconAgent {
 	{
 		inventory[com].TargetQuantity += quant;
 	}
+
 	public override Offers CreateBids(AuctionBook book) 
 	{
         var bids = new Offers();
+        if (EmploymentTarget > employees.Count)
+        {
+	        var offerQuantity = EmploymentTarget - employees.Count;
+	        var com = "Labor";
+	        bids.Add(com, new Offer(com, book["Food"].marketPrice * payCoefficient, offerQuantity, this));
+        }
 
         //replenish depended commodities
         foreach (var (com,item) in inventory)

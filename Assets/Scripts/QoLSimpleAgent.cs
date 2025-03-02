@@ -149,6 +149,10 @@ public class QoLSimpleAgent : EconAgent
     //decide what to bid/ask
     public override void Decide()
     {
+        if (outputName == "Unemployed" || outputName == "Labor")
+            return;
+        //TODO needs to bid for food!
+        
         //decide how much to bid and ask (just think of them as buy and sell for now)
         //randomly pick an inventory check if it's buying or selling it has a better utility than others
         //until out of money or can't sell anymore or can't buy anymore
@@ -174,6 +178,9 @@ public class QoLSimpleAgent : EconAgent
     }
     protected virtual void PopulateOffersFromInventory()
     {
+        if (outputName == "Unemployed")
+            return;
+        
         foreach (var item in inventory.Values)
         {
             item.offersThisRound = 0;

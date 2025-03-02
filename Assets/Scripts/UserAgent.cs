@@ -32,6 +32,8 @@ public partial class UserAgent : QolAgent
     // protected override void PopulateOffersFromInventory()
     protected void PrePopulateSellingOffers()
     {
+        if (outputName == "Unemployed" || outputName == "Labor")
+            return;
         foreach (var (com, item) in inventory)
         {
             var selling = !isConsumable(item.name);

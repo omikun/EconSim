@@ -113,6 +113,7 @@ public class ESStreamingGraph : MonoBehaviour
         }
 
         int index = 0;
+        AddCategory(graph, "Labor", 5);
         foreach (var good in auctionTracker.book.Keys)
         {
             graph.DataSource.ClearCategory(good);
@@ -230,15 +231,10 @@ public class ESStreamingGraph : MonoBehaviour
         askChartObject.Plot(auctionTracker.book, rsc => rsc.asks, lastX, SlideTime);
         bidChartObject.Plot(auctionTracker.book, rsc => rsc.bids, lastX, SlideTime);
 
-        for (int i = 0; i < 5; i++)
-        {
-            var name = jobChart.DataSource.GetCategoryName(i);
-            jobChart.DataSource.SetValue(name, 0.1);
-        }
-            
         foreach (var rsc in auctionTracker.book.Values)
         {
-            jobChart.DataSource.SetValue(rsc.name, rsc.numAgents);
+            var yvalue = Mathf.Max(.1f, rsc.numAgents);
+            jobChart.DataSource.SetValue(rsc.name, yvalue);
         }
 
         UpdatePerAgentInventoryGraph();

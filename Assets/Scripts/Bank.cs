@@ -83,6 +83,9 @@ public class Bank : EconAgent
             inputs.Add(name);
             AddToInventory(name, 0, maxstock, good.Value);
         }
+        
+        var com = "Labor";
+        AddToInventory(com, 0, 1, book[com]);
     }
     public Loan Borrow(EconAgent agent, float amount, string curr)
     {
@@ -216,7 +219,7 @@ public class Bank : EconAgent
     {
         var borrowAmount = BorrowAmount(paymentByAgent, agentMonies);
         tempLiability += borrowAmount;
-        Borrow(agent, borrowAmount, "cash");
+        Borrow(agent, borrowAmount, "Cash");
         //what happens if agent defaults? can't borrow anymore
         //kill off agent? 
         Assert.IsTrue(agent.Cash >= paymentByAgent, " cash " + agent.Cash.ToString("c2") + " payment " + paymentByAgent.ToString("c2"));

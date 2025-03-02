@@ -1048,6 +1048,11 @@ MonoBehaviour:
           Value: 5
         - Key: Set_price
           Value: 2
+    - Key: Labor
+      Value:
+        _serializedList:
+        - Key: Set_price
+          Value: 1
   starvationThreshold: 0.1
   maxDaysStarving: 5
   foodConsumption: 1
@@ -1129,10 +1134,11 @@ MonoBehaviour:
     - {fileID: 2100000, guid: c217ea83c14fb734f9447e7593f9c943, type: 2}
     - {fileID: 2100000, guid: 3293d8602b885d046b6f245655046c97, type: 2}
     - {fileID: 2100000, guid: fe05eaabecbe1724faf350e04c89a684, type: 2}
+    - {fileID: 2100000, guid: c7adf5134264eae4780bbea8c9ea9e19, type: 2}
     - {fileID: 2100000, guid: e4e16f82fb266f240aa11a8fc29bde78, type: 2}
-    - {fileID: 2100000, guid: 99f934b487889e24b96d1d9e9027f238, type: 2}
     - {fileID: 2100000, guid: 0000602c14b314841bf04bfce15cbb3b, type: 2}
     - {fileID: 2100000, guid: e91a104ae561b8c47afc13fcaa8a166c, type: 2}
+    - {fileID: 2100000, guid: 99f934b487889e24b96d1d9e9027f238, type: 2}
     - {fileID: 2100000, guid: c7adf5134264eae4780bbea8c9ea9e19, type: 2}
     lineTiling:
       EnableTiling: 0
@@ -1538,7 +1544,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5860133720375575324, guid: e3ff1f2d5633747db87f6ddc5f91c4ab, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 150
+      value: 175
       objectReference: {fileID: 0}
     - target: {fileID: 5860133720375575324, guid: e3ff1f2d5633747db87f6ddc5f91c4ab, type: 3}
       propertyPath: m_AnchoredPosition.x
@@ -1546,7 +1552,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5860133720375575324, guid: e3ff1f2d5633747db87f6ddc5f91c4ab, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: -1138
+      value: -1164
       objectReference: {fileID: 0}
     - target: {fileID: 6037386109209716025, guid: e3ff1f2d5633747db87f6ddc5f91c4ab, type: 3}
       propertyPath: m_UiScaleMode
@@ -4388,7 +4394,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 224823232353071100, guid: 3dbd4bc71acbb1145b6e80827b858127, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: -482
+      value: -429
       objectReference: {fileID: 0}
     - target: {fileID: 224823232353071100, guid: 3dbd4bc71acbb1145b6e80827b858127, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -6485,6 +6491,54 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1700845192}
     m_Modifications:
+    - target: {fileID: 3207969776009742520, guid: 6b1c7ef2e947a4f64a29265a17dfde1e, type: 3}
+      propertyPath: Data.mSerializedData.Array.size
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 3207969776009742520, guid: 6b1c7ef2e947a4f64a29265a17dfde1e, type: 3}
+      propertyPath: Data.mSerializedData.Array.data[5].Name
+      value: Labor
+      objectReference: {fileID: 0}
+    - target: {fileID: 3207969776009742520, guid: 6b1c7ef2e947a4f64a29265a17dfde1e, type: 3}
+      propertyPath: Data.mSerializedData.Array.data[5].Material
+      value: 
+      objectReference: {fileID: 2100000, guid: 17705335a6baae7449e02ba5755f88ea, type: 2}
+    - target: {fileID: 3207969776009742520, guid: 6b1c7ef2e947a4f64a29265a17dfde1e, type: 3}
+      propertyPath: Data.mSerializedData.Array.data[5].InnerFill
+      value: 
+      objectReference: {fileID: 2100000, guid: 17b534b72a7f8fc44ab9f285219f0f5a, type: 2}
+    - target: {fileID: 3207969776009742520, guid: 6b1c7ef2e947a4f64a29265a17dfde1e, type: 3}
+      propertyPath: Data.mSerializedData.Array.data[5].PointSize
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 3207969776009742520, guid: 6b1c7ef2e947a4f64a29265a17dfde1e, type: 3}
+      propertyPath: Data.mSerializedData.Array.data[5].ViewOrder
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 3207969776009742520, guid: 6b1c7ef2e947a4f64a29265a17dfde1e, type: 3}
+      propertyPath: Data.mSerializedData.Array.data[5].LineThickness
+      value: 2.5799999237060547
+      objectReference: {fileID: 0}
+    - target: {fileID: 3207969776009742520, guid: 6b1c7ef2e947a4f64a29265a17dfde1e, type: 3}
+      propertyPath: Data.mSerializedData.Array.data[5].PointMaterial
+      value: 
+      objectReference: {fileID: 2100000, guid: 06a326b15fab46b499e3406b7ad4cd2d, type: 2}
+    - target: {fileID: 3207969776009742520, guid: 6b1c7ef2e947a4f64a29265a17dfde1e, type: 3}
+      propertyPath: Data.mSerializedData.Array.data[5].LineHoverPrefab
+      value: 
+      objectReference: {fileID: 11494010, guid: 87cd6d8b7ca9527449e32ecefc4015c5, type: 3}
+    - target: {fileID: 3207969776009742520, guid: 6b1c7ef2e947a4f64a29265a17dfde1e, type: 3}
+      propertyPath: Data.mSerializedData.Array.data[5].PointHoverPrefab
+      value: 
+      objectReference: {fileID: 11475216, guid: 57ee497f5c86d764fa20628075109b20, type: 3}
+    - target: {fileID: 3207969776009742520, guid: 6b1c7ef2e947a4f64a29265a17dfde1e, type: 3}
+      propertyPath: Data.mSerializedData.Array.data[5].SegmentsPerCurve
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 3207969776009742520, guid: 6b1c7ef2e947a4f64a29265a17dfde1e, type: 3}
+      propertyPath: Data.mSerializedData.Array.data[5].LineTiling.TileFactor
+      value: 45.5
+      objectReference: {fileID: 0}
     - target: {fileID: 6276223800083845008, guid: 6b1c7ef2e947a4f64a29265a17dfde1e, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: -11
