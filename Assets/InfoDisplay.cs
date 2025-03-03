@@ -66,7 +66,7 @@ public class InfoDisplay : MonoBehaviour
 		msg += header + "-profit, " + numNegProfit.ToString("n0") + ", n/a\n";
 		msg += header + "gini, " + gini.ToString("n2") + ", n/a\n";
 		msg += header + "gdp, " + gdp.ToString("F2", System.Globalization.CultureInfo.InvariantCulture) + ", n/a\n";
-		msg += header + "govdebt, " + govDebt.ToString("F2", System.Globalization.CultureInfo.InvariantCulture) + ", n/a\n";
+		msg += header + "gov, " + govDebt.ToString("F2", System.Globalization.CultureInfo.InvariantCulture) + ", n/a\n";
         return msg;
     }
     public void UpdateText()
@@ -81,10 +81,7 @@ public class InfoDisplay : MonoBehaviour
             text.text += "\n-Profit: " + numNegProfit.ToString("n0");
             text.text += "\nGini: " + gini.ToString("n2");
             text.text += "\nGDP: " + gdp.ToString("c2");
-            if (govDebt > 0f)
-                text.text += "\ngov surplus: " + govDebt.ToString("c2");
-            else
-                text.text += "\ngov debt: " + govDebt.ToString("c2");
+            text.text += "\nGov: " + govDebt.ToString("c2");
         }
         updateInfo = false;
     }

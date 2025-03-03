@@ -24,19 +24,37 @@ public class QoLSimpleAgent : EconAgent
     //will the different based on the order; which means it's not stable
     //but in the auction model all bids and asks are made separately, so how would that work? 
     //can't even use the auction model??
-    Offers asks = new Offers();
-    Offers bids = new Offers();
-    public override void Init(SimulationConfig cfg, AuctionStats at, string b, float initStock, float maxstock)
+    protected Offers asks = new Offers();
+    protected Offers bids = new Offers();
+
+    public bool IsDying(ref bool starving)
     {
-	    base.Init(cfg, at, b, initStock, maxstock);
+        // starving = inventory.Values.Any(item => item.Quantity <= 5);
+        var farmerStarving = numProducedThisRound == 0 && outputName == "Food" && Food() <= 0;
+        var nonFarmerstarving = Food() <= 0 && outputName != "Food";
+        starving = farmerStarving || nonFarmerstarving;
+        if (starving)
+            DaysStarving++;
+        else
+            DaysStarving = 0;
+        var nonFarmerDying = (outputName != "Food" && DaysStarving >= config.maxDaysStarving);
+        var farmerDying = (outputName == "Food" && DaysStarving >= 2*config.maxDaysStarving);
+        return nonFarmerDying || farmerDying;
     }
-    //produce
     public override float Tick(Government gov, ref bool changedProfession, ref bool bankrupted, ref bool starving)
     {
         if (Alive == false)
             return 0;
-        //check if food=0
-        if ( inventory.Values.Any(item => item.Quantity <= 0) )
+        var dying = IsDying(ref starving);
+
+        if (config.changeProfession && dying)
+        {
+            bankrupted = Cash < book["Food"].marketPrice;
+            ChangeProfession(gov, bankrupted);
+            dying = false;
+        }
+        // if ( inventory.Values.Any(item => item.Quantity <= 0) )
+        if ( dying )
         {
             var quants = inventory.Values.Select(item => item.Quantity);
             //var msg = string.Join(",", quants);
@@ -45,54 +63,90 @@ public class QoLSimpleAgent : EconAgent
 
             Debug.Log(auctionStats.round + " " + name + " has died with " + msg);
             Alive = false;
-            outputName = "Ore";
+            outputName = "Dead";
+            if (auctionStats.bank.QueryLoans(this) > 0f)
+            {
+                //liquidate assets
+                auctionStats.bank.LiquidateInventory(inventory);
+            }
+            return 0;
+        } 
+        
+        //chance of reproducing
+        Debug.Log(auctionStats.round + " " + name + " since last birth " + numRoundsSinceLastBirth +  " fmaily planning " + numRoundsPlanFamily);
+        if (numRoundsSinceLastBirth > 5 && numRoundsPlanFamily > 5)
+        {
+            if (UnityEngine.Random.Range(0, 1f) > .1f)
+                return 0;
+            numRoundsSinceLastBirth = 0;
+
+            // if (Cash >= 50)
+            // {
+            //     Cash -= 25;
+            //     return 25;
+            // }
+
+            return 1;
         }
-        //die
-        //birth conditions? enough food for 5 rounds?
-        starving = inventory.Values.Any(item => item.Quantity <= 5);
+        else
+        {
+            numRoundsPlanFamily = (Cash > 0) 
+                ? numRoundsPlanFamily + 1 : 0;
+            numRoundsSinceLastBirth++;
+        }
+        
         return 0;
     }
+
+    private int numRoundsSinceLastBirth = 0;
+    private int numRoundsPlanFamily = 0;
 
     public override float EvaluateHappiness()
     {
         var x = (inventory.Values.Sum(item => item.Quantity));
-        return x / (x + 1);
-    }
-
-    public override void Sell(string commodity, float quantity, float price)
-    {
-        base.Sell(commodity, quantity, price);
+        return x / (x + 20);
     }
 
     public override void ConsumeGoods()
     {
+        //consume food
+        //unless consuming food to produce
+        //consume all other inputs proportional to output
         foreach (var item in inventory.Values)
         {
-            if (item.name == outputName)
+            if (!isConsumable(item.name)) //if not inputs
                 continue;
-            float amountConsumed = 0f;
+            if (item.Quantity <= 0) //can't go below 0
+                continue;
+            float amount = 0f;
+            // if (item.Quantity > 20)
+            //     amountConsumed = 6;
+            // else 
             if (item.Quantity > 10)
-                amountConsumed = 3;
+                amount = 3;
             else if (item.Quantity > 5)
-                amountConsumed = 2;
+                amount = 2;
             else 
-                amountConsumed = 1;
-            item.Decrease(amountConsumed);
+                amount = 1;
+            item.Decrease(amount);
         }
     }
 
     public override float Produce()
     {
         var item = inventory[outputName];
-        var maxProduction = item.GetProductionRate();
+        var maxProduction = item.GetMaxProductionRate();
+        //produce less if sold less
         // var numSoldLastRound = item.saleHistory[^1].quantity;
         // var smoothedProduction = Mathf.Round((numSoldLastRound + maxProduction) / 2f);
         // var numProduced = Mathf.Min(smoothedProduction, maxProduction);
         // item.Increase(numProduced);
+        //don't make any if missing a recipe ingredient
         item.Increase(maxProduction);
         return maxProduction;
     }
 
+    //decide what to bid/ask
     public override void Decide()
     {
         //decide how much to bid and ask (just think of them as buy and sell for now)
@@ -100,65 +154,128 @@ public class QoLSimpleAgent : EconAgent
         //until out of money or can't sell anymore or can't buy anymore
         asks.Clear();
         bids.Clear();
-        bool canBuy = true;
-        bool canSell = true;
+        PopulateOffersFromInventory();
+        CreateOffersFromInventory();
+    }
+
+    private void printInventoryNiceness(InventoryItem selectedItem)
+    {
+        string msg_nice = " ";
+        foreach (var item in inventory.Values)
+        {
+            if (item.name != selectedItem.name && item.name != outputName)
+            {
+                msg_nice += item.name + ": " + item.GetNiceness().ToString("f4") + " -- ";
+            }
+        }
+
+        msg_nice += " offering " + selectedItem.name + ": " + selectedItem.GetNiceness().ToString("f4"); 
+        // Debug.Log(auctionStats.round + " " + name + msg_nice);
+    }
+    protected virtual void PopulateOffersFromInventory()
+    {
         foreach (var item in inventory.Values)
         {
             item.offersThisRound = 0;
-            item.canOfferAdditionalThisRound = true;
+            item.UpdateNiceness = true;
+            item.CanOfferAdditionalThisRound = true;
         }
+
+        var msg =
+            $"{string.Join(",", inventory.Keys)}--{string.Join(",", inventory.Values.Select(item => item.Quantity))}";
+        Debug.Log(auctionStats.round + " produces " + outputName + " offering? -- " + msg);
+
         //determine how much of each good to offer
-        for (float allocatedSpending = 0, i = 0; 
-             i < 100 && inventory.Values.Any(item => item.canOfferAdditionalThisRound); 
+        WatchDogTimer timer = new(10);
+        for (float allocatedSpending = 0, i = 0;
+             timer.IsRunning() && inventory.Values.Any(item => item.CanOfferAdditionalThisRound);
              i++)
         {
             var idx = UnityEngine.Random.Range(0, inventory.Count);
             var (itemName, item) = inventory.ElementAt(idx);
-            var selling = (itemName == outputName);
+            var selling = !isConsumable(itemName);
             var itemPrice = item.GetPrice();
-            
-            item.canOfferAdditionalThisRound = (selling)
+
+            //TODO refactor this into two functions (worthSelling and worthBuying)
+            item.CanOfferAdditionalThisRound = (selling)
                 ? (item.Quantity - item.offersThisRound) >= 1
-                : item.canOfferAdditionalThisRound = ((Cash - allocatedSpending) / itemPrice) > 1f;
-            
-            if (false == item.canOfferAdditionalThisRound)
+                : ((Cash - allocatedSpending) / itemPrice) >= 1f;
+
+            if (false == item.CanOfferAdditionalThisRound)
                 continue;
-            
+
             var niceness = item.GetNiceness();
-            //sell if not the nicest (sell until equal to least owned, weighed by price)
-            //buy if the nicest option (buy least owned first, weighed by price)
-            var worthTheOffer = (true == selling)
-                ? inventory.Values
-                    .Where(item => item.name != itemName && item.name != outputName)
-                    .Any(item => item.GetNiceness() >= niceness)
-                : inventory.Values
-                    .Where(item => item.name != itemName && item.name != outputName)
-                    .All(item => item.GetNiceness() <= niceness);
-            
-            if (!worthTheOffer)
+            var worthOffering = false;
+
+            if (selling)
+                worthOffering = worthSelling(item);
+            else
+                worthOffering = worthBuying(item, ref allocatedSpending);
+
+            if (!worthOffering)
                 continue;
-            
+
+            timer.Reset();
             item.offersThisRound++;
-            if (false == selling)
-            {
-                // Debug.Log(auctionStats.round + " " + CashString + " " + name + " has " + item.QuantityString
-                //     + item.offersThisRoundString + " with niceness " + niceness.ToString("n5"));
-                allocatedSpending += itemPrice;
-            }
+            printInventoryNiceness(item);
         }
 
+        var msg2 =
+            $"{string.Join(",", inventory.Keys)}--{string.Join(",", inventory.Values.Select(item => item.Quantity))}";
+        Debug.Log(auctionStats.round + " " + name + " debug " + CashString + " has " + msg2);
+    }
+
+    //sell if not the nicest (sell until equal to least owned, weighed by price)
+    private bool worthSelling(InventoryItem item)
+    {
+        var niceness = item.GetNiceness();
+        if (niceness == float.NegativeInfinity)
+            return true;
+        
+        var itemName = item.name;
+        var worthTheOffer = inventory.Values
+            .Where(item => item.name != itemName && item.name != outputName)
+            .Any(item => item.GetNiceness() >= niceness);
+        
+        return worthTheOffer;
+    }
+    //buy if the nicest option (buy least owned first, weighed by price)
+    private bool worthBuying(InventoryItem item, ref float allocatedSpending)
+    {
+        var niceness = item.GetNiceness();
+        if (niceness == float.PositiveInfinity)
+            return true;
+        
+        var itemName = item.name;
+        var worthTheOffer = inventory.Values
+            .Where(item => item.name != itemName && item.name != outputName)
+            .All(item => item.GetNiceness() <= niceness);
+        
+        if (worthTheOffer)
+            allocatedSpending += item.GetPrice();
+        
+        return worthTheOffer;
+    }
+
+    protected void CreateOffersFromInventory()
+    {
         //place bids and asks
         foreach (var (itemName, item) in inventory)
         {
-            Debug.Log(auctionStats.round + " " + CashString + " " + name + " has " +
-                      item.QuantityString + " market price: " + book[itemName].marketPriceString);
-
             if (item.offersThisRound <= 0)
                 continue;
             var price = item.GetPrice();
-            var offers = (itemName == outputName) ? asks : bids;
+            var selling = !isConsumable(itemName);
+            var offers = (selling) ? asks : bids;
             offers.Add(itemName, new Offer(itemName, price, item.offersThisRound, this));
-            Debug.Log(auctionStats.round + " " + name + item.offersThisRound + " for " + price.ToString("c2"));
+            if (selling)
+                Debug.Log(auctionStats.round + name + " offers " + itemName + " asking " + item.offersThisRound 
+                          + " for " + price.ToString("c2")
+                          + " has " + item.QuantityString + " market price: " + book[itemName].marketPriceString);
+            else
+                Debug.Log(auctionStats.round + name + " offers " + itemName + " bidding " + item.offersThisRound 
+                          + " for " + price.ToString("c2")
+                          + " has " + item.QuantityString + " market price: " + book[itemName].marketPriceString);
         }
     }
 
@@ -168,7 +285,7 @@ public class QoLSimpleAgent : EconAgent
         return asks;
     }
 
-    public override Offers Consume(AuctionBook book)
+    public override Offers CreateBids(AuctionBook book)
     {
         return bids;
     }

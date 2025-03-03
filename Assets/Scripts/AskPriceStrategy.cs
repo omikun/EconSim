@@ -56,7 +56,7 @@ public abstract class AskPriceStrategy
 
 			if (agent.config.sanityCheckSellQuant)
 			{
-				sellQuantity = item.Value.GetProductionRate() * agent.config.sanityCheckTradeVolume;
+				sellQuantity = item.Value.GetMaxProductionRate() * agent.config.sanityCheckTradeVolume;
 				sellQuantity = Mathf.Min(sellQuantity, agent.inventory[commodityName].Quantity);
 			}
 			if (sellQuantity > 0 && sellPrice > 0)

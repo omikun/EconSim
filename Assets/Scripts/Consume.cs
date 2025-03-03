@@ -32,7 +32,7 @@ public class Consumer
 	    return numBids;
     }
 
-    public virtual Offers Consume(AuctionBook book)
+    public virtual Offers CreateBids(AuctionBook book)
     {
 	    var bids = new Offers();
 	    if (agent.Cash <= 0)
@@ -41,20 +41,21 @@ public class Consumer
 	    {
 		    if (!agent.inputs.Contains(item.name) || agent.outputName.Contains(item.name)) 
 			    continue;
-		    CreateBids(book, bids, item);
+		    CreateBid(book, bids, item);
 	    }
 
 	    return bids;
     }
 
-    public void CreateBids(AuctionBook book, Offers bids, InventoryItem item)
+    public void CreateBid(AuctionBook book, Offers bids, InventoryItem item)
     {
 	    var numBids = SelectBuyQuantity(item.name);
 	    if (numBids <= 0)
 		    return;
 	    var buyPrice = SelectPrice(item.name);
 	    
-	    Debug.Log(agent.name + " wants to buy " + numBids + item.name + " for " + buyPrice.ToString(("c2")));
+	    Debug.Log(agent.name + " wants to buy " + numBids + item.name 
+	              + " for " + buyPrice.ToString(("c2")));
 	    bids.Add(item.name, new Offer(item.name, buyPrice, numBids, agent));
 	    item.bidPrice = buyPrice;
 	    item.bidQuantity += numBids;
@@ -67,7 +68,7 @@ public class SanityCheckConsumer : Consumer
 {
 	public SanityCheckConsumer(EconAgent a) : base(a) { }
 
-	public virtual float SelectPrice(string com)
+	public override float SelectPrice(string com)
 	{
 		return agent.book[com].setPrice;
 	}
@@ -79,7 +80,7 @@ public class SanityCheckConsumer : Consumer
 			if (dep.Key == com)
 			{
 				var numNeeded = dep.Value;
-				numBids = numNeeded * agent.inventory[agent.Profession].GetProductionRate() * agent.config.sanityCheckTradeVolume ;
+				numBids = numNeeded * agent.inventory[agent.Profession].GetMaxProductionRate() * agent.config.sanityCheckTradeVolume ;
 				break;
 			}
 		}
@@ -90,18 +91,17 @@ public class QoLConsumer : Consumer
 {
 	public QoLConsumer(EconAgent a) : base(a) { }
 
-	public virtual float SelectPrice(string com)
+	public override float SelectPrice(string com)
 	{
 		return agent.book[com].setPrice;
 	}
 
-	public override Offers Consume(AuctionBook book)
+	public override Offers CreateBids(AuctionBook book)
 	{
 	    var bids = new Offers();
 	    if (agent.Cash <= 0)
 		    return bids;
 	    //if not profiting, just buy food if needed
-	    var buyInputs = 0f;
 	    if (agent.Profit > 0)
 	    {
 		    //how many days of food left?
@@ -173,7 +173,6 @@ public class QoLConsumer : Consumer
 		//QoL of wood vs tool, 2 wood to 1 tool
 		float numBids = 0;
 		var recipe = agent.book[agent.outputName].recipe;
-		var bestUtility = 0f; //item.value / mktprice
 		//find utility of each input and output item from 1 to quantity
 		//ex for wood, want to buy wood w/ all money maybe
 		//find utility of each additional wood from 1 to affordable quant

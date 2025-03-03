@@ -43,7 +43,7 @@ public class FiscalPolicy
     {
         //do nothing
     }
-    public virtual float AddSalesTax(string com, float quant, float price, EconAgent buyer)
+    public virtual float CollectSalesTax(string com, float quant, float price, EconAgent buyer)
     {
         if (false == config.EnableSalesTax)
             return 0;
@@ -85,7 +85,7 @@ public class FlatTaxPolicy : FiscalPolicy
 {
     public FlatTaxPolicy(SimulationConfig cfg, AuctionStats at, Government g) : base(cfg, at, g) {}
 
-    public override float AddSalesTax(string com, float quant, float price, EconAgent buyer)
+    public override float CollectSalesTax(string com, float quant, float price, EconAgent buyer)
     {
         if (false == config.EnableSalesTax)
             return 0;
@@ -132,9 +132,9 @@ Reduction of social welfare spending: Cutting back on social programs, which all
     [InfoBox("Marginal Income Tax", "@!EnableIncomeTax")]
     public bool EnableIncomeTax = true;
 
-    [ShowInInspector, DictionaryDrawerSettings(DisplayMode = DictionaryDisplayOptions.OneLine, KeyLabel = "Income Bracket", ValueLabel = "Marginal Tax Rate")]
+    [HideInInspector, DictionaryDrawerSettings(DisplayMode = DictionaryDisplayOptions.OneLine, KeyLabel = "Income Bracket", ValueLabel = "Marginal Tax Rate")]
     [SerializedDictionary("Income Bracket", "Marginal Tax Rate")]
-    public SerializedDictionary<Range, float> taxBracket = new();
+    private SerializedDictionary<Range, float> taxBracket = new();
     public ProgressivePolicy(SimulationConfig cfg, AuctionStats at, Government g) : base(cfg, at, g)
     {
     }
@@ -178,7 +178,7 @@ Reduction of social welfare spending: Cutting back on social programs, which all
             + agent.Cash.ToString("c2") + " produced " + numProduced
             + " goods and idle taxed " + idleTax.ToString("c2"));
     }
-    public override float AddSalesTax(string com, float quant, float price, EconAgent buyer)
+    public override float CollectSalesTax(string com, float quant, float price, EconAgent buyer)
     {
         if (false == config.EnableSalesTax)
             return 0;

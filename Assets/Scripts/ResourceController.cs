@@ -4,8 +4,14 @@ using UnityEngine.Assertions;
 using UnityEngine;
 using System.Linq;
 using System;
+using Sirenix.OdinInspector;
 
-public class Recipe : Dictionary<string, float> {}
+public class Recipe : Dictionary<string, float>
+{
+	public Recipe() { }
+
+	public Recipe(Recipe recipe) : base(recipe) { }
+}
 public class ResourceController
 {
 	const float defaultPrice = 1;
@@ -14,9 +20,17 @@ public class ResourceController
  	public ESList bids = new();
  	public ESList asks = new();
  	public ESList avgBidPrice = new();
+ 	public ESList minBidPrice = new();
+ 	public ESList maxBidPrice = new();
  	public ESList avgAskPrice = new();
+ 	public ESList minAskPrice = new();
+ 	public ESList maxAskPrice = new();
  	public ESList avgClearingPrice = new();
+ 	public ESList minClearingPrice = new();
+ 	public ESList maxClearingPrice = new();
  	public ESList trades = new();
+ 	public ESList inventory = new();
+ 	public ESList cash = new();
  	public ESList profits = new();
  	public ESList changedProfession = new();
  	public ESList bankrupted = new();
@@ -42,13 +56,14 @@ public class ResourceController
         avgPrice = avgClearingPrice.Skip(skip).Average();
         return avgPrice;
 	}
-	public ResourceController(string n, float p, float br, float pm, float sp,Recipe r)
+	public ResourceController(string n, float p, float bp, float br, float pm, float sp,Recipe r)
 	{
 		name = n;
 		productionPerBatch = p;
+		baseProduction = bp;
 		batchRate = br;
 		productionMultiplier = pm;
-		setPrice = sp; //why can't setPrice and price be the same thing?
+		setPrice = sp; //initial price at start of simulation
 		marketPrice = sp;
 		recipe = r;
 		demand = 1;
@@ -58,9 +73,17 @@ public class ResourceController
 		bids.Add(1);
 		asks.Add(1);
 		trades.Add(1);
-		avgAskPrice.Add(1);
-		avgBidPrice.Add(1);
-		avgClearingPrice.Add(1);
+		inventory.Add(1);
+		cash.Add(1);
+		avgAskPrice.Add(setPrice);
+		avgBidPrice.Add(setPrice);
+		minAskPrice.Add(setPrice);
+		minBidPrice.Add(setPrice);
+		maxAskPrice.Add(setPrice);
+		maxBidPrice.Add(setPrice);
+		avgClearingPrice.Add(setPrice);
+		minClearingPrice.Add(setPrice);
+		maxClearingPrice.Add(setPrice);
 		profits.Add(1);
 		bankrupted.Add(1);
 		starving.Add(1);
@@ -76,15 +99,23 @@ public class ResourceController
 		productionMultiplier = pm;
 	}
 	public string name { get; private set; }
-	public float marketPrice { get; private set; } //market price
+	private float _marketPrice;
+	public float marketPrice
+	{
+		get { return _marketPrice;}
+		private set { _marketPrice = value; } //Mathf.Max(0.01f, value); }
+	} 
 	public string marketPriceString
 	{
 		get { return marketPrice.ToString("c2");  }
 	}
 	public float demand { get; private set; }
-	public float productionPerBatch { get; private set; }
-	public float batchRate { get; private set; }
+	public float productionPerBatch { get; private set; } //base line production is productionPerBatch * batchRate
+	public float baseProduction { get; private set; } //min production if no inputs
+	public float batchRate { get; private set; } //num batches per round
 	public float productionMultiplier { get; private set; } //forest fire or rich mineral vein
+	public float productionChance = 1;
 	public float resourceAmount { get; private set; } // for fish or finite ore
+	[DictionaryDrawerSettings(IsReadOnly = false, DisplayMode = DictionaryDisplayOptions.OneLine)]
 	public Recipe recipe { get; private set; }
 }

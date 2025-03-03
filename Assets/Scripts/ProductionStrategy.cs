@@ -10,25 +10,27 @@ public abstract class ProductionStrategy
     {
         agent = a;
     }
-	//build as many as one can 
-	//TODO what if I don't want to produce as much as one can? what if costs are high rn?
-	public float CalculateNumProduceable(ResourceController rsc, InventoryItem outputItem)
+	public float NumBatchesProduceable(ResourceController rsc, InventoryItem outputItem)
 	{
-		float numProduceable = float.MaxValue;
+		float numBatches = float.MaxValue;
 		
 		//find max that can be made w/ available stock
 		foreach (var com in rsc.recipe.Keys)
 		{
 			var numProduceableWithCom = Mathf.Floor(agent.inventory[com].NumProduceable(rsc));
-			numProduceable = Mathf.Min(numProduceableWithCom, numProduceable);
-			// Debug.Log(agent.auctionStats.round + " " + agent.name 
-			// 	+ " can produce " + numProduceable + " " + outputItem.name
-			// 	+ " with " + agent.inventory[com].Quantity + "/" + rsc.recipe[com] + " " + com);
+			numBatches = Mathf.Min(numProduceableWithCom, numBatches);
+			Debug.Log(agent.auctionStats.round + " " + agent.name 
+				+ " can produce " + numBatches + " batches of " + outputItem.name
+				+ " with " + agent.inventory[com].Quantity + "/" + rsc.recipe[com] + " " + com);
 		}
-		float storage = outputItem.Deficit(); //can't produce more than max stock
-		numProduceable = Mathf.Min(numProduceable, storage);
-		numProduceable = Mathf.Min(numProduceable, outputItem.GetProductionRate());
-		return numProduceable;
+		
+	    numBatches = Mathf.Min(outputItem.GetMaxBatchRate(), numBatches);
+	    var realProductionRate = outputItem.GetMaxProductionRate(numBatches);
+	    var realBatchRate = Mathf.Floor(realProductionRate / outputItem.ProductionPerBatch);
+	    
+		Debug.Log(agent.auctionStats.round + " " + agent.name
+		          + " can ultimately produce " + realBatchRate + " batches of " + outputItem.name);
+		return realBatchRate;
 	}
 
 	protected internal abstract float CalculateNumProduced(ResourceController rsc, InventoryItem item);
@@ -41,20 +43,20 @@ public abstract class ProductionStrategy
 				Assert.IsTrue(false, agent.auctionStats.round + " " + agent.name + " not valid output " + outputName);
 			}
 			Assert.IsTrue(agent.book.ContainsKey(outputName));
-			var com = agent.book[outputName];
+			var rsc = agent.book[outputName];
 			var stock = agent.inventory[outputName];
-			var numProduced = CalculateNumProduced(com, stock);
+			var numProduced = CalculateNumProduced(rsc, stock);
 
 			var inputCosts = "";
-			agent.ConsumeInput(com, numProduced, ref inputCosts);
+			agent.ConsumeInput(rsc, numProduced, ref inputCosts);
 
 			//auction wide multiplier (e.g. richer ore vien or forest fire)
-			var multiplier = com.productionMultiplier;
-			if (numProduced == 0f || multiplier == 0f)
-				return 0;
+			var multiplier = rsc.productionMultiplier;
+			numProduced *= multiplier; 
 
-			stock.Produced(numProduced * multiplier, agent.GetCostOf(com)); 
+			stock.Produced(numProduced, agent.GetCostOf(rsc)); 
 			agent.producedThisRound[outputName] = numProduced;
+			agent.numProducedThisRound = numProduced;
 
 			Debug.Log(agent.auctionStats.round + " " + agent.name 
 				+ " has " + agent.Cash.ToString("c2") 
@@ -73,9 +75,9 @@ public class FixedProduction : ProductionStrategy
     public FixedProduction(EconAgent a) : base(a) {}
 	protected internal override float CalculateNumProduced(ResourceController rsc, InventoryItem item)
 	{
-		var numProduced = CalculateNumProduceable(rsc, item);
+		var numProduced = NumBatchesProduceable(rsc, item);
 		//can only build fixed rate at a time
-		numProduced = Mathf.Clamp(numProduced, 0, item.GetProductionRate());
+		numProduced = Mathf.Clamp(numProduced, 0, item.GetMaxProductionRate());
 		numProduced = Mathf.Floor(numProduced);
 
 		Assert.IsTrue(numProduced >= 0);

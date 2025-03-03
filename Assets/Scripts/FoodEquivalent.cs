@@ -7,18 +7,18 @@ public class FoodEquivalent
 	{
 		agent = a;
 	}
-	public float GetNumFoodEquivalent(AuctionBook book, float numFoodHappy)
+	public float GetHappyLevel(AuctionBook book, float numFoodHappy)
 	{
 		var numFood = GetNumFood();
 		if (numFood >= numFoodHappy) return 1f;
 
-		numFood += GetCashFood(book);
+		numFood += GetCashFood();
 		if (numFood >= numFoodHappy) return 1f;
 		
-		numFood += GetOutputFood(book);
+		numFood += GetOutputFood();
 		if (numFood >= numFoodHappy) return 1f;
 		
-		numFood += GetInputFood(book);
+		numFood += GetInputFood();
 		if (numFood >= numFoodHappy) return 1f;
 		
 		var happy = agent.foodToHappy.Evaluate(numFood / numFoodHappy);
@@ -31,27 +31,40 @@ public class FoodEquivalent
 	{
 		return agent.Food();
 	}
-	public float GetCashFood(AuctionBook book)
+	//returns number of food that can be bought with cash at market price
+	public float GetCashFood()
 	{
 		//TODO assumes enough supply; how to change happiness if demand is greater than supply?
-		var foodPrice = book["Food"].marketPrice;
+		var foodPrice = agent.book["Food"].marketPrice;
 		var affordNumFood = agent.Cash / foodPrice;
 		return affordNumFood;
 	}
-	public float GetOutputFood(AuctionBook book)
+	//returns number of food that 
+	public float GetOutputFood()
 	{
-		var foodPrice = book["Food"].marketPrice;
-		var foodEquivalent = book[agent.Profession].marketPrice / foodPrice;
-		var outputFoodEquivalent = agent.inventory[agent.Profession].Quantity * foodEquivalent;
+		var numFoodPerOutput = GetNumFoodPerOutput();
+		var outputItem = agent.inventory[agent.Profession];
+		var outputFoodEquivalent = outputItem.Quantity * numFoodPerOutput;
 		return outputFoodEquivalent;
 	}
-	public float GetInputFood(AuctionBook book)
+
+	//returns number of food that can be purchased from num outputs produceable by current input inventory
+	public float GetInputFood()
 	{
-		var foodPrice = book["Food"].marketPrice;
-		var foodEquivalent = book[agent.Profession].marketPrice / foodPrice;
-		var inputFoodEquivalent =
-			agent.productionStrategy.CalculateNumProduceable(book[agent.Profession], agent.inventory[agent.Profession]) * foodEquivalent;
-		return inputFoodEquivalent;
+		var numFoodPerOutput = GetNumFoodPerOutput();
+		var outputItem = agent.inventory[agent.Profession];
+		var outputRsc = agent.book[agent.Profession];
+		var numBatches= agent.productionStrategy.NumBatchesProduceable(outputRsc, outputItem);
+		var numOutputs = Mathf.Min(numBatches, outputItem.GetMaxProductionRate(numBatches));
+		var numFood = numOutputs * numFoodPerOutput;
+		return numBatches;
+		// return numFood;
+	}
+	public float GetNumFoodPerOutput()
+	{
+		var foodPrice = agent.book["Food"].marketPrice;
+		var numFoodPerOutput = agent.book[agent.Profession].marketPrice / foodPrice;
+		return numFoodPerOutput;
 	}
 
 	public float GetNumDaysEquivalent(float numFood)

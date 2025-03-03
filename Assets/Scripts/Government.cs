@@ -9,12 +9,13 @@ using Sirenix.Reflection.Editor;
 using DG.Tweening;
 
 public class Government : EconAgent {
-	public float FoodTarget = 50;
-	public override void Init(SimulationConfig cfg, AuctionStats at, string b, float _initStock, float maxstock) {
+	public float FoodTarget = 000;
+	public override void Init(SimulationConfig cfg, AuctionStats at, string b, float _initStock, float maxstock, float cash=-1f) {
 		config = cfg;
 		uid = uid_idx++;
 		initStock = _initStock;
 		maxStock = maxstock;
+		Alive = true;
 
 		book = at.book;
 		auctionStats = at;
@@ -28,15 +29,14 @@ public class Government : EconAgent {
         {
             var name = good.Key;
             inputs.Add(name);
-            AddToInventory(name, 0, maxstock, 1, 0, 0);
+            AddToInventory(name, 0, maxstock, good.Value);
         }
 		
 		inventory["Food"].Increase(FoodTarget);
 		inventory["Food"].TargetQuantity = FoodTarget;
     }
 
-    public override float Produce() {
-        return 0;
+    public override void Decide() {
     }
 	public override float EvaluateHappiness()
     {
@@ -67,7 +67,7 @@ public class Government : EconAgent {
 	{
 		inventory[com].TargetQuantity += quant;
 	}
-	public override Offers Consume(AuctionBook book) 
+	public override Offers CreateBids(AuctionBook book) 
 	{
         var bids = new Offers();
 
@@ -92,8 +92,8 @@ public class Government : EconAgent {
 				continue;
 
 			var offerQuantity = item.TargetQuantity - item.Quantity;
-			var offerPrice = book[com].marketPrice * .95f;
-			if (item.OfferQuantity < 0)
+			var offerPrice = book[com].marketPrice * 1.15f;
+			if (item.OfferQuantity > 0)
 			{
 				asks.Add(com, new Offer(com, offerPrice, offerQuantity, this));
 				Debug.Log(auctionStats.round + " gov asked " + offerQuantity.ToString("n2") + " " + item.name);
@@ -102,6 +102,17 @@ public class Government : EconAgent {
 		return asks;
 	}
 
+    public void LiquidateInventory(Inventory agentInventory)
+    {
+        foreach (var (good, item) in agentInventory)
+        {
+            if (inventory.ContainsKey(good) == false)
+                AddToInventory(good, item.Quantity, maxStock, item.rsc);
+            else
+                inventory[good].Increase(item.Quantity);
+            item.Decrease(item.Quantity);
+        }
+    }
     public override float Tick(Government gov, ref bool changedProfession, ref bool bankrupted, ref bool starving)
     {
 	    Debug.Log(name + " outputs: " + outputName);
@@ -110,12 +121,14 @@ public class Government : EconAgent {
 
     public void AbsorbBankruptcy(EconAgent agent)
     {
-		if (agent.IsBankrupt())
+		//if (agent.IsBankrupt())
+		if (config.declareBankruptcy)
 		{
-			Cash += agent.Cash;
-			Cash -= config.initCash;
-			agent.ResetCash();
-			agent.modify_cash(config.initCash);
+			var transferCash = config.initCash - agent.Cash;
+			
+			auctionStats.Transfer(this, agent, "Cash", transferCash);
+			agent.AddToCash(transferCash);
+			Cash -= transferCash;
 		}
     }
 	public void Welfare(EconAgent agent)
@@ -127,14 +140,17 @@ public class Government : EconAgent {
 		//quant should be no more than what gov's inventory holds
 		//only enough to refill agent's inv back to 2
 		//should not be negative in case agent has more than 2 already
-		var agentFood = agent.inventory["Food"].Quantity;
-		var govFood = inventory["Food"].Quantity;
-		var refillThreshold = 1f;
+		var agentFood = agent.Food();
+		var govFood = Food();
+		var refillThreshold = 5f;
 		if (agentFood < refillThreshold)
 		{
 			var refill = refillThreshold - agentFood;
 			var quant = Mathf.Min(refill, govFood);
 			Debug.Log(auctionStats.round + " Fed agent" + agent.name + " " + quant.ToString("n1") + " food, prev had " + agentFood.ToString("n1"));
+			if (quant == 0)
+				return;
+			auctionStats.Transfer(this, agent, "Food", quant);
 			inventory["Food"].Decrease(quant);
 			agent.inventory["Food"].Increase(quant);
 		}

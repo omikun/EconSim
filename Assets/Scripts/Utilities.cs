@@ -23,20 +23,23 @@ public class Utilities
     }
     public static void TransferQuantity(float quantity, EconAgent from, EconAgent to)
     {
-        from.modify_cash(-quantity);
-        to.modify_cash(quantity);
+        from.AddToCash(-quantity);
+        to.AddToCash(quantity);
     }
 }
 
 public class ESList : List<float>
 {
     float avg;
+    private float ema = 0; //exponential moving average
     public ESList()
     {
     }
     new public void Add(float num)
     {
         base.Add(num);
+        float period = 3;
+        ema = (num - ema) * 2 / (period + 1) + ema;
     }
     public float LastHighest(int history)
     {
@@ -58,9 +61,14 @@ public class ESList : List<float>
         {
             return 0;
         }
-        var skip = Mathf.Max(0, base.Count - history);
-        var end = Math.Min(history, base.Count);
-        return base.GetRange(skip, end).Average();
+        var index = Mathf.Max(0, base.Count - history);
+        var count = Math.Min(history, base.Count);
+        return base.GetRange(index, count).Average();
+    }
+
+    public float ExpAverage()
+    {
+        return ema;
     }
 
     public float LastSum(int history)
@@ -149,6 +157,27 @@ public class WaitNumRoundsNotTriggered {
     }
 }
 
+public class WatchDogTimer
+{
+    private int count = 0;
+    private int timeOut = 0;
+
+    public WatchDogTimer(int timeOutValue)
+    {
+        timeOut = timeOutValue;
+    }
+
+    public bool IsRunning()
+    {
+        count++;
+        return count <= timeOut;
+    }
+
+    public void Reset()
+    {
+        count = 0;
+    }
+}
 public static class ListUtil {
     public static string ListToString(List<float> list, string format)
     {

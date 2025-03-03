@@ -9,10 +9,10 @@ using AYellowpaper.SerializedCollections;
 public class AuctionHouseTest : AuctionHouse {
 	void Awake()
 	{
-		auctionTracker = GetComponent<AuctionStats>();
+		district = GetComponent<AuctionStats>();
 		config = GetComponent<SimulationConfig>();
-		auctionTracker.config = config;
-		auctionTracker.Init();
+		district.config = config;
+		district.Init();
 	}
 	void Start() {
 		Debug.unityLogger.logEnabled=config.EnableDebug;
@@ -21,7 +21,7 @@ public class AuctionHouseTest : AuctionHouse {
 
 		UnityEngine.Random.InitState(config.seed);
 		lastTick = 0;
-		var com = auctionTracker.book;
+		var com = district.book;
 	
 		config = GetComponent<SimulationConfig>();
 		var prefab = Resources.Load("Agent");
@@ -65,6 +65,6 @@ public class AuctionHouseTest : AuctionHouse {
 		// TODO: This may cause uneven maxStock between agents
 		var maxStock = Mathf.Max(initStock, config.maxStock);
 
-        agent.Init(config, auctionTracker, buildable, initStock, maxStock);
+        agent.Init(config, district, buildable, initStock, maxStock);
 	}
 }

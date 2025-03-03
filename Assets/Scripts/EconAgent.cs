@@ -12,11 +12,15 @@ using EconSim;
 using UnityEditor;
 using UnityEngine.UIElements;
 
+public class Inventory : Dictionary<string, InventoryItem>
+{
+}
+
 public class EconAgent : MonoBehaviour
 {
 	protected internal SimulationConfig config;
 	public static int uid_idx = 0;
-	protected int uid;
+	public int uid { get; protected set; }
 	public float Cash { get; protected set; }
 
 	public void ResetCash()
@@ -26,16 +30,16 @@ public class EconAgent : MonoBehaviour
 	public string CashString { get{ return Cash.ToString("c2"); } }
 
 	public bool Alive { get; protected set; }
+	public int DaysStarving { get; protected set; }
+	
 	protected float prevCash;
 	protected internal float foodExpense = 0;
 	protected float initStock = 1;
 	protected float maxStock = 1;
 	public float Profit { get; protected set; }
 	public float TaxableProfit { get; protected set; }
-	public Dictionary<string, InventoryItem> inventory = new();
+	public Inventory inventory = new();
 	float taxesPaidThisRound = 0;
-	bool boughtThisRound = false;
-	bool soldThisRound = false;
 	WaitNumRoundsNotTriggered noSaleIn = new();
 	WaitNumRoundsNotTriggered noPurchaseIn = new();
 	protected internal FoodEquivalent foodEquivalent;
@@ -91,16 +95,12 @@ public class EconAgent : MonoBehaviour
 		return ret;
 	}
 
-	void Start()
-	{
-	}
-
-	protected void AddToInventory(string name, float num, float max, float price, float production, float batchRate)
+	protected void AddToInventory(string name, float num, float max, ResourceController rsc)
 	{
 		if (inventory.ContainsKey(name))
 			return;
 
-		inventory.Add(name, new InventoryItem(this, auctionStats, name, num, max, price, production, batchRate));
+		inventory.Add(name, new InventoryItem(this, auctionStats, name, num, max, rsc));
 	}
 
 	public float PayWealthTax(float amountExempt, float taxRate)
@@ -119,7 +119,7 @@ public class EconAgent : MonoBehaviour
 		Cash -= amount;
 	}
 
-	public virtual void Init(SimulationConfig cfg, AuctionStats at, string b, float _initStock, float maxstock)
+	public virtual void Init(SimulationConfig cfg, AuctionStats at, string b, float _initStock, float maxstock, float cash=-1f)
 	{
 		Alive = true;
 		config = cfg;
@@ -134,12 +134,21 @@ public class EconAgent : MonoBehaviour
 		//list of commodities self can produce
 		//get initial stockpiles
 		outputName = b;
-		Cash = config.initCash;
+		
+		Cash = (cash == -1f) ? config.initCash : cash;
 		prevCash = Cash;
 		inputs.Clear();
 		//foreach (var buildable in outputName)
 		var buildable = outputName;
 		{
+			if (buildable != "Food")
+			{
+				var commodity = "Food";
+				AddToInventory(commodity, initStock, maxStock, book[commodity]);
+			}
+			
+			if (buildable == "None")
+				return;
 
 			if (!book.ContainsKey(buildable))
 				Debug.Log("commodity not recognized: " + buildable);
@@ -152,12 +161,12 @@ public class EconAgent : MonoBehaviour
 				var commodity = dep.Key;
 				inputs.Add(commodity);
 				//Debug.Log("::" + commodity);
-				AddToInventory(commodity, initStock, maxStock, book[commodity].marketPrice,
-					book[commodity].productionPerBatch, book[commodity].batchRate);
+				AddToInventory(commodity, initStock, maxStock, book[commodity]);
 			}
 
-			AddToInventory(buildable, 0, maxStock, book[buildable].marketPrice, book[buildable].productionPerBatch, book[buildable].batchRate);
-			Debug.Log("New " + gameObject.name + " has " + inventory[buildable].Quantity + " " + buildable);
+
+			AddToInventory(buildable, 0, maxStock, book[buildable]);
+			Debug.Log(auctionStats.round + " New agent " + gameObject.name + " uid: " + uid + " cash: " + Cash.ToString("c2") + " has " + inventory[buildable].Quantity + " " + buildable);
 		}
 	}
 
@@ -213,6 +222,22 @@ public class EconAgent : MonoBehaviour
 		}
 	}
 
+    protected bool isSellable(string itemName)
+    {
+	    return !inRecipe(itemName);
+    }
+
+    protected bool isConsumable(string itemName)
+    {
+	    return inRecipe(itemName) || (outputName != "Food" && itemName == "Food");
+    }
+
+    protected bool inRecipe(string itemName)
+    {
+	    if (outputName == "None")
+		    return false;
+	    return (book[outputName].recipe.ContainsKey(itemName));
+    }
 	public void Respawn(bool bankrupted, string buildable, Government gov = null)
 	{
 		Assert.IsTrue(this is not Government);
@@ -222,6 +247,7 @@ public class EconAgent : MonoBehaviour
 		prevCash = Cash;
 		foodExpense = 0;
 		inputs.Clear();
+		DaysStarving = 0;
 		//foreach (var outputName in outputName)
 		{
 			if (!book.ContainsKey(outputName))
@@ -239,10 +265,10 @@ public class EconAgent : MonoBehaviour
 			{
 				var com = book[dep.Key];
 				inputs.Add(com.name);
-				AddToInventory(com.name, 0, maxStock, com.marketPrice, com.productionPerBatch, com.batchRate);
+				AddToInventory(com.name, 0, maxStock, com);
 			}
 
-			AddToInventory(outputName, 0, maxStock, output.marketPrice, output.productionPerBatch, output.batchRate);
+			AddToInventory(outputName, 0, maxStock, output);
 
 			PrintInventory("post reinit");
 		}
@@ -256,7 +282,7 @@ public class EconAgent : MonoBehaviour
 			msg += entry.Value.Quantity + " " + entry.Key + ", ";
 		}
 
-		Debug.Log(auctionStats.round + ": " + name + " " + label + " reinit2: " + msg);
+		Debug.Log(auctionStats.round + ": " + name + " " + label + " reinit2: " + msg + " cash: " + CashString);
 	}
 
 	public float TaxProfit(float taxRate)
@@ -282,7 +308,7 @@ public class EconAgent : MonoBehaviour
 		TaxableProfit = Mathf.Max(0, cumDelta);
 	}
 
-	const float bankruptcyThreshold = 0;
+	const float bankruptcyThreshold = 30;
 
 	public bool IsBankrupt()
 	{
@@ -325,6 +351,16 @@ public class EconAgent : MonoBehaviour
 			gov.Welfare(this);
 
 			starving = food.Quantity <= 0.1f;
+			if (starving)
+				DaysStarving++;
+			else
+				DaysStarving = 0;
+			
+			//if starving for 3 rounds, die off
+			if (DaysStarving == 3)
+			{
+				Alive = false;
+			}
 			foodExpense = Mathf.Max(0, foodExpense - Mathf.Max(0, Profit));
 		}
 
@@ -376,11 +412,15 @@ public class EconAgent : MonoBehaviour
 
 	public virtual float EvaluateHappiness()
 	{
-		var numFoodEq = foodEquivalent.GetNumFoodEquivalent(book, config.numFoodHappy);
+		var numFoodEq = foodEquivalent.GetHappyLevel(book, config.numFoodHappy);
 		return Mathf.Log10(numFoodEq);
 	}
 
-	void ChangeProfession(Government gov, bool bankrupted = true)
+	public void BecomesUnemployed()
+	{
+		outputName = "None";
+	}
+	public virtual void ChangeProfession(Government gov, bool bankrupted = true)
 	{
 		string bestGood = auctionStats.GetHottestGood();
 		float profit = 0f;
@@ -395,7 +435,8 @@ public class EconAgent : MonoBehaviour
 		          " --  bestGood: " + bestGood + " bestProfession: " + mostDemand);
 
 		string b = "";
-		if (mostDemand != "invalid")
+		var lastInProfession = book[Profession].numAgents == 1;
+		if (mostDemand != "invalid" && !lastInProfession)
 			b = mostDemand;
 		else
 			b = Profession;
@@ -409,7 +450,7 @@ public class EconAgent : MonoBehaviour
 	}
 
 	/*********** Trading ************/
-	public void modify_cash(float quant)
+	public void AddToCash(float quant)
 	{
 		Cash += quant;
 	}
@@ -426,28 +467,21 @@ public class EconAgent : MonoBehaviour
 
 		taxesPaidThisRound = 0;
 	}
-
-public float Buy(string commodity, float quantity, float price)
+	public float Buy(string commodity, float quantity, float price)
 	{
 		if (this is Government)
 		{
 			Debug.Log(auctionStats.round + " gov buying " + quantity.ToString("n0") + " " + commodity);
 		}
-
-		if (name == "agent14")
-		{
-			Debug.Log("agent14 buying something");
-		}
         Assert.IsTrue(quantity > 0);
 
-		var boughtQuantity = inventory[commodity].Buy(quantity, price);
+		inventory[commodity].Buy(quantity, price);
 		Debug.Log(name + " has " + Cash.ToString("c2") 
 			+ " want to buy " + quantity.ToString("n2") + " " + commodity 
-			+ " for " + price.ToString("c2") + " bought " + boughtQuantity.ToString("n2"));
+			+ " for " + price.ToString("c2") + " bought " + quantity.ToString("n2"));
 		Assert.IsFalse(outputName.Contains(commodity), name + " buying own output: " + outputName); 
-		Cash -= price * boughtQuantity;
-		boughtThisRound = true;
-		return boughtQuantity;
+		Cash -= price * quantity;
+		return quantity;
 	}
 	public virtual void Sell(string commodity, float quantity, float price)
 	{
@@ -458,7 +492,6 @@ public float Buy(string commodity, float quantity, float price)
 		Assert.IsTrue(inventory[commodity].Quantity >= 0);
 		inventory[commodity].Sell(quantity, price);
 		Assert.IsTrue(inventory[commodity].Quantity >= 0);
-		soldThisRound = true;
 		Cash += price * quantity;
 	}
 	public void UpdateSellerPriceBelief(in Offer trade, in ResourceController rsc) 
@@ -472,24 +505,25 @@ public float Buy(string commodity, float quantity, float price)
 
 	public virtual void Decide()
 	{
+		ConsumeGoods();
+		Produce();
 	}
 
 	/*********** Produce and consume; enter asks and bids to auction house *****/
-	public virtual Offers Consume(AuctionBook book)
+	public virtual Offers CreateBids(AuctionBook book)
 	{
 		Debug.Log(name + " consuming");
-		return consumer.Consume(book);
+		return consumer.CreateBids(book);
 	}
 	public virtual float Produce() {
-		numProducedThisRound = productionStrategy.Produce();
-		return numProducedThisRound;
+		return productionStrategy.Produce();
 	}
 	public float CalcMinProduction()
 	{
 		Assert.IsTrue(book.ContainsKey(outputName));
 		var rsc = book[outputName];
 		var item = inventory[rsc.name];
-		return productionStrategy.CalculateNumProduceable(rsc, item);
+		return productionStrategy.NumBatchesProduceable(rsc, item);
 	}
 	protected internal void ConsumeInput(ResourceController rsc, float numProduced, ref string msg)
 	{
@@ -508,10 +542,8 @@ public float Buy(string commodity, float quantity, float price)
     protected internal float GetCostOf(ResourceController rsc)
 	{
 		float cost = 0;
-		foreach (var dep in rsc.recipe)
+		foreach (var (depCommodity, numDep) in rsc.recipe)
 		{
-			var depCommodity = dep.Key;
-			var numDep = dep.Value;
 			var depCost = inventory[depCommodity].meanCost;
 			cost += numDep * depCost;
 		}
