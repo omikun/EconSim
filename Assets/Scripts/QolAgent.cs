@@ -15,19 +15,14 @@ public partial class QolAgent : QoLSimpleAgent
     }
     protected void decideProduction()
     {
-        if (book.ContainsKey(outputName) == true)
-        {
-            var rsc = book[outputName];
-            var stock = inventory[outputName];
-            var numBatches = NumBatchesProduceable(rsc, stock);
-            var numProduced = Produce(numBatches);
-            ConsumeGoods(numBatches);
-            Debug.Log(auctionStats.round + " " + name + " produced " + numProduced + " " + rsc.name);
-        }
-        else
-        {
-            ConsumeGoods(0);
-        }
+        if (book.ContainsKey(outputName) == false)
+            return;
+        
+        var rsc = book[outputName];
+        var stock = inventory[outputName];
+        var numBatches = NumBatchesProduceable(rsc, stock);
+        var numProduced = Produce(numBatches);
+        ConsumeGoods(numBatches);
         // var numProduced2 = productionStrategy.Produce();
         // Assert.AreEqual(numProduced, numProduced2);
     }
