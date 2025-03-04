@@ -113,7 +113,7 @@ public class ESStreamingGraph : MonoBehaviour
         }
 
         int index = 0;
-        AddCategory(graph, "Labor", 5);
+        // AddCategory(graph, "Labor", 5);
         foreach (var good in auctionTracker.book.Keys)
         {
             graph.DataSource.ClearCategory(good);

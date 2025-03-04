@@ -972,15 +972,15 @@ MonoBehaviour:
   numAgents:
     _serializedList:
     - Key: Food
-      Value: 5
+      Value: 3
     - Key: Wood
-      Value: 5
+      Value: 3
     - Key: Ore
-      Value: 5
+      Value: 3
     - Key: Metal
-      Value: 5
+      Value: 3
     - Key: Tool
-      Value: 5
+      Value: 3
   initialization:
     _serializedList:
     - Key: Food
@@ -993,7 +993,7 @@ MonoBehaviour:
         - Key: Prod_multiplier
           Value: 1
         - Key: Prod_rate
-          Value: 4
+          Value: 10
         - Key: Base_rate
           Value: 1
         - Key: Batch_rate
@@ -1140,6 +1140,7 @@ MonoBehaviour:
     - {fileID: 2100000, guid: e91a104ae561b8c47afc13fcaa8a166c, type: 2}
     - {fileID: 2100000, guid: 99f934b487889e24b96d1d9e9027f238, type: 2}
     - {fileID: 2100000, guid: c7adf5134264eae4780bbea8c9ea9e19, type: 2}
+    - {fileID: 2100000, guid: 3293d8602b885d046b6f245655046c97, type: 2}
     lineTiling:
       EnableTiling: 0
       TileFactor: 0
@@ -2176,6 +2177,54 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1700845192}
     m_Modifications:
+    - target: {fileID: 3207969776009742520, guid: 6b1c7ef2e947a4f64a29265a17dfde1e, type: 3}
+      propertyPath: Data.mSerializedData.Array.size
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 3207969776009742520, guid: 6b1c7ef2e947a4f64a29265a17dfde1e, type: 3}
+      propertyPath: Data.mSerializedData.Array.data[5].Name
+      value: Labor
+      objectReference: {fileID: 0}
+    - target: {fileID: 3207969776009742520, guid: 6b1c7ef2e947a4f64a29265a17dfde1e, type: 3}
+      propertyPath: Data.mSerializedData.Array.data[5].Material
+      value: 
+      objectReference: {fileID: 2100000, guid: 17705335a6baae7449e02ba5755f88ea, type: 2}
+    - target: {fileID: 3207969776009742520, guid: 6b1c7ef2e947a4f64a29265a17dfde1e, type: 3}
+      propertyPath: Data.mSerializedData.Array.data[5].InnerFill
+      value: 
+      objectReference: {fileID: 2100000, guid: c7adf5134264eae4780bbea8c9ea9e19, type: 2}
+    - target: {fileID: 3207969776009742520, guid: 6b1c7ef2e947a4f64a29265a17dfde1e, type: 3}
+      propertyPath: Data.mSerializedData.Array.data[5].PointSize
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 3207969776009742520, guid: 6b1c7ef2e947a4f64a29265a17dfde1e, type: 3}
+      propertyPath: Data.mSerializedData.Array.data[5].ViewOrder
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 3207969776009742520, guid: 6b1c7ef2e947a4f64a29265a17dfde1e, type: 3}
+      propertyPath: Data.mSerializedData.Array.data[5].LineThickness
+      value: 2.5799999237060547
+      objectReference: {fileID: 0}
+    - target: {fileID: 3207969776009742520, guid: 6b1c7ef2e947a4f64a29265a17dfde1e, type: 3}
+      propertyPath: Data.mSerializedData.Array.data[5].PointMaterial
+      value: 
+      objectReference: {fileID: 2100000, guid: 06a326b15fab46b499e3406b7ad4cd2d, type: 2}
+    - target: {fileID: 3207969776009742520, guid: 6b1c7ef2e947a4f64a29265a17dfde1e, type: 3}
+      propertyPath: Data.mSerializedData.Array.data[5].LineHoverPrefab
+      value: 
+      objectReference: {fileID: 11494010, guid: 87cd6d8b7ca9527449e32ecefc4015c5, type: 3}
+    - target: {fileID: 3207969776009742520, guid: 6b1c7ef2e947a4f64a29265a17dfde1e, type: 3}
+      propertyPath: Data.mSerializedData.Array.data[5].PointHoverPrefab
+      value: 
+      objectReference: {fileID: 11475216, guid: 57ee497f5c86d764fa20628075109b20, type: 3}
+    - target: {fileID: 3207969776009742520, guid: 6b1c7ef2e947a4f64a29265a17dfde1e, type: 3}
+      propertyPath: Data.mSerializedData.Array.data[5].SegmentsPerCurve
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 3207969776009742520, guid: 6b1c7ef2e947a4f64a29265a17dfde1e, type: 3}
+      propertyPath: Data.mSerializedData.Array.data[5].LineTiling.TileFactor
+      value: 45.5
+      objectReference: {fileID: 0}
     - target: {fileID: 4645855503065732711, guid: 6b1c7ef2e947a4f64a29265a17dfde1e, type: 3}
       propertyPath: m_text
       value: Cash
@@ -5031,7 +5080,55 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8596192673270936261, guid: 7bdec001232dd409eb1e237114ffd09d, type: 3}
       propertyPath: Data.automaticVerticalViewGap
-      value: 1
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8596192673270936261, guid: 7bdec001232dd409eb1e237114ffd09d, type: 3}
+      propertyPath: Data.mSerializedData.Array.size
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 8596192673270936261, guid: 7bdec001232dd409eb1e237114ffd09d, type: 3}
+      propertyPath: Data.mSerializedData.Array.data[5].Name
+      value: Labor
+      objectReference: {fileID: 0}
+    - target: {fileID: 8596192673270936261, guid: 7bdec001232dd409eb1e237114ffd09d, type: 3}
+      propertyPath: Data.mSerializedData.Array.data[5].Material
+      value: 
+      objectReference: {fileID: 2100000, guid: 17705335a6baae7449e02ba5755f88ea, type: 2}
+    - target: {fileID: 8596192673270936261, guid: 7bdec001232dd409eb1e237114ffd09d, type: 3}
+      propertyPath: Data.mSerializedData.Array.data[5].InnerFill
+      value: 
+      objectReference: {fileID: 2100000, guid: c7adf5134264eae4780bbea8c9ea9e19, type: 2}
+    - target: {fileID: 8596192673270936261, guid: 7bdec001232dd409eb1e237114ffd09d, type: 3}
+      propertyPath: Data.mSerializedData.Array.data[5].PointSize
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 8596192673270936261, guid: 7bdec001232dd409eb1e237114ffd09d, type: 3}
+      propertyPath: Data.mSerializedData.Array.data[5].ViewOrder
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 8596192673270936261, guid: 7bdec001232dd409eb1e237114ffd09d, type: 3}
+      propertyPath: Data.mSerializedData.Array.data[5].LineThickness
+      value: 2.5799999237060547
+      objectReference: {fileID: 0}
+    - target: {fileID: 8596192673270936261, guid: 7bdec001232dd409eb1e237114ffd09d, type: 3}
+      propertyPath: Data.mSerializedData.Array.data[5].PointMaterial
+      value: 
+      objectReference: {fileID: 2100000, guid: 06a326b15fab46b499e3406b7ad4cd2d, type: 2}
+    - target: {fileID: 8596192673270936261, guid: 7bdec001232dd409eb1e237114ffd09d, type: 3}
+      propertyPath: Data.mSerializedData.Array.data[5].LineHoverPrefab
+      value: 
+      objectReference: {fileID: 11494010, guid: 87cd6d8b7ca9527449e32ecefc4015c5, type: 3}
+    - target: {fileID: 8596192673270936261, guid: 7bdec001232dd409eb1e237114ffd09d, type: 3}
+      propertyPath: Data.mSerializedData.Array.data[5].PointHoverPrefab
+      value: 
+      objectReference: {fileID: 11475216, guid: 57ee497f5c86d764fa20628075109b20, type: 3}
+    - target: {fileID: 8596192673270936261, guid: 7bdec001232dd409eb1e237114ffd09d, type: 3}
+      propertyPath: Data.mSerializedData.Array.data[5].SegmentsPerCurve
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 8596192673270936261, guid: 7bdec001232dd409eb1e237114ffd09d, type: 3}
+      propertyPath: Data.mSerializedData.Array.data[5].LineTiling.TileFactor
+      value: 45.5
       objectReference: {fileID: 0}
     - target: {fileID: 9211726940875377140, guid: 7bdec001232dd409eb1e237114ffd09d, type: 3}
       propertyPath: m_Name
@@ -5982,6 +6079,54 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1700845192}
     m_Modifications:
+    - target: {fileID: 3207969776009742520, guid: 6b1c7ef2e947a4f64a29265a17dfde1e, type: 3}
+      propertyPath: Data.mSerializedData.Array.size
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 3207969776009742520, guid: 6b1c7ef2e947a4f64a29265a17dfde1e, type: 3}
+      propertyPath: Data.mSerializedData.Array.data[5].Name
+      value: Labor
+      objectReference: {fileID: 0}
+    - target: {fileID: 3207969776009742520, guid: 6b1c7ef2e947a4f64a29265a17dfde1e, type: 3}
+      propertyPath: Data.mSerializedData.Array.data[5].Material
+      value: 
+      objectReference: {fileID: 2100000, guid: 17705335a6baae7449e02ba5755f88ea, type: 2}
+    - target: {fileID: 3207969776009742520, guid: 6b1c7ef2e947a4f64a29265a17dfde1e, type: 3}
+      propertyPath: Data.mSerializedData.Array.data[5].InnerFill
+      value: 
+      objectReference: {fileID: 2100000, guid: c7adf5134264eae4780bbea8c9ea9e19, type: 2}
+    - target: {fileID: 3207969776009742520, guid: 6b1c7ef2e947a4f64a29265a17dfde1e, type: 3}
+      propertyPath: Data.mSerializedData.Array.data[5].PointSize
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 3207969776009742520, guid: 6b1c7ef2e947a4f64a29265a17dfde1e, type: 3}
+      propertyPath: Data.mSerializedData.Array.data[5].ViewOrder
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 3207969776009742520, guid: 6b1c7ef2e947a4f64a29265a17dfde1e, type: 3}
+      propertyPath: Data.mSerializedData.Array.data[5].LineThickness
+      value: 2.5799999237060547
+      objectReference: {fileID: 0}
+    - target: {fileID: 3207969776009742520, guid: 6b1c7ef2e947a4f64a29265a17dfde1e, type: 3}
+      propertyPath: Data.mSerializedData.Array.data[5].PointMaterial
+      value: 
+      objectReference: {fileID: 2100000, guid: 06a326b15fab46b499e3406b7ad4cd2d, type: 2}
+    - target: {fileID: 3207969776009742520, guid: 6b1c7ef2e947a4f64a29265a17dfde1e, type: 3}
+      propertyPath: Data.mSerializedData.Array.data[5].LineHoverPrefab
+      value: 
+      objectReference: {fileID: 11494010, guid: 87cd6d8b7ca9527449e32ecefc4015c5, type: 3}
+    - target: {fileID: 3207969776009742520, guid: 6b1c7ef2e947a4f64a29265a17dfde1e, type: 3}
+      propertyPath: Data.mSerializedData.Array.data[5].PointHoverPrefab
+      value: 
+      objectReference: {fileID: 11475216, guid: 57ee497f5c86d764fa20628075109b20, type: 3}
+    - target: {fileID: 3207969776009742520, guid: 6b1c7ef2e947a4f64a29265a17dfde1e, type: 3}
+      propertyPath: Data.mSerializedData.Array.data[5].SegmentsPerCurve
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 3207969776009742520, guid: 6b1c7ef2e947a4f64a29265a17dfde1e, type: 3}
+      propertyPath: Data.mSerializedData.Array.data[5].LineTiling.TileFactor
+      value: 45.5
+      objectReference: {fileID: 0}
     - target: {fileID: 4645855503065732711, guid: 6b1c7ef2e947a4f64a29265a17dfde1e, type: 3}
       propertyPath: m_text
       value: Inventory
@@ -6493,7 +6638,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 3207969776009742520, guid: 6b1c7ef2e947a4f64a29265a17dfde1e, type: 3}
       propertyPath: Data.mSerializedData.Array.size
-      value: 5
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 3207969776009742520, guid: 6b1c7ef2e947a4f64a29265a17dfde1e, type: 3}
       propertyPath: Data.mSerializedData.Array.data[5].Name
@@ -6506,7 +6651,7 @@ PrefabInstance:
     - target: {fileID: 3207969776009742520, guid: 6b1c7ef2e947a4f64a29265a17dfde1e, type: 3}
       propertyPath: Data.mSerializedData.Array.data[5].InnerFill
       value: 
-      objectReference: {fileID: 2100000, guid: 17b534b72a7f8fc44ab9f285219f0f5a, type: 2}
+      objectReference: {fileID: 2100000, guid: c7adf5134264eae4780bbea8c9ea9e19, type: 2}
     - target: {fileID: 3207969776009742520, guid: 6b1c7ef2e947a4f64a29265a17dfde1e, type: 3}
       propertyPath: Data.mSerializedData.Array.data[5].PointSize
       value: 6
