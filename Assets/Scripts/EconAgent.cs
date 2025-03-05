@@ -66,6 +66,9 @@ public class EconAgent : MonoBehaviour
 		agent.inventory["Labor"].Decrease(1);
 		Assert.IsTrue(agent.inventory["Labor"].Quantity == 0);
 		agent.employer = this;
+		//pay them to keep them alive!
+		var firstPaycheck = Mathf.Min(Cash, book["Food"].marketPrice * 1.2f);
+		agent.Earn(firstPaycheck);
 	}
 
 	public void EmployeeQuit(EconAgent employee)

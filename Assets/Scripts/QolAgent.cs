@@ -15,10 +15,7 @@ public partial class QolAgent : QoLSimpleAgent
     }
     protected void decideProduction()
     {
-        if (outputName == "Labor")
-            return;
-        
-        if (book.ContainsKey(outputName) == true)
+        if (outputName != "Labor" && book.ContainsKey(outputName) == true)
         {
             var rsc = book[outputName];
             var stock = inventory[outputName];
