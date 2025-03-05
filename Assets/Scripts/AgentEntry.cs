@@ -42,10 +42,10 @@ public class AgentEntry
 	[VerticalGroup("Stats"), LabelWidth(50), ReadOnly] [GUIColor("GetCashColor")]
 	public float Cash;
 
-	[VerticalGroup("Stats"), LabelWidth(50), ReadOnly] [GUIColor("GetCashColor")]
+	[VerticalGroup("Stats"), LabelWidth(50), ReadOnly] [GUIColor("GetDepositColor")]
 	public float Deposit;
 	
-	[VerticalGroup("Stats"), LabelWidth(50), ReadOnly] [GUIColor("GetCashColor")]
+	[VerticalGroup("Stats"), LabelWidth(50), ReadOnly] [GUIColor("GetDebtColor")]
 	public float Debt;
 	
 	[VerticalGroup("Stats"), LabelWidth(50), ReadOnly] [GUIColor("GetFoodColor")]
@@ -72,10 +72,28 @@ public class AgentEntry
 			return Color.green;
 	}
 
+	private Color GetDebtColor()
+	{
+		if (Debt < 1f)
+			return Color.green;
+		else
+			return Color.red;
+	}
+	private Color GetDepositColor()
+	{
+		if (Deposit > foodPrice)
+			return Color.green;
+		else if (Deposit + Cash > foodPrice)
+			return Color.yellow;
+		else
+			return Color.red;
+	}
 	private Color GetCashColor()
 	{
 		if (Cash > foodPrice)
 			return Color.green;
+		else if (Deposit + Cash > foodPrice)
+			return Color.yellow;
 		else
 			return Color.red;
 	}
