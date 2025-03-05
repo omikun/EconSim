@@ -331,6 +331,14 @@ MonoBehaviour:
       RadiusScale: 1
       DepthScale: 1
       DepthOffset: 0
+    - Name: Labor
+      Materials:
+        Normal: {fileID: 2100000, guid: 32e777e9c95677b47be2c48058a923bd, type: 2}
+        Hover: {r: 1, g: 1, b: 1, a: 1}
+        Selected: {r: 0, g: 0, b: 0, a: 0}
+      RadiusScale: 1
+      DepthScale: 1
+      DepthOffset: 0
     mGroups:
     - Pie
     mData:
@@ -349,6 +357,9 @@ MonoBehaviour:
     - GroupName: Pie
       ColumnName: Tool
       Amount: 10
+    - GroupName: Pie
+      ColumnName: Labor
+      Amount: 0
   clockWise: 0
   prefab: {fileID: 114000011816695716, guid: 510d303410ef2cd42b6c0dfef4a6792b, type: 3}
   lineThickness: 1
@@ -993,11 +1004,11 @@ MonoBehaviour:
         - Key: Prod_multiplier
           Value: 1
         - Key: Prod_rate
-          Value: 10
+          Value: 8
         - Key: Base_rate
           Value: 1
         - Key: Batch_rate
-          Value: 2
+          Value: 1
         - Key: Set_price
           Value: 1
     - Key: Wood

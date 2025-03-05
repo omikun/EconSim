@@ -235,6 +235,7 @@ public class ESStreamingGraph : MonoBehaviour
         {
             var yvalue = Mathf.Max(.1f, rsc.numAgents);
             jobChart.DataSource.SetValue(rsc.name, yvalue);
+            Debug.Log("jobchart " + rsc.name + " rsc.numAgents");
         }
 
         UpdatePerAgentInventoryGraph();

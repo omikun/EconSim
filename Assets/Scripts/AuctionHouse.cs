@@ -315,7 +315,7 @@ public partial class AuctionHouse : MonoBehaviour {
 			string profession = agent.Profession;
 
 
-			if (profession != "Unemployed" && profession != "Labor")
+			if (profession != "Unemployed")
 			{
 				book[profession].numAgents++;
 				book[profession].numAgents += agent.NumEmployees;
