@@ -64,6 +64,9 @@ public class QoLSimpleAgent : EconAgent
             Debug.Log(auctionStats.round + " " + name + " has died with " + msg);
             Alive = false;
             outputName = "Dead";
+            if (employer != null)
+                employer.EmployeeQuit(this);
+            
             if (auctionStats.bank.QueryLoans(this) > 0f)
             {
                 //liquidate assets
@@ -149,10 +152,6 @@ public class QoLSimpleAgent : EconAgent
     //decide what to bid/ask
     public override void Decide()
     {
-        if (outputName == "Unemployed" || outputName == "Labor")
-            return;
-        //TODO needs to bid for food!
-        
         //decide how much to bid and ask (just think of them as buy and sell for now)
         //randomly pick an inventory check if it's buying or selling it has a better utility than others
         //until out of money or can't sell anymore or can't buy anymore
@@ -275,6 +274,7 @@ public class QoLSimpleAgent : EconAgent
             var selling = !isConsumable(itemName);
             var offers = (selling) ? asks : bids;
             offers.Add(itemName, new Offer(itemName, price, item.offersThisRound, this));
+            item.offersThisRound = 0;
             if (selling)
                 Debug.Log(auctionStats.round + name + " offers " + itemName + " asking " + item.offersThisRound 
                           + " for " + price.ToString("c2")

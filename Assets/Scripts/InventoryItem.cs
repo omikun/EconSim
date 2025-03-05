@@ -210,6 +210,7 @@ public class InventoryItem {
     }
     public float Increase(float quant)
     {
+	    Assert.IsFalse(name == "Labor"); //should never increase labor unless fired
         Quantity += quant;
         Assert.IsTrue(quant >= 0);
         return Quantity;

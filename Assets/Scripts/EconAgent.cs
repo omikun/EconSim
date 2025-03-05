@@ -53,6 +53,7 @@ public class EconAgent : MonoBehaviour
 	
 	//////////////// NOTE FOR FIRMS ONLY //////////////////////
 	protected Dictionary<EconAgent, float> employees { get; set; }
+	protected EconAgent employer;
 	public int NumEmployees
 	{
 		get { return (employees != null) ? employees.Count : 0; }
@@ -63,6 +64,13 @@ public class EconAgent : MonoBehaviour
 		employees[agent] = wage;
 		agent.SetEmployed();
 		agent.inventory["Labor"].Decrease(1);
+		Assert.IsTrue(agent.inventory["Labor"].Quantity == 0);
+		agent.employer = this;
+	}
+
+	public void EmployeeQuit(EconAgent employee)
+	{
+		employees.Remove(employee);
 	}
 
 	public string Profession

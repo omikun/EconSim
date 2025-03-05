@@ -91,7 +91,7 @@ public class AgentEntry
 	{
 		foreach (var item in agent.inventory.Values)
 		{
-			// item.offersThisRound = 0;
+			// item.offersThisRound = 0; this clears all offers before they can be entered to auction
 		}
 
 		if (agent is Bank)

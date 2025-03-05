@@ -15,6 +15,9 @@ public partial class QolAgent : QoLSimpleAgent
     }
     protected void decideProduction()
     {
+        if (outputName == "Labor")
+            return;
+        
         if (book.ContainsKey(outputName) == true)
         {
             var rsc = book[outputName];
@@ -134,6 +137,9 @@ public partial class QolAgent : QoLSimpleAgent
     }
     public float Produce(float numBatches)
     {
+        if (outputName == "Labor")
+            return 0;
+        
         // return productionStrategy.Produce();
         var output = inventory[outputName];
         var numProduced = output.GetMaxProductionRate(numBatches);

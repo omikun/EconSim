@@ -522,6 +522,7 @@ public partial class AuctionHouse : MonoBehaviour {
 	{
 		if (source.inventory[commodity].Quantity >= quant)
 		{
+			Assert.IsFalse(commodity == "Labor");
 			source.inventory[commodity].Decrease(quant);
 			destination.inventory[commodity].Increase(quant);
 			return true;

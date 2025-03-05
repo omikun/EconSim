@@ -134,6 +134,9 @@ public class Government : EconAgent {
     {
         foreach (var (good, item) in agentInventory)
         {
+	        if (good == "Labor")
+		        continue;
+	        
             if (inventory.ContainsKey(good) == false)
                 AddToInventory(good, item.Quantity, maxStock, item.rsc);
             else
