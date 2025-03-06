@@ -82,7 +82,9 @@ public partial class QolAgent : QoLSimpleAgent
 				+ " with " + inventory[com].Quantity + "/" + rsc.recipe[com] + " " + com);
 		}
         // numBatches = rsc.recipe.Keys.Min(com => inventory[com].NumProduceable(rsc));
-	    numBatches = Mathf.Min(outputItem.GetMaxBatchRate(), numBatches);
+        var numEmployees = (employees == null) ? 0 : employees.Count;
+        var maxBatchRate = outputItem.GetMaxBatchRate() + numEmployees;
+	    numBatches = Mathf.Min(maxBatchRate, numBatches);
         
 	    var realProductionRate = outputItem.GetMaxProductionRate(numBatches);
 	    var realBatchRate = Mathf.Ceil(realProductionRate / outputItem.ProductionPerBatch);

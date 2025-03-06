@@ -14,13 +14,17 @@ using Sirenix.Utilities.Editor;
 using Sirenix.Serialization;
 using UnityEngine.Assertions;
 
-public class FiscalPolicy 
+public class FiscalPolicy
 {
     public SimulationConfig config;
     public AuctionStats auctionStats;
     public float taxed = 0;
     public Government gov;
-    public FiscalPolicy(SimulationConfig cfg, AuctionStats at, Government g)
+
+    public FiscalPolicy()
+    {
+    }
+    public void Init(SimulationConfig cfg, AuctionStats at, Government g)
     {
         config = cfg;
         auctionStats = at;
@@ -83,7 +87,9 @@ public class Range
 [Serializable]
 public class FlatTaxPolicy : FiscalPolicy
 {
-    public FlatTaxPolicy(SimulationConfig cfg, AuctionStats at, Government g) : base(cfg, at, g) {}
+    public FlatTaxPolicy()
+    {
+    }
 
     public override float CollectSalesTax(string com, float quant, float price, EconAgent buyer)
     {
@@ -132,10 +138,17 @@ Reduction of social welfare spending: Cutting back on social programs, which all
     [InfoBox("Marginal Income Tax", "@!EnableIncomeTax")]
     public bool EnableIncomeTax = true;
 
-    [HideInInspector, DictionaryDrawerSettings(DisplayMode = DictionaryDisplayOptions.OneLine, KeyLabel = "Income Bracket", ValueLabel = "Marginal Tax Rate")]
-    [SerializedDictionary("Income Bracket", "Marginal Tax Rate")]
-    private SerializedDictionary<Range, float> taxBracket = new();
-    public ProgressivePolicy(SimulationConfig cfg, AuctionStats at, Government g) : base(cfg, at, g)
+    [ShowInInspector]
+    //, DictionaryDrawerSettings(DisplayMode = DictionaryDisplayOptions.OneLine, KeyLabel = "Income Bracket", ValueLabel = "Marginal Tax Rate")]
+    // [SerializedDictionary("Income Bracket", "Marginal Tax Rate")]
+    [OdinSerialize]
+    private Dictionary<Range, float> taxBracket = new()
+    {
+        {new Range(1, 5), 0.1f },
+        {new Range(5, 10), 0.2f },
+        {new Range(10, 1000), 0.5f },
+    };
+    public ProgressivePolicy()
     {
     }
     public override void Tax(AuctionBook book, List<EconAgent> agents)

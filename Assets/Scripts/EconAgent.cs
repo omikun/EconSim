@@ -60,14 +60,15 @@ public class EconAgent : MonoBehaviour
 	}
 	public void Hire(EconAgent agent, float wage)
 	{
-		Assert.IsTrue(employees != null);
+		if (employees == null)
+			employees = new();
 		employees[agent] = wage;
 		agent.SetEmployed();
 		agent.inventory["Labor"].Decrease(1);
 		Assert.IsTrue(agent.inventory["Labor"].Quantity == 0);
 		agent.employer = this;
 		//pay them to keep them alive!
-		var firstPaycheck = Mathf.Min(Cash, book["Food"].marketPrice * 1.2f);
+		var firstPaycheck = Mathf.Min(Cash, book["Food"].marketPrice * .8f);
 		agent.Earn(firstPaycheck);
 	}
 

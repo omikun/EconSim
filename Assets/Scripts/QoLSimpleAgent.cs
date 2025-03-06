@@ -45,6 +45,15 @@ public class QoLSimpleAgent : EconAgent
     {
         if (Alive == false)
             return 0;
+        
+        if (employees != null)
+            foreach (var (employee,wage) in employees)
+            {
+                var pay = book["Food"].marketPrice * .5f;
+                employee.Earn(pay);
+                Cash -= pay;
+            }
+        
         var dying = IsDying(ref starving);
 
         if (config.changeProfession && dying)
@@ -83,11 +92,13 @@ public class QoLSimpleAgent : EconAgent
                 return 0;
             numRoundsSinceLastBirth = 0;
 
-            // if (Cash >= 50)
-            // {
-            //     Cash -= 25;
-            //     return 25;
-            // }
+            var foodPrice = Mathf.Max(4, book["Food"].marketPrice * 4);
+            if (Cash >= foodPrice)
+            {
+                var inheritance = foodPrice / 4;
+                Cash -= inheritance;
+                return inheritance;
+            }
 
             return 1;
         }

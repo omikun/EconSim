@@ -851,8 +851,8 @@ MonoBehaviour:
     EnableIdleWealthTax: 0
     EnableWealthTax: 0
     WealthTaxRate: 0.3
-    MinWealthTaxExempt: 0
-    EnableIncomeTax: 0
+    MinWealthTaxExempt: 50
+    EnableIncomeTax: 1
   FlatTaxPolicy:
     config: {fileID: 0}
     auctionStats: {fileID: 0}

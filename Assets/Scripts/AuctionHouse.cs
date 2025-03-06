@@ -22,7 +22,9 @@ public partial class AuctionHouse : MonoBehaviour {
 	[ShowInInspector] public int FrameRate = 60;
 	[ShowInInspector]
 	FiscalPolicy fiscalPolicy;
-	public ProgressivePolicy progressivePolicy;
+	[ShowInInspector]
+	public ProgressivePolicy progressivePolicy = new();
+	[HideInInspector]
 	public FlatTaxPolicy FlatTaxPolicy;
 	// [ValueDropdown("FiscalPolicies")]
 	// public FiscalPolicy fiscalPolicy;
@@ -67,6 +69,7 @@ public partial class AuctionHouse : MonoBehaviour {
 		InitGovernment();
 		InitAgents();
 		
+		progressivePolicy.Init(config, district, gov);
 		progressivePolicy.gov = gov;
 		progressivePolicy.config = config;
 		progressivePolicy.auctionStats = district;
@@ -282,11 +285,11 @@ public partial class AuctionHouse : MonoBehaviour {
 
 		PrintAuctionStats();
 
-		progressivePolicy.Tax(book, agents);
 		foreach (var agent in agents) //including gov
 		{
 			agent.CalculateProfit();
 		}
+		progressivePolicy.Tax(book, agents);
 		logAgentsStats();
 		district.ClearStats();
 		TickAgent();
@@ -302,13 +305,18 @@ public partial class AuctionHouse : MonoBehaviour {
 		Debug.Log(district.round + " gov outputs: " + gov.outputName);
 		var newAgents = new List<EconAgent>();
 		var deadAgents = new List<EconAgent>();
+		
         foreach (var agent in agents)
         {
 			if (agent.Alive == false)
 				continue;
 //	        Debug.Log("TickAgent() " + agent.name);
 			if (agent is Government || agent is Bank)
+			{
+				if (agent is Government)
+					((Government)agent).Tick(agents.Count);
 				continue;
+			}
 			bool changedProfession = false;
 			bool bankrupted = false;
 			bool starving = false;
@@ -363,6 +371,7 @@ public partial class AuctionHouse : MonoBehaviour {
 				go.name = "agent" + newAgent.uid.ToString(); //uid only initialized after agent.Init
 				newAgents.Add(newAgent);
 				Debug.Log(district.round + " new agent: " + go.name + " uid: " + newAgent.uid.ToString());
+				agent.Hire(newAgent, cash);
 			// Debug.Log(auctionStats.round + " New agent " + gameObject.name + " uid: " + uid + " cash: " + Cash.ToString("c2") + " has " + inventory[buildable].Quantity + " " + buildable);
 			}
 			// gov.Pay(amount); //welfare?

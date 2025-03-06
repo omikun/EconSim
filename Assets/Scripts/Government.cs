@@ -144,6 +144,13 @@ public class Government : EconAgent {
             item.Decrease(item.Quantity);
         }
     }
+
+    public void Tick(int numAgents)
+    {
+	    var temp = Math.Log((double)numAgents);
+	    EmploymentTarget = (int)Math.Floor(temp) * 2;
+	    Debug.Log(auctionStats.round +  " gov employment target: " + EmploymentTarget.ToString("n2"));
+    }
     public override float Tick(Government gov, ref bool changedProfession, ref bool bankrupted, ref bool starving)
     {
 	    Debug.Log(name + " outputs: " + outputName);
