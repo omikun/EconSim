@@ -444,7 +444,7 @@ public class EconAgent : MonoBehaviour
 	public AnimationCurve foodToHappy;
 	public AnimationCurve cashToHappy;
 
-	public float Food()
+	public float FoodInv()
 	{
 		return inventory["Food"].Quantity;
 	}

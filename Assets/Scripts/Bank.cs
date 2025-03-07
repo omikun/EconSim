@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.Assertions;
@@ -38,6 +39,8 @@ public partial class Bank : EconAgent
     [ShowInInspector]
     private LoanBook loanBook = new();
     public Dictionary<EconAgent, float> Deposits { get; private set; }
+    protected int EmploymentTarget = 2;
+	public float payCoefficient = 1.4f; //low pay to force employees to find a real job?
 
     public float Monies()
     {
@@ -50,6 +53,7 @@ public partial class Bank : EconAgent
         liability = 0;
         Wealth = 0;
         Deposits = new();
+		Employees = new();
     }
     
     public void BankRegulations(float ratio, int termsInRounds, float interest, int _maxMissedPayments, float _maxPrinciple, int _maxNumDefaults) {
@@ -147,7 +151,15 @@ public partial class Bank : EconAgent
 
     public override Offers CreateBids(AuctionBook book)
     {
-        return new Offers();
+        var bids = new Offers();
+        if (EmploymentTarget > Employees.Count)
+        {
+	        var offerQuantity = EmploymentTarget - Employees.Count;
+	        var com = "Labor";
+	        bids.Add(com, new Offer(com, book["Food"].marketPrice * payCoefficient, offerQuantity, this));
+        }
+
+        return bids;
     }
     public override Offers CreateAsks()
     {
@@ -164,7 +176,20 @@ public partial class Bank : EconAgent
         return asks;
     }
 
+    public void Tick()
+    {
+        var numLoans = loanBook.Sum(account => account.Value.Count);
+        EmploymentTarget = (int)Math.Log(1 + numLoans) + 2;
+        Debug.Log(auctionStats.round + " bank employment target: " + EmploymentTarget.ToString("n0"));
+    }
+
     public override void Decide()
     {
+	    foreach (var (employee,wage) in Employees)
+	    {
+		    var pay = book["Food"].marketPrice * payCoefficient;
+		    employee.Earn(pay);
+		    Cash -= pay;
+	    }
     }
 }

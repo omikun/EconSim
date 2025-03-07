@@ -29,7 +29,7 @@ public class FoodEquivalent
 	}
 	public float GetNumFood()
 	{
-		return agent.Food();
+		return agent.FoodInv();
 	}
 	//returns number of food that can be bought with cash at market price
 	public float GetCashFood()

@@ -30,8 +30,8 @@ public class QoLSimpleAgent : EconAgent
     public bool IsDying(ref bool starving)
     {
         // starving = inventory.Values.Any(item => item.Quantity <= 5);
-        var farmerStarving = numProducedThisRound == 0 && outputName == "Food" && Food() <= 0;
-        var nonFarmerstarving = Food() <= 0 && outputName != "Food";
+        var farmerStarving = numProducedThisRound == 0 && outputName == "Food" && FoodInv() <= 0;
+        var nonFarmerstarving = FoodInv() <= 0 && outputName != "Food";
         starving = farmerStarving || nonFarmerstarving;
         if (starving)
             DaysStarving++;

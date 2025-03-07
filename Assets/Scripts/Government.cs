@@ -103,7 +103,7 @@ public class Government : EconAgent {
 			if ((int)item.TargetQuantity <= (int)item.Quantity)
 				continue;
 			var offerQuantity = item.TargetQuantity - item.Quantity;
-			var offerPrice = book[com].marketPrice * .90f;
+			var offerPrice = book[com].marketPrice * .93f;
 			bids.Add(com, new Offer(com, offerPrice, offerQuantity, this));
 		}
         return bids;
@@ -177,8 +177,8 @@ public class Government : EconAgent {
 		//quant should be no more than what gov's inventory holds
 		//only enough to refill agent's inv back to 2
 		//should not be negative in case agent has more than 2 already
-		var agentFood = agent.Food();
-		var govFood = Food();
+		var agentFood = agent.FoodInv();
+		var govFood = FoodInv();
 		var refillThreshold = 5f;
 		if (agent.DaysStarving >= refillThreshold)
 		{

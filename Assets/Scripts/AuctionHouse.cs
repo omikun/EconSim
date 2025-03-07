@@ -322,6 +322,8 @@ public partial class AuctionHouse : MonoBehaviour {
 			{
 				if (agent is Government)
 					((Government)agent).Tick(agents.Count);
+				else if (agent is Bank)
+					((Bank)agent).Tick();
 				continue;
 			}
 			bool changedProfession = false;
