@@ -177,6 +177,7 @@ public partial class AuctionHouse : MonoBehaviour {
 		var agent = go.GetComponent<EconAgent>();
 		InitAgent(agent, profession, cash);
 		go.name = "agent" + agent.uid; //uid only initialized after agent.Init
+		agent.name = go.name;
 		return agent;
 
 	}
@@ -347,6 +348,8 @@ public partial class AuctionHouse : MonoBehaviour {
 			{
 				agent.gameObject.SetActive(false);
 				deadAgents.Add(agent);
+				if (agent.Employer != null)
+					agent.Employer.EmployeeQuit(agent);
 				if (district.bank.QueryLoans(agent) > 0)
 					district.bank.LiquidateInventory(agent.inventory);
 				else
@@ -358,7 +361,6 @@ public partial class AuctionHouse : MonoBehaviour {
 					cash = 0;
 				var prefab = GetAgentPrefab();
 				var chance = UnityEngine.Random.Range(0f, 1f);
-				var prof = (chance < .5f) ? "Wood" : "Ore";
 				// spawn new agent! if 1 spawn as wood worker or ore miner
 				// else spawn as most profitable profession
 				// var newAgent = NewAgent(prefab, agent.Profession, amount);
@@ -371,7 +373,8 @@ public partial class AuctionHouse : MonoBehaviour {
 				go.name = "agent" + newAgent.uid.ToString(); //uid only initialized after agent.Init
 				newAgents.Add(newAgent);
 				Debug.Log(district.round + " new agent: " + go.name + " uid: " + newAgent.uid.ToString());
-				agent.Hire(newAgent, cash);
+				if (agent.Profession != "Unemployed" && agent.Profession != "Labor")
+					agent.Hire(newAgent, cash);
 			// Debug.Log(auctionStats.round + " New agent " + gameObject.name + " uid: " + uid + " cash: " + Cash.ToString("c2") + " has " + inventory[buildable].Quantity + " " + buildable);
 			}
 			// gov.Pay(amount); //welfare?
