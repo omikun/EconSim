@@ -36,8 +36,13 @@ public class CommodityEntry
 [Serializable]
 public class AgentEntry
 {
-	[TableColumnWidth(50), VerticalGroup("Agent"), HideLabel, LabelWidth(42), ReadOnly]
+	[TableColumnWidth(40), VerticalGroup("Agent"), HideLabel, LabelWidth(42), ReadOnly]
 	public string Agent;
+	[VerticalGroup("Agent"), HideLabel, LabelWidth(42), ReadOnly]
+	public string Employer;
+
+	[VerticalGroup("Agent"), HideLabel, LabelWidth(42), ReadOnly]
+	public int NumEmployees;
 
 	[VerticalGroup("Stats"), LabelWidth(50), ReadOnly] [GUIColor("GetCashColor")]
 	public float Cash;
@@ -127,6 +132,8 @@ public class AgentEntry
 			Debt = agent.auctionStats.bank.QueryLoans(agent);
 		}
 		DaysStarving = agent.DaysStarving;
+		Employer = (agent.Employer == null) ? "Self employed" : agent.Employer.name + "-" + agent.Employer.outputName;
+		NumEmployees = (agent.Employees == null) ? 0 : agent.Employees.Count;
 		
 		//all inventory
 		foreach (var (com, numDepends) in agent.inventory)
