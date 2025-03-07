@@ -82,7 +82,7 @@ public partial class QolAgent : QoLSimpleAgent
 				+ " with " + inventory[com].Quantity + "/" + rsc.recipe[com] + " " + com);
 		}
         // numBatches = rsc.recipe.Keys.Min(com => inventory[com].NumProduceable(rsc));
-        var numEmployees = (employees == null) ? 0 : employees.Count;
+        var numEmployees = (Employees == null) ? 0 : Employees.Count;
         var maxBatchRate = outputItem.GetMaxBatchRate() + numEmployees;
 	    numBatches = Mathf.Min(maxBatchRate, numBatches);
         

@@ -127,19 +127,19 @@ public partial class AuctionHouse
 
 	private static string[] comOptions = new string[] { "Food","Wood","Ore","Metal","Tool" };
 	[PropertyOrder(4)]
-	[HorizontalGroup("InsertBid")]
+	[HorizontalGroup("UpdateTarget")]
 	[ValueDropdown("comOptions")]
 	public string bidCom = "Food";
 
 	[PropertyOrder(4)]
-	[HorizontalGroup("InsertBid")]
+	[HorizontalGroup("UpdateTarget")]
 	public float bidQuant = 0;
 	[PropertyOrder(4)]
-	[HorizontalGroup("InsertBid")]
+	[HorizontalGroup("UpdateTarget")]
 	[Button]
 	public void InsertBid() 
 	{
-		((Government)gov).InsertBid(bidCom, bidQuant, 0f);
+		((Government)gov).UpdateTarget(bidCom, bidQuant);
 	}
 	
 	[PropertyOrder(5)] [HorizontalGroup("KillAgent")]

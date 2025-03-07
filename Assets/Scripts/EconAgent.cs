@@ -52,21 +52,22 @@ public class EconAgent : MonoBehaviour
 	//private BidPriceStrategy bidPriceStrategy;
 	
 	//////////////// NOTE FOR FIRMS ONLY //////////////////////
-	protected Dictionary<EconAgent, float> employees { get; set; }
-	protected EconAgent employer;
+	public Dictionary<EconAgent, float> Employees { get; protected set; }
+	public EconAgent Employer { get; protected set; }
 	public int NumEmployees
 	{
-		get { return (employees != null) ? employees.Count : 0; }
+		get { return (Employees != null) ? Employees.Count : 0; }
 	}
 	public void Hire(EconAgent agent, float wage)
 	{
-		if (employees == null)
-			employees = new();
-		employees[agent] = wage;
+		if (Employees == null)
+			Employees = new();
+		Assert.IsFalse(Profession == "Labor" || Profession == "Unemployed");
+		Employees[agent] = wage;
 		agent.SetEmployed();
 		agent.inventory["Labor"].Decrease(1);
 		Assert.IsTrue(agent.inventory["Labor"].Quantity == 0);
-		agent.employer = this;
+		agent.Employer = this;
 		//pay them to keep them alive!
 		var firstPaycheck = Mathf.Min(Cash, book["Food"].marketPrice * .8f);
 		agent.Earn(firstPaycheck);
@@ -74,7 +75,7 @@ public class EconAgent : MonoBehaviour
 
 	public void EmployeeQuit(EconAgent employee)
 	{
-		employees.Remove(employee);
+		Employees.Remove(employee);
 	}
 
 	public string Profession

@@ -46,13 +46,15 @@ public class QoLSimpleAgent : EconAgent
         if (Alive == false)
             return 0;
         
-        if (employees != null)
-            foreach (var (employee,wage) in employees)
+        if (Employees != null)
+            foreach (var (employee,wage) in Employees)
             {
                 var pay = book["Food"].marketPrice * .5f;
                 employee.Earn(pay);
                 Cash -= pay;
             }
+        
+        gov.Welfare(this);
         
         var dying = IsDying(ref starving);
 
@@ -73,8 +75,8 @@ public class QoLSimpleAgent : EconAgent
             Debug.Log(auctionStats.round + " " + name + " has died with " + msg);
             Alive = false;
             outputName = "Dead";
-            if (employer != null)
-                employer.EmployeeQuit(this);
+            if (Employer != null)
+                Employer.EmployeeQuit(this);
             
             if (auctionStats.bank.QueryLoans(this) > 0f)
             {

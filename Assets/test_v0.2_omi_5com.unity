@@ -852,7 +852,7 @@ MonoBehaviour:
     EnableWealthTax: 0
     WealthTaxRate: 0.3
     MinWealthTaxExempt: 50
-    EnableIncomeTax: 1
+    EnableIncomeTax: 0
   FlatTaxPolicy:
     config: {fileID: 0}
     auctionStats: {fileID: 0}
@@ -1065,7 +1065,7 @@ MonoBehaviour:
         - Key: Set_price
           Value: 1
   starvationThreshold: 0.1
-  maxDaysStarving: 5
+  maxDaysStarving: 10
   foodConsumption: 1
   foodConsumptionRate: 1
   useFoodConsumptionCurve: 1

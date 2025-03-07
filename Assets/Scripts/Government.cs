@@ -11,7 +11,7 @@ using Sirenix.OdinInspector;
 using UnityEngine.Serialization;
 
 public class Government : EconAgent {
-	public float FoodTarget = 000;
+	public float FoodTarget = 020;
 	[ShowInInspector]
 	public int EmploymentTarget = 4;  //should vary with tax base
 
@@ -20,7 +20,7 @@ public class Government : EconAgent {
 
 	public override void Init(SimulationConfig cfg, AuctionStats at, string b, float _initStock, float maxstock, float cash=-1f)
 	{
-		employees = new();
+		Employees = new();
 		config = cfg;
 		uid = uid_idx++;
 		initStock = _initStock;
@@ -50,7 +50,7 @@ public class Government : EconAgent {
 
     public override void Decide() {
 	    //pay employees
-	    foreach (var (employee,wage) in employees)
+	    foreach (var (employee,wage) in Employees)
 	    {
 		    var pay = book["Food"].marketPrice * payCoefficient;
 		    employee.Earn(pay);
@@ -90,9 +90,9 @@ public class Government : EconAgent {
 	public override Offers CreateBids(AuctionBook book) 
 	{
         var bids = new Offers();
-        if (EmploymentTarget > employees.Count)
+        if (EmploymentTarget > Employees.Count)
         {
-	        var offerQuantity = EmploymentTarget - employees.Count;
+	        var offerQuantity = EmploymentTarget - Employees.Count;
 	        var com = "Labor";
 	        bids.Add(com, new Offer(com, book["Food"].marketPrice * payCoefficient, offerQuantity, this));
         }
@@ -103,7 +103,7 @@ public class Government : EconAgent {
 			if ((int)item.TargetQuantity <= (int)item.Quantity)
 				continue;
 			var offerQuantity = item.TargetQuantity - item.Quantity;
-			var offerPrice = book[com].marketPrice * 1.05f;
+			var offerPrice = book[com].marketPrice * .90f;
 			bids.Add(com, new Offer(com, offerPrice, offerQuantity, this));
 		}
         return bids;
@@ -114,11 +114,10 @@ public class Government : EconAgent {
 
         foreach (var (com,item) in inventory)
 		{
-			// if ((int)item.TargetQuantity >= (int)item.Quantity)
-				// continue;
+			if ((int)item.TargetQuantity >= (int)item.Quantity)
+				continue;
 
-			// var offerQuantity = item.TargetQuantity - item.Quantity;
-			var offerQuantity = item.Quantity;
+			var offerQuantity = item.Quantity - item.TargetQuantity;
 			var offerPrice = book[com].marketPrice * 1.1f;
 			// if (item.OfferQuantity > 0)
 			if (offerQuantity > 0)
@@ -181,9 +180,9 @@ public class Government : EconAgent {
 		var agentFood = agent.Food();
 		var govFood = Food();
 		var refillThreshold = 5f;
-		if (agentFood < refillThreshold)
+		if (agent.DaysStarving >= refillThreshold)
 		{
-			var refill = refillThreshold - agentFood;
+			var refill = 1f;
 			var quant = Mathf.Min(refill, govFood);
 			Debug.Log(auctionStats.round + " Fed agent" + agent.name + " " + quant.ToString("n1") + " food, prev had " + agentFood.ToString("n1"));
 			if (quant == 0)
