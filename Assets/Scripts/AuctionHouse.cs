@@ -37,6 +37,7 @@ public partial class AuctionHouse : MonoBehaviour {
 	protected float lastTick;
 	ESStreamingGraph streamingGraphs;
 	public Government gov { get; protected set; }
+	public Bank bank { get; protected set; }
 	protected Logger logger;
 	private TradeResolution tradeResolver;
 
@@ -96,6 +97,11 @@ public partial class AuctionHouse : MonoBehaviour {
         }
 		UpdateAgentTable();
 	}
+
+	public int NumUnemployed
+	{
+		get { return agents.Sum(agent => (agent.Profession == "Unemployed") ? 1 : 0); }
+	}
 	void InitGovernment()
 	{
 		if (config.EnableGovernment == false)
@@ -117,7 +123,7 @@ public partial class AuctionHouse : MonoBehaviour {
 	void InitBank()
 	{
 		var go = transform.Find("Bank").gameObject;
-		var bank = go.GetComponent<Bank>();
+		bank = go.GetComponent<Bank>();
 		bank.name = "Bank";
 		bank.BankRegulations(config.fractionalReserveRatio, 
 							 config.termInRounds, 

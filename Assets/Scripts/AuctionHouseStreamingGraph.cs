@@ -184,10 +184,6 @@ public class ESStreamingGraph : MonoBehaviour
         
         //InitPerAgentGraph(perAgentGraph, "Per Agent Inventory");
         //InitPieChart(jobChart);
-        // jobChart.DataSource.StartBatch();
-        //     jobChart.DataSource.RemoveCategory("Ore");
-        //     jobChart.DataSource.RemoveCategory("Metal");
-        // jobChart.DataSource.EndBatch(); // finally we call EndBatch , this will cause the GraphChart to redraw itself
 
         lastX = 0;//TotalPoints;
         lastTime = Time.time;
@@ -196,30 +192,6 @@ public class ESStreamingGraph : MonoBehaviour
     public float SlideTime = -1f;//.5f; //-1 will update y axis?
     List<float> starvValues = new();
 
-    // public void NewUpdateGraphs()
-    // {
-    //     foreach (var rsc in auctionTracker.book.Values)
-    //     {
-    //         jobChart.DataSource.SetValue(rsc.name, rsc.numAgents);
-    //     }
-    //     UpdateGraph(meanPriceGraph, vaxisPriceGraph, auctionTracker.book, value => value.avgClearingPrice);
-    //     UpdateGraph(tradeGraph, vaxisTradeGraph, auctionTracker.book, value => value.trades);
-    //     UpdateGraph(inventoryGraph, vaxisInventoryGraph, auctionTracker.book, value => value.inventory);
-    //     lastX += 1;
-    // }
-    // public void UpdateGraph<TKey, TValue, TResult>(GraphChart chart, VerticalAxis vaxis, Dictionary<TKey, TValue> dic, Func<TValue, TResult> selector)
-    // {
-    //     double newMaxY = 0;
-    //
-    //     foreach (var rsc in dic.Values)
-    //     {
-    //         var values = selector(rsc);
-    //         chart.DataSource.AddPointToCategoryRealtime(rsc.name, lastX, values[^1], SlideTime);
-    //
-    //         newMaxY  = Math.Max(newMaxY,  values.TakeLast(TotalPoints+2).Max());
-    //     }
-    //     chart.DataSource.VerticalViewSize = nearestBracket(vaxis, newMaxY);
-    // }
     private ESList perAgentValues = new();
 
     public void UpdateGraphs()
@@ -233,10 +205,19 @@ public class ESStreamingGraph : MonoBehaviour
 
         foreach (var rsc in auctionTracker.book.Values)
         {
-            var yvalue = Mathf.Max(.1f, rsc.numAgents);
-            jobChart.DataSource.SetValue(rsc.name, yvalue);
             Debug.Log("jobchart " + rsc.name + " rsc.numAgents");
+            if (rsc.name == "Labor")
+                continue;
+            var yvalue = Mathf.Max(.01f, rsc.numAgents);
+            jobChart.DataSource.SetValue(rsc.name, yvalue);
         }
+        //Add gov and bank and unemployed count
+        var numGovEmployees = Mathf.Max(.01f, district.gov.NumEmployees);
+        var numBankEmployees = Mathf.Max(.01f, district.bank.NumEmployees);
+        var numUnemployed = Mathf.Max(0.1f, district.NumUnemployed);
+        jobChart.DataSource.SetValue("Government", numGovEmployees);
+        jobChart.DataSource.SetValue("Bank", numBankEmployees);
+        jobChart.DataSource.SetValue("Unemployed", numUnemployed);
 
         UpdatePerAgentInventoryGraph();
         lastX += 1;

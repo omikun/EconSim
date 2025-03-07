@@ -331,9 +331,25 @@ MonoBehaviour:
       RadiusScale: 1
       DepthScale: 1
       DepthOffset: 0
-    - Name: Labor
+    - Name: Government
       Materials:
         Normal: {fileID: 2100000, guid: 32e777e9c95677b47be2c48058a923bd, type: 2}
+        Hover: {r: 1, g: 1, b: 1, a: 1}
+        Selected: {r: 0, g: 0, b: 0, a: 0}
+      RadiusScale: 1
+      DepthScale: 1
+      DepthOffset: 0
+    - Name: Bank
+      Materials:
+        Normal: {fileID: 2100000, guid: 6e197c2f133bdc84bb930e4bb0ba8aa7, type: 2}
+        Hover: {r: 1, g: 1, b: 1, a: 1}
+        Selected: {r: 0, g: 0, b: 0, a: 0}
+      RadiusScale: 1
+      DepthScale: 1
+      DepthOffset: 0
+    - Name: Unemployed
+      Materials:
+        Normal: {fileID: 2100000, guid: 17e6c60474da53742b24e6b561e0191d, type: 2}
         Hover: {r: 1, g: 1, b: 1, a: 1}
         Selected: {r: 0, g: 0, b: 0, a: 0}
       RadiusScale: 1
@@ -344,13 +360,13 @@ MonoBehaviour:
     mData:
     - GroupName: Pie
       ColumnName: Food
-      Amount: 20
+      Amount: 10
     - GroupName: Pie
       ColumnName: Ore
-      Amount: 30
+      Amount: 10
     - GroupName: Pie
       ColumnName: Wood
-      Amount: 30
+      Amount: 10
     - GroupName: Pie
       ColumnName: Metal
       Amount: 10
@@ -358,8 +374,14 @@ MonoBehaviour:
       ColumnName: Tool
       Amount: 10
     - GroupName: Pie
-      ColumnName: Labor
-      Amount: 0
+      ColumnName: Government
+      Amount: 2
+    - GroupName: Pie
+      ColumnName: Bank
+      Amount: 1
+    - GroupName: Pie
+      ColumnName: Unemployed
+      Amount: 5
   clockWise: 0
   prefab: {fileID: 114000011816695716, guid: 510d303410ef2cd42b6c0dfef4a6792b, type: 3}
   lineThickness: 1
@@ -4362,7 +4384,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 224390226033679502, guid: 3dbd4bc71acbb1145b6e80827b858127, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 0
+      value: 55.27
       objectReference: {fileID: 0}
     - target: {fileID: 224390226033679502, guid: 3dbd4bc71acbb1145b6e80827b858127, type: 3}
       propertyPath: m_SizeDelta.y
@@ -4498,7 +4520,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3155788890126894321, guid: 3dbd4bc71acbb1145b6e80827b858127, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 0
+      value: 55.27
       objectReference: {fileID: 0}
     - target: {fileID: 3155788890126894321, guid: 3dbd4bc71acbb1145b6e80827b858127, type: 3}
       propertyPath: m_SizeDelta.y
@@ -4526,7 +4548,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4484771780012352589, guid: 3dbd4bc71acbb1145b6e80827b858127, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 0
+      value: 55.27
       objectReference: {fileID: 0}
     - target: {fileID: 4484771780012352589, guid: 3dbd4bc71acbb1145b6e80827b858127, type: 3}
       propertyPath: m_SizeDelta.y
@@ -4550,7 +4572,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4866549897623903779, guid: 3dbd4bc71acbb1145b6e80827b858127, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 0
+      value: 135.27
       objectReference: {fileID: 0}
     - target: {fileID: 4866549897623903779, guid: 3dbd4bc71acbb1145b6e80827b858127, type: 3}
       propertyPath: m_SizeDelta.y
