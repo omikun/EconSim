@@ -16,12 +16,14 @@ public class GraphObject
     public GraphChart chart;
     private VerticalAxis vaxis;
     private double newMaxY = 0;
+    private double newMinY = 0;
     public int TotalPoints = 20;
     public bool EnableDynamicFit = false; //may need to expose this
 
     public void ResetY()
     {
         newMaxY = 0;
+        newMinY = 0;
     }
 
     public void Plot(AuctionBook book, Func<ResourceController, ESList> selector, 
@@ -31,13 +33,18 @@ public class GraphObject
             return;
         
         newMaxY = 0;
+        newMinY = 0;
         foreach (var rsc in book.Values)
         {
             var values = selector(rsc);
             chart.DataSource.AddPointToCategoryRealtime(rsc.name, lastX, values[^1], SlideTime);
             newMaxY  = Math.Max(newMaxY,  values.TakeLast(TotalPoints+1).Max());
+            newMinY  = Math.Min(newMinY,  values.TakeLast(TotalPoints+1).Min());
         }
-        chart.DataSource.VerticalViewSize = nearestBracket(vaxis, newMaxY);
+
+        chart.DataSource.VerticalViewSize = nearestBracket(vaxis, newMaxY) - newMinY;
+        chart.DataSource.VerticalViewOrigin = newMinY;
+        Debug.Log("graph y: max y: " + newMaxY + " min y: " + newMinY);
     }
 
     public GraphObject(GraphChart c)
