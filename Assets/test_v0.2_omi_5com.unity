@@ -842,6 +842,7 @@ GameObject:
   - component: {fileID: 194909953}
   - component: {fileID: 194909947}
   - component: {fileID: 194909954}
+  - component: {fileID: 194909955}
   m_Layer: 0
   m_Name: auction house
   m_TagString: Untagged
@@ -942,7 +943,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   autoNextRound: 0
   tickInterval: 0.058
-  EnableDebug: 1
+  EnableDebug: 0
   EnableLog: 0
   appendTimeToLog: 0
   exitAfterNoTrade: 0
@@ -1057,6 +1058,8 @@ MonoBehaviour:
           Value: 5
         - Key: Set_price
           Value: 7
+        - Key: Breakdown_chance
+          Value: 0.1
     - Key: Ore
       Value:
         _serializedList:
@@ -1186,6 +1189,18 @@ MonoBehaviour:
     pointHover: {fileID: 11475216, guid: 57ee497f5c86d764fa20628075109b20, type: 3}
   SlideTime: 0.5
   EnableDynamicFit: 1
+--- !u!114 &194909955
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 194909945}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f920ff28121a4c7eb8e69e89f7ac3f00, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!114 &203114368 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 7057254797645271277, guid: 3c167baeeb85a4d0fa0c702400cf122d, type: 3}

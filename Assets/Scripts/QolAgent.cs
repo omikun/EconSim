@@ -118,14 +118,20 @@ public partial class QolAgent : QoLSimpleAgent
             else if (item.Quantity <= 0) //can't go below 0
                 continue;
 
-            if (numBatches > 0)
+            if (numBatches > 0 && inRecipe(item.name))
             {
                 var recipe = book[outputName].recipe;
-                if (recipe.ContainsKey(item.name))
+                float toBeConsumedByBatch = recipe[item.name] * numBatches;
+                float consumedByBatch = 0;
+                float breakdown = book[item.name].breakdown_chance;
+                for (int i = 0; i < toBeConsumedByBatch; i++)
                 {
-                    float consumedByBatch = recipe[item.name] * numBatches;
-                    amountConsumed = Mathf.Max(amountConsumed, consumedByBatch);
+                    if (UnityEngine.Random.value <= breakdown)
+                    {
+                        consumedByBatch++;
+                    }
                 }
+                amountConsumed = Mathf.Max(amountConsumed, consumedByBatch);
             }
             
             amountConsumed = Mathf.Min(item.Quantity, amountConsumed);

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using UnityEngine;
+
 using UnityEngine.Assertions;
 using AYellowpaper.SerializedCollections;
 using UnityEngine.Rendering;
@@ -12,6 +12,7 @@ using EconSim;
 using Sirenix.Serialization;
 using Sirenix.OdinInspector.Editor.ValueResolvers;
 using UnityEngine.Serialization;
+using UnityEngine.Profiling;
 
 public partial class AuctionHouse 
 {
@@ -27,16 +28,21 @@ public partial class AuctionHouse
 		}
 	}
 	
+	
 	[Title("Player Actions")]
 	[Button(ButtonSizes.Large), GUIColor(0.4f, 0.8f,1)]
 	public void DoNextRound()
 	{
+		// Profiler.BeginSample("begin round");
 		LatchBids();
 		Tick();
 		district.nextRound();
 		streamingGraphs.UpdateGraphs();
 		UpdateAgentTable();
+		// Profiler.EndSample();
 	}
+
+	
 	
 	bool forestFire = false;
 	[HideIf("forestFire")]

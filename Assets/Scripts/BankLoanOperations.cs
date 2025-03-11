@@ -104,7 +104,8 @@ public partial class Bank
     {
         var borrowAmount = BorrowAmount(paymentByAgent, agentMonies);
         tempLiability += borrowAmount;
-        Borrow(agent, borrowAmount, "Cash");
+        var loan = Borrow(agent, borrowAmount, "Cash");
+        Assert.IsFalse(loan == null);
         //what happens if agent defaults? can't borrow anymore
         //kill off agent? 
         Assert.IsTrue(agent.Cash >= paymentByAgent, " cash " + agent.Cash.ToString("c2") + " payment " + paymentByAgent.ToString("c2"));
@@ -164,7 +165,7 @@ public partial class Bank
                 canBorrowMore = CheckIfCanBorrow(agent, borrowAmount);
             }
 
-            if (!enoughToPay && !canBorrowMore) //missed payment
+            if (!enoughToPay || !canBorrowMore) //missed payment
             {
                 Debug.Log(agent.name + " unable to repay " + payment.ToString("c2") + " interest " + interest.ToString("c2"));
                 loan.Paid(0); //marks missed payment if 0

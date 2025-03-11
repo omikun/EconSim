@@ -50,19 +50,21 @@ public class ResourceController
 	
 	float avgPrice = 1;
     public float setPrice = 1; //predetermined price from initializer for sanity check
+    public float breakdown_chance = 1;
 	public float GetAvgPrice(int history) //average of last history size
 	{
         var skip = Mathf.Max(0, avgClearingPrice.Count - history);
         avgPrice = avgClearingPrice.Skip(skip).Average();
         return avgPrice;
 	}
-	public ResourceController(string n, float p, float bp, float br, float pm, float sp,Recipe r)
+	public ResourceController(string n, float p, float bp, float br, float pm, float sp, float bc, Recipe r)
 	{
 		name = n;
 		productionPerBatch = p;
 		baseProduction = bp;
 		batchRate = br;
 		productionMultiplier = pm;
+		breakdown_chance = bc;
 		setPrice = sp; //initial price at start of simulation
 		marketPrice = sp;
 		recipe = r;

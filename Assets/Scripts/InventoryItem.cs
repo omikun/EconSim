@@ -106,6 +106,7 @@ public class InventoryItem {
 
 	    if (numBatches == 0)
 		    return BaseProduction;
+	    
 	    if (rsc.productionMultiplier < 1)
 		    Debug.Log(name + " productionMultiplier " + rsc.productionMultiplier);
         //derate

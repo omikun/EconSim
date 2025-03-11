@@ -267,8 +267,14 @@ public class AuctionStats : MonoBehaviour
 			float base_rate = 0;
 			float prod_multiplier = 0;
 			float set_price = 0;
+			float breakdown_chance = 1;
 			foreach (var field in item.Value)
 			{
+				if (field.Key == "Breakdown_chance")
+				{
+					breakdown_chance = field.Value;
+					continue;
+				}
 				if (field.Key == "Prod_rate")
 				{
 					prod_rate = field.Value;
@@ -298,7 +304,7 @@ public class AuctionStats : MonoBehaviour
 			}
 
 			Assert.IsNotNull(dep);
-			book.Add(item.Key, new ResourceController(item.Key, prod_rate, base_rate, batch_rate, prod_multiplier, set_price, dep));
+			book.Add(item.Key, new ResourceController(item.Key, prod_rate, base_rate, batch_rate, prod_multiplier, set_price, breakdown_chance, dep));
 		}
 	    foreach (var com in book.Keys)
 	    {
