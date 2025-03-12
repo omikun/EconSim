@@ -260,7 +260,7 @@ public class InventoryItem {
 	}
 	public void Sell(float quant, float price)
 	{
-        Assert.IsTrue(quant <= Quantity);
+        Assert.IsTrue(quant <= Quantity, agent.name + " trying to sell " + quant + " " + name + " with inventory = " + Quantity);
         if (quant <= 0)
             return;
 

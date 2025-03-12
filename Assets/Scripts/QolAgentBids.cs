@@ -21,7 +21,8 @@ public partial class QolAgent
     {
         if (outputName == "Unemployed")
         {
-            Assert.IsTrue(inventory["Labor"].Quantity > 0);
+            var numLabor = inventory["Labor"].Quantity;
+            Assert.IsTrue(numLabor > 0, name + " is unemployed: " + outputName + " and has no labor? " + numLabor);
             var item = inventory["Labor"];
             item.offersThisRound = item.Quantity;
         }

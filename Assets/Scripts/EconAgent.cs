@@ -71,6 +71,7 @@ public class EconAgent : MonoBehaviour
 		agent.Employer = this;
 		//pay them to keep them alive!
 		var firstPaycheck = Mathf.Min(Cash, book["Food"].marketPrice * .8f);
+		firstPaycheck = Mathf.Max(0, firstPaycheck);
 		agent.Earn(firstPaycheck);
 	}
 
@@ -148,10 +149,12 @@ public class EconAgent : MonoBehaviour
 	public void Pay(float amount)
 	{
 		Cash -= amount;
+		Assert.IsTrue(Cash >= 0, name + " has minus cash " + Cash.ToString("c2"));
 	}
 	public void Earn(float amount)
 	{
 		Cash += amount;
+		Assert.IsTrue(Cash >= 0, name + " has minus cash " + Cash.ToString("c2"));
 	}
 
 	public virtual void Init(SimulationConfig cfg, AuctionStats at, string b, float _initStock, float maxstock, float cash=-1f)
