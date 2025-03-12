@@ -10,6 +10,7 @@ using Sirenix.Reflection.Editor;
 using DG.Tweening;
 using EconSim;
 using UnityEditor;
+using UnityEngine.Serialization;
 using UnityEngine.UIElements;
 
 public class Inventory : Dictionary<string, InventoryItem>
@@ -97,7 +98,10 @@ public class EconAgent : MonoBehaviour
 	protected internal AuctionBook book { get; set; }
 	protected internal AuctionStats auctionStats;
 	protected internal Dictionary<string, float> producedThisRound = new();
-	public float numProducedThisRound = 0;
+	[FormerlySerializedAs("numProducedThisRound")] public float numUnitsProducedThisRound = 0;
+	public float numUnitsProducedLastRound = 0;
+	public float numBatchesProducedThisRound = 0;
+	public float numBatchesProducedLastRound = 0;
 	protected string log = "";
 
 	public virtual String Stats(String header)

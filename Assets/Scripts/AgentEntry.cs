@@ -135,6 +135,7 @@ public class AgentEntry
 		Employer = (agent.Employer == null) ? "Self employed" : agent.Employer.name + "-" + agent.Employer.outputName;
 		NumEmployees = (agent.Employees == null) ? 0 : agent.Employees.Count;
 		
+		Assert.IsFalse(agent.Employer != null && NumEmployees > 0);
 		//all inventory
 		foreach (var (com, numDepends) in agent.inventory)
 		{
@@ -172,5 +173,7 @@ public class AgentEntry
 			var food = agent.inventory["Food"];
 			Bids.Add(new ("Food", food.offersThisRound, food.GetPrice()));
 		}
+		var labor = agent.inventory["Labor"];
+		Bids.Add(new (labor.name, labor.offersThisRound, labor.GetPrice()));
 	}
 }

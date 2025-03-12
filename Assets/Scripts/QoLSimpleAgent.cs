@@ -30,7 +30,7 @@ public class QoLSimpleAgent : EconAgent
     public bool IsDying(ref bool starving)
     {
         // starving = inventory.Values.Any(item => item.Quantity <= 5);
-        var farmerStarving = numProducedThisRound == 0 && outputName == "Food" && FoodInv() <= 0;
+        var farmerStarving = numUnitsProducedThisRound == 0 && outputName == "Food" && FoodInv() <= 0;
         var nonFarmerstarving = FoodInv() <= 0 && outputName != "Food";
         starving = farmerStarving || nonFarmerstarving;
         if (starving)
@@ -188,6 +188,7 @@ public class QoLSimpleAgent : EconAgent
         msg_nice += " offering " + selectedItem.name + ": " + selectedItem.GetNiceness().ToString("f4"); 
         // Debug.Log(auctionStats.round + " " + name + msg_nice);
     }
+
     protected virtual void PopulateOffersFromInventory()
     {
         if (outputName == "Unemployed")
@@ -200,6 +201,7 @@ public class QoLSimpleAgent : EconAgent
             item.CanOfferAdditionalThisRound = true;
         }
 
+        
         var msg =
             $"{string.Join(",", inventory.Keys)}--{string.Join(",", inventory.Values.Select(item => item.Quantity))}";
         Debug.Log(auctionStats.round + " produces " + outputName + " offering? -- " + msg);
@@ -283,8 +285,12 @@ public class QoLSimpleAgent : EconAgent
         {
             if (item.offersThisRound <= 0)
                 continue;
+            
             var price = item.GetPrice();
             var selling = !isConsumable(itemName);
+            if (itemName == "Labor")
+                selling = Profession == "Unemployed";
+            
             var offers = (selling) ? asks : bids;
             offers.Add(itemName, new Offer(itemName, price, item.offersThisRound, this));
             item.offersThisRound = 0;

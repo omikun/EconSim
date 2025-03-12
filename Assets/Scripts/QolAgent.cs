@@ -7,12 +7,6 @@ public partial class QolAgent : QoLSimpleAgent
 {
     protected float numBatchesConsumed = 0;
 
-    public override void Decide()
-    {
-        decideProduction();
-        // decideOffers();
-        base.Decide();
-    }
     protected void decideProduction()
     {
         if (outputName != "Labor" && book.ContainsKey(outputName) == true)
@@ -21,6 +15,10 @@ public partial class QolAgent : QoLSimpleAgent
             var stock = inventory[outputName];
             var numBatches = NumBatchesProduceable(rsc, stock);
             var numProduced = Produce(numBatches);
+            numUnitsProducedLastRound = numUnitsProducedThisRound;
+            numUnitsProducedThisRound = numProduced;
+            numBatchesProducedLastRound = numBatchesProducedThisRound;
+            numBatchesProducedThisRound = numBatches;
             ConsumeGoods(numBatches);
             Debug.Log(auctionStats.round + " " + name + " produced " + numProduced + " " + rsc.name);
         }
@@ -92,6 +90,33 @@ public partial class QolAgent : QoLSimpleAgent
 		          + " can ultimately produce " + realBatchRate + " batches of " + outputItem.name);
 
         return realBatchRate;
+    }
+    
+    protected void CreateOffersFromInventory()
+    {
+        //place bids and asks
+        foreach (var (itemName, item) in inventory)
+        {
+            if (item.offersThisRound <= 0)
+                continue;
+            
+            var price = item.GetPrice();
+            var selling = !isConsumable(itemName);
+            if (itemName == "Labor")
+                selling = Profession == "Unemployed";
+            
+            var offers = (selling) ? asks : bids;
+            offers.Add(itemName, new Offer(itemName, price, item.offersThisRound, this));
+            item.offersThisRound = 0;
+            if (selling)
+                Debug.Log(auctionStats.round + name + " offers " + itemName + " asking " + item.offersThisRound 
+                          + " for " + price.ToString("c2")
+                          + " has " + item.QuantityString + " market price: " + book[itemName].marketPriceString);
+            else
+                Debug.Log(auctionStats.round + name + " offers " + itemName + " bidding " + item.offersThisRound 
+                          + " for " + price.ToString("c2")
+                          + " has " + item.QuantityString + " market price: " + book[itemName].marketPriceString);
+        }
     }
 
     public void ConsumeGoods(float numBatches)

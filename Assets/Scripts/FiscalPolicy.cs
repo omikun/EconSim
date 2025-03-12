@@ -179,7 +179,7 @@ Reduction of social welfare spending: Cutting back on social programs, which all
     }
     void applyIdleWealthTax(AuctionBook book, EconAgent agent)
     {
-        var numProduced = agent.numProducedThisRound;
+        var numProduced = agent.numUnitsProducedThisRound;
         if (numProduced > 0) return;
 
         float idleTax = agent.PayWealthTax(MinWealthTaxExempt, WealthTaxRate);

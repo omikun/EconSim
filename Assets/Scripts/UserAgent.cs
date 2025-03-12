@@ -37,6 +37,8 @@ public partial class UserAgent : QolAgent
         foreach (var (com, item) in inventory)
         {
             var selling = !isConsumable(item.name);
+            if (item.name == "Labor")
+                continue; //should be biding w/ offersThisRound
             if (selling)
                 item.offersThisRound = item.Quantity;
         }

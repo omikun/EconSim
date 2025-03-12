@@ -42,6 +42,25 @@ public partial class QolAgent
         //bid for food
         inventory["Food"].offersThisRound = Mathf.Floor(Cash / foodMarketPrice);
     }
+    protected void DecideToHire()
+    {
+        //if demand >> supply such that additional goods can be sold to cover cost of new hire
+        //if current production does not cover additional demand or at max production already
+        var demand = book[outputName].bids.ExpAverage();
+        var supply = book[outputName].asks.ExpAverage();
+        var excessDemand = demand - supply;
+        
+        var outputItem = inventory[outputName];
+        var numEmployees = (Employees == null) ? 0 : Employees.Count;
+        var maxBatchRate = outputItem.GetMaxBatchRate() + numEmployees;
+        var maxProduceable = outputItem.GetMaxProductionRate(maxBatchRate);
+        var maxRecentlyProduced = Mathf.Max(numUnitsProducedLastRound, numUnitsProducedThisRound);
+        var excessProduceable = maxProduceable - maxRecentlyProduced;
+        if (excessDemand - excessProduceable > 0) //should be in excess of cost of an additional laborer
+        {
+            inventory["Labor"].offersThisRound++;
+        }
+    }
     protected override void PopulateOffersFromInventory()
     {
         if (outputName == "Unemployed" || outputName == "Labor")
@@ -59,6 +78,7 @@ public partial class QolAgent
 
         var reason = "";
 
+        DecideToHire();
         // float minQuant = 3f;
         // float outputPressure = buyOutputPressure(minQuant);
         float numBatchInputToBid = 0;

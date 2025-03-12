@@ -943,7 +943,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   autoNextRound: 0
   tickInterval: 0.058
-  EnableDebug: 0
+  EnableDebug: 1
   EnableLog: 0
   appendTimeToLog: 0
   exitAfterNoTrade: 0
@@ -3761,7 +3761,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9b013f14f3874d1b9112e3ca0708d7af, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  numProducedThisRound: 0
+  numUnitsProducedThisRound: 0
+  numUnitsProducedLastRound: 0
+  numBatchesProducedThisRound: 0
+  numBatchesProducedLastRound: 0
   foodToHappy:
     serializedVersion: 2
     m_Curve: []
@@ -4400,7 +4403,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 224390226033679502, guid: 3dbd4bc71acbb1145b6e80827b858127, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 55.27
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 224390226033679502, guid: 3dbd4bc71acbb1145b6e80827b858127, type: 3}
       propertyPath: m_SizeDelta.y
@@ -4536,7 +4539,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3155788890126894321, guid: 3dbd4bc71acbb1145b6e80827b858127, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 55.27
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3155788890126894321, guid: 3dbd4bc71acbb1145b6e80827b858127, type: 3}
       propertyPath: m_SizeDelta.y
@@ -4564,7 +4567,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4484771780012352589, guid: 3dbd4bc71acbb1145b6e80827b858127, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 55.27
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4484771780012352589, guid: 3dbd4bc71acbb1145b6e80827b858127, type: 3}
       propertyPath: m_SizeDelta.y
@@ -4588,7 +4591,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4866549897623903779, guid: 3dbd4bc71acbb1145b6e80827b858127, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 135.27
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4866549897623903779, guid: 3dbd4bc71acbb1145b6e80827b858127, type: 3}
       propertyPath: m_SizeDelta.y

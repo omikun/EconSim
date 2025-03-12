@@ -224,6 +224,8 @@ public partial class AuctionHouse : MonoBehaviour {
 			{
 				if (agent.inventory.ContainsKey(c.name) == false)
 					Debug.Log("no key found");
+				if (c.name == "Labor")
+					Debug.Log("reseting labor offers");
 				agent.inventory[c.name].offersThisRound = c.quantity;
 				msg += c.name + ": " + c.quantity + " ";
 			}
@@ -381,8 +383,14 @@ public partial class AuctionHouse : MonoBehaviour {
 				go.name = "agent" + newAgent.uid.ToString(); //uid only initialized after agent.Init
 				newAgents.Add(newAgent);
 				Debug.Log(district.round + " new agent: " + go.name + " uid: " + newAgent.uid.ToString());
-				if (agent.Profession != "Unemployed" && agent.Profession != "Labor")
-					agent.Hire(newAgent, cash);
+				if (agent.Profession != "Unemployed") // && agent.Profession != "Labor")
+				{
+					// if (agent.Employer != null)
+					// 	agent.Employer.Hire(newAgent, cash);
+					// else 
+					if (agent.Profession != "Labor")
+						agent.Hire(newAgent, cash);
+				}
 			// Debug.Log(auctionStats.round + " New agent " + gameObject.name + " uid: " + uid + " cash: " + Cash.ToString("c2") + " has " + inventory[buildable].Quantity + " " + buildable);
 			}
 			// gov.Pay(amount); //welfare?
