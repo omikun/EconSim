@@ -62,7 +62,7 @@ public partial class QolAgent
             inventory["Labor"].offersThisRound++;
         }
     }
-    protected override void PopulateOffersFromInventory()
+    protected void PopulateOffersFromInventory()
     {
         if (outputName == "Unemployed" || outputName == "Labor")
         {

@@ -3,10 +3,25 @@ using UnityEngine.Assertions;
 using System.Linq;
 
 //medium agent
-public partial class QolAgent : QoLSimpleAgent
+public partial class QolAgent : EconAgent
 {
     protected float numBatchesConsumed = 0;
+    private int numRoundsSinceLastBirth = 0;
+    private int numRoundsPlanFamily = 0;
+    protected Offers asks = new Offers();
+    protected Offers bids = new Offers();
 
+    public override void Decide()
+    {
+        decideProduction();
+        //decide how much to bid and ask (just think of them as buy and sell for now)
+        //randomly pick an inventory check if it's buying or selling it has a better utility than others
+        //until out of money or can't sell anymore or can't buy anymore
+        asks.Clear();
+        bids.Clear();
+        PopulateOffersFromInventory(); //called by AuctionHouse.UpdateAgentTable
+        CreateOffersFromInventory();
+    }
     protected void decideProduction()
     {
         if (outputName != "Labor" && book.ContainsKey(outputName) == true)
@@ -181,5 +196,101 @@ public partial class QolAgent : QoLSimpleAgent
         //don't make any if missing a recipe ingredient
         output.Increase(numProduced);
         return numProduced;
+    }
+    public bool IsDying(ref bool starving)
+    {
+        // starving = inventory.Values.Any(item => item.Quantity <= 5);
+        var farmerStarving = numUnitsProducedThisRound == 0 && outputName == "Food" && FoodInv() <= 0;
+        var nonFarmerstarving = FoodInv() <= 0 && outputName != "Food";
+        starving = farmerStarving || nonFarmerstarving;
+        if (starving)
+            DaysStarving++;
+        else
+            DaysStarving = 0;
+        var nonFarmerDying = (outputName != "Food" && DaysStarving >= config.maxDaysStarving);
+        var farmerDying = (outputName == "Food" && DaysStarving >= 2*config.maxDaysStarving);
+        return nonFarmerDying || farmerDying;
+    }
+    public override float Tick(Government gov, ref bool changedProfession, ref bool bankrupted, ref bool starving)
+    {
+        if (Alive == false)
+            return 0;
+        
+        if (Employees != null)
+            foreach (var (employee,wage) in Employees)
+            {
+                var pay = book["Food"].marketPrice * .5f;
+                employee.Earn(pay);
+                Cash -= pay;
+            }
+        
+        gov.Welfare(this);
+        
+        var dying = IsDying(ref starving);
+
+        if (config.changeProfession && dying)
+        {
+            bankrupted = Cash < book["Food"].marketPrice;
+            ChangeProfession(gov, bankrupted);
+            dying = false;
+        }
+        // if ( inventory.Values.Any(item => item.Quantity <= 0) )
+        if ( dying )
+        {
+            var quants = inventory.Values.Select(item => item.Quantity);
+            //var msg = string.Join(",", quants);
+            var msg = $"{string.Join(",", inventory.Keys)}--{string.Join(",", inventory.Values.Select(item => item.Quantity))}";
+            //var msg = string.Join(",", inventory.SelectMany(t => t.Key, (t, i) => t.Key + ", " + t.Value.Quantity ));
+
+            Debug.Log(auctionStats.round + " " + name + " has died with " + msg);
+            Alive = false;
+            outputName = "Dead";
+            if (Employer != null)
+                Employer.EmployeeQuit(this);
+            
+            if (auctionStats.bank.QueryLoans(this) > 0f)
+            {
+                //liquidate assets
+                auctionStats.bank.LiquidateInventory(inventory);
+            }
+            return 0;
+        } 
+        
+        //chance of reproducing
+        Debug.Log(auctionStats.round + " " + name + " since last birth " + numRoundsSinceLastBirth +  " fmaily planning " + numRoundsPlanFamily);
+        if (numRoundsSinceLastBirth > 5 && numRoundsPlanFamily > 5)
+        {
+            if (UnityEngine.Random.Range(0, 1f) > .1f)
+                return 0;
+            numRoundsSinceLastBirth = 0;
+
+            var foodPrice = Mathf.Max(4, book["Food"].marketPrice * 4);
+            if (Cash >= foodPrice)
+            {
+                var inheritance = foodPrice / 4;
+                Cash -= inheritance;
+                return inheritance;
+            }
+
+            return 1;
+        }
+        else
+        {
+            numRoundsPlanFamily = (Cash > 0) 
+                ? numRoundsPlanFamily + 1 : 0;
+            numRoundsSinceLastBirth++;
+        }
+        
+        return 0;
+    }
+    public override Offers CreateAsks()
+    {
+        //ask only enough where utility matches others
+        return asks;
+    }
+
+    public override Offers CreateBids(AuctionBook book)
+    {
+        return bids;
     }
 }

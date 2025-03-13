@@ -17,7 +17,7 @@ public class Inventory : Dictionary<string, InventoryItem>
 {
 }
 
-public class EconAgent : MonoBehaviour
+public partial class EconAgent : MonoBehaviour
 {
 	protected internal SimulationConfig config;
 	public static int uid_idx = 0;
@@ -32,62 +32,19 @@ public class EconAgent : MonoBehaviour
 
 	public bool Alive { get; protected set; }
 	public int DaysStarving { get; protected set; }
-	
-	protected float prevCash;
-	protected internal float foodExpense = 0;
-	protected float initStock = 1;
-	protected float maxStock = 1;
-	public float Profit { get; protected set; }
-	public float TaxableProfit { get; protected set; }
-	public Inventory inventory = new();
-	float taxesPaidThisRound = 0;
+
 	WaitNumRoundsNotTriggered noSaleIn = new();
 	WaitNumRoundsNotTriggered noPurchaseIn = new();
 	protected internal FoodEquivalent foodEquivalent;
-	protected internal Consumer consumer;
-	protected internal ProductionStrategy productionStrategy;
 
-	protected internal AskPriceStrategy askPriceStrategy;
 	//private AskQuantityStrategy askQuantityStrategy;
 	//private bidQuantityStrategy bidQuantityStrategy;
 	//private BidPriceStrategy bidPriceStrategy;
 	
 	//////////////// NOTE FOR FIRMS ONLY //////////////////////
-	public Dictionary<EconAgent, float> Employees { get; protected set; }
-	public EconAgent Employer { get; protected set; }
-	public int NumEmployees
-	{
-		get { return (Employees != null) ? Employees.Count : 0; }
-	}
-	public void Hire(EconAgent agent, float wage)
-	{
-		if (Employees == null)
-			Employees = new();
-		Assert.IsFalse(Profession == "Labor" || Profession == "Unemployed");
-		Employees[agent] = wage;
-		agent.SetEmployed();
-		agent.inventory["Labor"].Decrease(1);
-		Assert.IsTrue(agent.inventory["Labor"].Quantity == 0);
-		agent.Employer = this;
-		//pay them to keep them alive!
-		var firstPaycheck = Mathf.Min(Cash, book["Food"].marketPrice * .8f);
-		firstPaycheck = Mathf.Max(0, firstPaycheck);
-		agent.Earn(firstPaycheck);
-	}
-
-	public void EmployeeQuit(EconAgent employee)
-	{
-		Employees.Remove(employee);
-	}
-
-	public string Profession
-	{
-		get { return outputName; }
-	}
 
 	public string outputName { get; protected set; } //can produce commodities
 
-	protected internal HashSet<string> inputs = new();
 	//production has dependencies on commodities->populates stock
 	//production rate is limited by assembly lines (queues/event lists)
 
@@ -98,11 +55,6 @@ public class EconAgent : MonoBehaviour
 	// Use this for initialization
 	protected internal AuctionBook book { get; set; }
 	protected internal AuctionStats auctionStats;
-	protected internal Dictionary<string, float> producedThisRound = new();
-	[FormerlySerializedAs("numProducedThisRound")] public float numUnitsProducedThisRound = 0;
-	public float numUnitsProducedLastRound = 0;
-	public float numBatchesProducedThisRound = 0;
-	public float numBatchesProducedLastRound = 0;
 	protected string log = "";
 
 	public virtual String Stats(String header)
@@ -125,36 +77,6 @@ public class EconAgent : MonoBehaviour
 		var ret = log;
 		log = "";
 		return ret;
-	}
-
-	protected void AddToInventory(string name, float num, float max, ResourceController rsc)
-	{
-		if (inventory.ContainsKey(name))
-			return;
-
-		inventory.Add(name, new InventoryItem(this, auctionStats, name, num, max, rsc));
-	}
-
-	public float PayWealthTax(float amountExempt, float taxRate)
-	{
-		var taxableAmount = Cash - amountExempt;
-		if (taxableAmount <= 0)
-			return 0f;
-		var tax = taxableAmount * taxRate;
-		Cash -= tax;
-		taxesPaidThisRound = tax;
-		return tax;
-	}
-
-	public void Pay(float amount)
-	{
-		Cash -= amount;
-		Assert.IsTrue(Cash >= 0, name + " has minus cash " + Cash.ToString("c2"));
-	}
-	public void Earn(float amount)
-	{
-		Cash += amount;
-		Assert.IsTrue(Cash >= 0, name + " has minus cash " + Cash.ToString("c2"));
 	}
 
 	public virtual void Init(SimulationConfig cfg, AuctionStats at, string b, float _initStock, float maxstock, float cash=-1f)
@@ -268,22 +190,6 @@ public class EconAgent : MonoBehaviour
 		}
 	}
 
-    protected bool isSellable(string itemName)
-    {
-	    return !inRecipe(itemName);
-    }
-
-    protected bool isConsumable(string itemName)
-    {
-	    return inRecipe(itemName) || (outputName != "Food" && itemName == "Food");
-    }
-
-    protected bool inRecipe(string itemName)
-    {
-	    if (book.ContainsKey(outputName) == false)
-		    return false;
-	    return (book[outputName].recipe.ContainsKey(itemName));
-    }
 	public void Respawn(bool bankrupted, string buildable, Government gov = null)
 	{
 		Assert.IsTrue(this is not Government);
@@ -320,39 +226,7 @@ public class EconAgent : MonoBehaviour
 		}
 	}
 
-	public void PrintInventory(string label)
-	{
-		string msg = "";
-		foreach (var entry in inventory)
-		{
-			msg += entry.Value.Quantity + " " + entry.Key + ", ";
-		}
-
-		Debug.Log(auctionStats.round + ": " + name + " " + label + " reinit2: " + msg + " cash: " + CashString);
-	}
-
-	public float TaxProfit(float taxRate)
-	{
-		if (TaxableProfit <= 0)
-			return 0;
-		var taxAmt = TaxableProfit * taxRate;
-		Cash -= taxAmt;
-		return taxAmt;
-	}
-
-	private float losses = 0;
-
 	//want to control when profit gets calculated in round
-	public void CalculateProfit()
-	{
-		var prevLosses = losses;
-		var delta = Cash - prevCash;
-		prevCash = Cash;
-		Profit = delta;
-		var cumDelta = delta + prevLosses;
-		losses = Mathf.Min(0, cumDelta);
-		TaxableProfit = Mathf.Max(0, cumDelta);
-	}
 
 	const float bankruptcyThreshold = 30;
 
@@ -361,10 +235,6 @@ public class EconAgent : MonoBehaviour
 		return Cash < bankruptcyThreshold;
 	}
 
-	public virtual void ConsumeGoods()
-	{
-		
-	}
 	public virtual float Tick(Government gov, ref bool changedProfession, ref bool bankrupted, ref bool starving)
 	{
 		Assert.IsTrue(this is not Government);
@@ -501,10 +371,6 @@ public class EconAgent : MonoBehaviour
 	}
 
 	/*********** Trading ************/
-	public void AddToCash(float quant)
-	{
-		Cash += quant;
-	}
 
 	public void ClearRoundStats()
 	{
@@ -518,41 +384,6 @@ public class EconAgent : MonoBehaviour
 
 		taxesPaidThisRound = 0;
 	}
-	public float Buy(string commodity, float quantity, float price)
-	{
-		if (this is Government)
-		{
-			Debug.Log(auctionStats.round + " gov buying " + quantity.ToString("n0") + " " + commodity);
-		}
-        Assert.IsTrue(quantity > 0);
-
-		inventory[commodity].Buy(quantity, price);
-		Debug.Log(name + " has " + Cash.ToString("c2") 
-			+ " want to buy " + quantity.ToString("n2") + " " + commodity 
-			+ " for " + price.ToString("c2") + " bought " + quantity.ToString("n2"));
-		Assert.IsFalse(outputName.Contains(commodity), name + " buying own output: " + outputName); 
-		Cash -= price * quantity;
-		return quantity;
-	}
-	public virtual void Sell(string commodity, float quantity, float price)
-	{
-		if (this is Government)
-		{
-			Debug.Log(auctionStats.round + " gov selling " + quantity.ToString("n0") + " " + commodity);
-		}
-		Assert.IsTrue(inventory[commodity].Quantity >= 0);
-		inventory[commodity].Sell(quantity, price);
-		Assert.IsTrue(inventory[commodity].Quantity >= 0);
-		Cash += price * quantity;
-	}
-	public void UpdateSellerPriceBelief(in Offer trade, in ResourceController rsc) 
-	{
-		inventory[rsc.name].UpdateSellerPriceBelief(name, in trade, in rsc);
-	}
-	public void UpdateBuyerPriceBelief(in Offer trade, in ResourceController rsc) 
-	{
-		inventory[rsc.name].UpdateBuyerPriceBelief(name, in trade, in rsc);
-	}
 
 	public virtual void Decide()
 	{
@@ -561,36 +392,8 @@ public class EconAgent : MonoBehaviour
 	}
 
 	/*********** Produce and consume; enter asks and bids to auction house *****/
-	public virtual Offers CreateBids(AuctionBook book)
-	{
-		Debug.Log(name + " consuming");
-		return consumer.CreateBids(book);
-	}
-	public virtual float Produce() {
-		return productionStrategy.Produce();
-	}
-	public float CalcMinProduction()
-	{
-		Assert.IsTrue(book.ContainsKey(outputName));
-		var rsc = book[outputName];
-		var item = inventory[rsc.name];
-		return productionStrategy.NumBatchesProduceable(rsc, item);
-	}
-	protected internal void ConsumeInput(ResourceController rsc, float numProduced, ref string msg)
-	{
-		float numBatches = numProduced / rsc.productionPerBatch;
-		foreach (var dep in rsc.recipe)
-		{
-			var stock = inventory[dep.Key].Quantity;
-			var numUsed = dep.Value * numBatches;
-			Debug.Log(auctionStats.round + " " + name + " has " + stock + " " + dep.Key + " used " + numUsed);
-			Assert.IsTrue(numUsed == 0 || stock >= numUsed);
-			inventory[dep.Key].Decrease(numUsed);
-			msg += dep.Key + ": " + inventory[dep.Key].meanCost.ToString("c2");
-		}
-	}
-	
-    protected internal float GetCostOf(ResourceController rsc)
+
+	protected internal float GetCostOf(ResourceController rsc)
 	{
 		float cost = 0;
 		foreach (var (depCommodity, numDep) in rsc.recipe)
@@ -607,11 +410,4 @@ public class EconAgent : MonoBehaviour
 	// 	baseSellPrice *= UnityEngine.Random.Range(.97f, 1.03f);
 	// 	sellPrice = Mathf.Max(sellPrice, baseSellPrice);
 	// }
-
-	public virtual Offers CreateAsks()
-	{
-		return askPriceStrategy.CreateAsks();
-	}
-	void Update () {
-	}
 }
