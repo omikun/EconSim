@@ -142,7 +142,7 @@ public class ESStreamingGraph : MonoBehaviour
         int index = 0;
         foreach (var good in auctionTracker.book.Keys)
         {
-            foreach (var agent in district.agents)
+            foreach (var agent in district.AgentManager.agents)
             {
                 //TODO add gov back in later
                 if (agent is Government)
@@ -214,7 +214,7 @@ public class ESStreamingGraph : MonoBehaviour
         //Add gov and bank and unemployed count
         var numGovEmployees = Mathf.Max(.01f, district.gov.NumEmployees);
         var numBankEmployees = Mathf.Max(.01f, district.bank.NumEmployees);
-        var numUnemployed = Mathf.Max(0.1f, district.NumUnemployed);
+        var numUnemployed = Mathf.Max(0.1f, district.AgentManager.NumUnemployed);
         jobChart.DataSource.SetValue("Government", numGovEmployees);
         jobChart.DataSource.SetValue("Bank", numBankEmployees);
         jobChart.DataSource.SetValue("Unemployed", numUnemployed);
@@ -228,7 +228,7 @@ public class ESStreamingGraph : MonoBehaviour
             return;
         
         double newMaxY = 0;
-        foreach (var agent in district.agents)
+        foreach (var agent in district.AgentManager.agents)
         {
             if (agent is Government)
                 continue;

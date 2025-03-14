@@ -9,6 +9,9 @@ public class Logger
 	public Logger(SimulationConfig cfg)
 	{
 		config = cfg;
+		OpenFileForWrite();
+		string header_row = "round, agent, produces, inventory_items, type, amount, reason\n";
+		PrintToFile(header_row);
 	}
 	public void OpenFileForWrite() {
 		if (!config.EnableLog)

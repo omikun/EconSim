@@ -42,7 +42,7 @@ public class AuctionHouseTest : AuctionHouse {
 				GameObject child = transform.GetChild(agentIndex).gameObject;
 				var agent = child.GetComponent<EconAgent>();
 				InitAgent(agent, profession);
-				agents.Add(agent);
+				AgentManager.agents.Add(agent);
 				++agentIndex;
 			}
 		}

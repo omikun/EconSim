@@ -11,6 +11,7 @@ using ChartAndGraph;
 using EconSim;
 using Sirenix.Serialization;
 using Sirenix.OdinInspector.Editor.ValueResolvers;
+using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.Profiling;
 
@@ -20,14 +21,13 @@ public partial class AuctionHouse
 	public void UpdateAgentTable()
 	{
 		AgentTable.Clear();
-		foreach (var agent in agents)
+		foreach (var agent in AgentManager.agents)
 		{
 			if (agent is UserAgent)
 				((UserAgent)agent).UserTriggeredPopulateOffersFromInventory();
 			AgentTable.Add(new (agent));
 		}
 	}
-	
 	
 	[Title("Player Actions")]
 	[Button(ButtonSizes.Large), GUIColor(0.4f, 0.8f,1)]
@@ -42,7 +42,30 @@ public partial class AuctionHouse
 		// Profiler.EndSample();
 	}
 
-	
+	//latch bid values in AgentTable to agent inventory offers
+	public void LatchBids()
+	{
+		Debug.Log("Latching bids");
+		// var entriesAgent = AgentTable.Zip(agents, (e, a) => new { entry = e, agent = a });
+		// foreach(var ea in entriesAgent)
+		for (int a = 0; a < AgentTable.Count && a < AgentManager.agents.Count; a++)
+		{
+			var agent = AgentManager.agents[a];
+			var entry = AgentTable[a];
+			
+			string msg = agent.name + " offering ";
+			foreach (var c in entry.Bids)
+			{
+				if (agent.inventory.ContainsKey(c.name) == false)
+					Debug.Log("no key found");
+				if (c.name == "Labor")
+					Debug.Log("reseting labor offers");
+				agent.inventory[c.name].offersThisRound = c.quantity;
+				msg += c.name + ": " + c.quantity + " ";
+			}
+			Debug.Log(msg);
+		}
+	}
 	
 	bool forestFire = false;
 	[HideIf("forestFire")]
@@ -147,23 +170,15 @@ public partial class AuctionHouse
 	{
 		((Government)gov).UpdateTarget(bidCom, bidQuant);
 	}
-	
-	[PropertyOrder(5)] [HorizontalGroup("KillAgent")]
-	public int killIndex = 2;
-	
-	[PropertyOrder(5)] [HorizontalGroup("KillAgent")]
-	[Button(ButtonSizes.Large), GUIColor(1, 0.4f, 0.4f)]
-	public void KillAgent()
-	{
-		var agent = agents[killIndex];
-		if (district.bank.QueryLoans(agent) > 0)
-			district.bank.LiquidateInventory(agent.inventory);
-		else
-			gov.LiquidateInventory(agent.inventory);
-		agents.Remove(agent);
-	}
-	
+
 	[PropertyOrder(6)]
 	[FormerlySerializedAs("AlwaysExpandedTable")] [TableList(AlwaysExpanded = true, DrawScrollView = false)]
 	public List<AgentEntry> AgentTable = new List<AgentEntry>();
+
+	private AgentManager agentManager;
+
+	public AgentManager AgentManager
+	{
+		get { return agentManager; }
+	}
 }
