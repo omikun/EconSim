@@ -43,7 +43,7 @@ public class Player : MonoBehaviour
     void Start()
     {
         selectedAgent = (Government)selectedDistrict.gov;
-        InitTradeUI();
+        // InitTradeUI();
         // Tick("Food");
     }
 
