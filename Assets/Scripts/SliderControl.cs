@@ -10,14 +10,14 @@ public class SliderControl
 	{
 		name = n;
 		this.slider = slider;
-		this.slider.mainSlider.minValue = 0; // Change min value
-		this.slider.mainSlider.maxValue = .4f; // Change max value
-		this.slider.mainSlider.value = .1f; // Change current slider value
-		this.slider.usePercent = true; // Enabling/disabling percent
-		this.slider.useRoundValue = false; // Show simplifed value
 		this.slider.mainSlider.onValueChanged.AddListener(TestFunction); // Add new onValueChanged event
 	}
 
+	public SliderControl SetPercent(bool value)
+	{
+		slider.usePercent = value;
+		return this;
+	}
 	public SliderControl SetRoundValue(bool value)
 	{
 		slider.useRoundValue = value;
