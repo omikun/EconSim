@@ -18,6 +18,12 @@ public class SliderControl
 		slider.usePercent = value;
 		return this;
 	}
+
+	public SliderControl SetWholeNumber(bool value)
+	{
+		slider.mainSlider.wholeNumbers = value;
+		return this;
+	}
 	public SliderControl SetRoundValue(bool value)
 	{
 		slider.useRoundValue = value;
