@@ -1,5 +1,6 @@
 
 using System.Collections.Generic;
+using System.Linq;
 using Michsky.MUIP;
 using UnityEngine;
 
@@ -12,17 +13,16 @@ public class ReserveControl : MonoBehaviour
 		var window = GameObject.Find("Reserve Window");
 		var content = window.transform.Find("Content").gameObject;
 		string[] names = { "Food", "Wood", "Ore", "Metal", "Tool" };
-		float[] amount = { 20, 2, 2, 2, 2 };
-		foreach (var name in names)
+		float[] amounts = { 20, 2, 2, 2, 2 };
+		foreach (var (name, amount) in names.Zip(amounts, (a, b) => (a, b)))
 		{
 			controls[name] = InitController(content, name)
 				.SetMinValue(0)
 				.SetMaxValue(100f)
-				.SetValue(2f)
+				.SetValue(amount)
 				.SetPercent(false)
 				.SetRoundValue(true)
 				.SetWholeNumber(true);
-			// controls[name].GetSlider().mainSlider.onValueChanged.AddListener(TestFunction);
 		}
 		SliderControl InitController(GameObject go, string name)
 		{

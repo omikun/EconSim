@@ -94,22 +94,11 @@ public class IncomeTaxControl : MonoBehaviour
 		if (order > 0)
 		{
 			var changedValue = brackets[order].slider.CurrentLowerValue;
-			var preValue = brackets[order - 1].slider.CurrentUpperValue;
-			var maxValue = brackets[order - 1].slider.maxValue;
-			var minValue = brackets[order - 1].slider.minValue;
-			// brackets[order - 1].slider.maxSlider.Refresh(brackets[order].slider.CurrentLowerValue);
 			brackets[order - 1].slider.maxSlider.SetValue(changedValue);
-			var postValue = brackets[order - 1].slider.CurrentUpperValue;
-			Debug.Log("UpdateBrackets changed brackets[" + order + "].lowerValue=" + changedValue 
-			          + " => brackets[" + (order - 1) + "].upperValue=" + preValue + " = " + postValue);
 		}
 		
 		if (order < 2)
 		{
-			var changedValue = brackets[order].slider.CurrentUpperValue;
-			var preValue = brackets[order + 1].slider.CurrentLowerValue;
-			Debug.Log("UpdateBrackets changed brackets[" + order + "].lowerValue=" + changedValue 
-			          + " => brackets[" + (order + 1) + "].upperValue=" + preValue);
 			brackets[order + 1].slider.minSlider.Refresh(brackets[order].slider.CurrentUpperValue);
 		}
 	}

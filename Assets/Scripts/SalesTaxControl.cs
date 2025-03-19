@@ -20,7 +20,6 @@ public class SalesTaxControl : MonoBehaviour
 				.SetValue(.1f)
 				.SetPercent(true)
 				.SetRoundValue(false);
-			// controls[name].GetSlider().mainSlider.onValueChanged.AddListener(TestFunction);
 		}
 	}
 
