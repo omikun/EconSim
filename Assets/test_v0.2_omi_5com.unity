@@ -1063,7 +1063,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2419645097284248002, guid: 4b5c2d45d85f8f54a8b5c1df3c1d77d0, type: 3}
       propertyPath: decimals
-      value: 2
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4337610018798286363, guid: 4b5c2d45d85f8f54a8b5c1df3c1d77d0, type: 3}
       propertyPath: m_AnchorMax.x
@@ -4948,7 +4948,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2419645097284248002, guid: 4b5c2d45d85f8f54a8b5c1df3c1d77d0, type: 3}
       propertyPath: decimals
-      value: 2
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4337610018798286363, guid: 4b5c2d45d85f8f54a8b5c1df3c1d77d0, type: 3}
       propertyPath: m_AnchorMax.x
@@ -8834,7 +8834,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2419645097284248002, guid: 4b5c2d45d85f8f54a8b5c1df3c1d77d0, type: 3}
       propertyPath: decimals
-      value: 2
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4337610018798286363, guid: 4b5c2d45d85f8f54a8b5c1df3c1d77d0, type: 3}
       propertyPath: m_AnchorMax.x
@@ -9015,7 +9015,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2419645097284248002, guid: 4b5c2d45d85f8f54a8b5c1df3c1d77d0, type: 3}
       propertyPath: decimals
-      value: 2
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4337610018798286363, guid: 4b5c2d45d85f8f54a8b5c1df3c1d77d0, type: 3}
       propertyPath: m_AnchorMax.x
@@ -12064,7 +12064,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2419645097284248002, guid: 4b5c2d45d85f8f54a8b5c1df3c1d77d0, type: 3}
       propertyPath: decimals
-      value: 2
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4337610018798286363, guid: 4b5c2d45d85f8f54a8b5c1df3c1d77d0, type: 3}
       propertyPath: m_AnchorMax.x
@@ -13117,6 +13117,7 @@ GameObject:
   - component: {fileID: 1885158127}
   - component: {fileID: 1885158128}
   - component: {fileID: 1885158129}
+  - component: {fileID: 1885158130}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -13247,6 +13248,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 92d35c5575f64c2c967ed4f898fdf088, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &1885158130
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1885158124}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 836062fbeaf5412f96857756955953b7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1 &1899558125
