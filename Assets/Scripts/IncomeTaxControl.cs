@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Michsky.MUIP;
 using Sirenix.Serialization;
+using UnityEngine.Assertions;
 using UnityEngine.Events;
 
 public class IncomeTaxControl : MonoBehaviour
@@ -45,15 +46,17 @@ public class IncomeTaxControl : MonoBehaviour
 		brackets.Add(new (1, FindRangeSlider(content, "TaxBracket2")));
 		brackets.Add(new (2, FindRangeSlider(content, "TaxBracket3")));
 
+		brackets[0].InitBracket(0, 5, 0, 1);
 		brackets[1].InitBracket(1, 10, 1, 5);
-		brackets[0].InitBracket(0, 3, 0, 1);
 		brackets[2].InitBracket(5, 100, 5, 100);
 		reset = false;
-		
+
+		// for (int i = 0; i < brackets.Count; i++)
+			// brackets[i].RegisterCallBacks(() => UpdateBrackets(i));
 		foreach (var bracket in brackets)
-			bracket.onValueChanged.AddListener(UpdateBrackets);
+			bracket.onValueChanged.AddListener(UpdateBrackets); //updates all brackets
 		foreach (var bracket in brackets)
-			bracket.InitBracketCallBacks();
+			bracket.RegisterCallBacks(null); //this call back will call UpdateBrackets
 	}
 
 	protected void InitAmounts(GameObject content)
@@ -82,23 +85,25 @@ public class IncomeTaxControl : MonoBehaviour
 	{
 		if (!reset)
 			return;
+		Debug.Log("UpdateBrackets " + order);
+		Assert.IsTrue(order >= 0 && order < brackets.Count);
 		
-		Debug.Log("UpdateBrackets");
 		reset = false;
-		brackets[0].slider.minSlider.value = 0;
-		brackets[2].slider.maxSlider.value = 100;
+		brackets[0].slider.minSlider.Refresh(0);
+		brackets[2].slider.maxSlider.SetValue(100);
 		if (order > 0)
 		{
 			var changedValue = brackets[order].slider.CurrentLowerValue;
 			var preValue = brackets[order - 1].slider.CurrentUpperValue;
 			var maxValue = brackets[order - 1].slider.maxValue;
+			var minValue = brackets[order - 1].slider.minValue;
 			// brackets[order - 1].slider.maxSlider.Refresh(brackets[order].slider.CurrentLowerValue);
-			brackets[order - 1].slider.maxSlider.Refresh(maxValue - changedValue);
+			brackets[order - 1].slider.maxSlider.SetValue(changedValue);
 			var postValue = brackets[order - 1].slider.CurrentUpperValue;
 			Debug.Log("UpdateBrackets changed brackets[" + order + "].lowerValue=" + changedValue 
 			          + " => brackets[" + (order - 1) + "].upperValue=" + preValue + " = " + postValue);
 		}
-
+		
 		if (order < 2)
 		{
 			var changedValue = brackets[order].slider.CurrentUpperValue;
@@ -112,41 +117,5 @@ public class IncomeTaxControl : MonoBehaviour
 	private void LateUpdate()
 	{
 		reset = true;
-	}
-}
-
-public class RangeSliderControl
-{
-	public RangeSlider slider;
-	protected int order;
-	public UnityEvent<int> onValueChanged = new();
-
-	public RangeSliderControl(int i, RangeSlider rs)
-	{
-		slider = rs;
-		order = i;
-	}
-	
-	public void InitBracket(float min, float max, float lowValue, float highValue)
-	{
-		slider.minValue = min;
-		slider.maxValue = max;
-		slider.minSlider.Refresh(lowValue);
-		slider.maxSlider.Refresh(highValue);
-		// slider.onValueChanged.AddListener(Update);
-		Debug.Log("RangeSliderControl" + order + " init");
-	}
-
-	public void InitBracketCallBacks()
-	{
-		slider.minSlider.onValueChanged.AddListener(UpdateBracket);
-		slider.maxSlider.onValueChanged.AddListener(UpdateBracket);
-	}
-
-	public void UpdateBracket(float value)
-	{
-		Debug.Log("RangeSliderControl" + order + " values: " + slider.CurrentLowerValue + "/" + slider.CurrentUpperValue);
-		onValueChanged.Invoke(order);
-
 	}
 }
