@@ -1,5 +1,6 @@
 using Michsky.MUIP; // MUIP namespace
 using UnityEngine;
+using UnityEngine.UI;
 
 public class SliderControl 
 {
@@ -49,6 +50,11 @@ public class SliderControl
 	public SliderManager GetSlider()
 	{
 		return slider;
+	}
+
+	public Slider.SliderEvent GetSliderEvent()
+	{
+		return slider.mainSlider.onValueChanged;
 	}
 
 	void TestFunction(float value)

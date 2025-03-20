@@ -1,13 +1,12 @@
+using System.Collections.Generic;
+using System.Linq;
 using Michsky.MUIP;
 using UnityEngine;
 
 public class SubsidiesControl : MonoBehaviour
 {
-	[SerializeField] private SliderControl FoodControl;
-	[SerializeField] private SliderControl WoodControl;
-	[SerializeField] private SliderControl OreControl;
-	[SerializeField] private SliderControl MetalControl;
-	[SerializeField] private SliderControl ToolControl;
+	private SwitchManager SubsidiesEnable;
+	private Dictionary<string, SliderControl> controls = new();
 
 	private void Awake()
 	{
@@ -15,11 +14,19 @@ public class SubsidiesControl : MonoBehaviour
 		var window = GameObject.Find("Subsidies Window");
 		var content = window.transform.Find("Content").gameObject;
 
-		FoodControl = InitController(content, "Food");
-		WoodControl = InitController(content, "Wood");
-		OreControl = InitController(content, "Ore");
-		MetalControl = InitController(content, "Metal");
-		ToolControl = InitController(content, "Tool");
+		SubsidiesEnable = content.transform.Find("Subsidies Enable")
+			.GetComponent<SwitchManager>();
+		
+		string[] names = { "Food", "Wood", "Ore", "Metal", "Tool" };
+		foreach (var name in names)
+		{
+			controls[name] = InitController(content, name)
+				.SetMinValue(0)
+				.SetMaxValue(1f)
+				.SetValue(.0f)
+				.SetPercent(true)
+				.SetRoundValue(true);
+		}
 	}
 
 	private SliderControl InitController(GameObject go, string name)
@@ -27,6 +34,22 @@ public class SubsidiesControl : MonoBehaviour
 		var slider = go.transform.Find(name + "Controller")
 			.GetComponent<SliderManager>();
 
-		return new SliderControl(slider, name);
+		var sc = new SliderControl(slider, name);
+			// .SetValue(0f);
+		sc.GetSliderEvent().AddListener(UpdateControls);
+		return sc;
+	}
+
+	void UpdateControls(float value)
+	{
+		Debug.Log(name + " Current value: " + value.ToString());
+		if (value > 0)
+			SubsidiesEnable.SetOn();
+		else if (value == 0)
+		{
+			var sum = controls.Values.Sum(c => c.GetSlider().mainSlider.value);
+			if (sum == 0)
+				SubsidiesEnable.SetOff();
+		}
 	}
 }
