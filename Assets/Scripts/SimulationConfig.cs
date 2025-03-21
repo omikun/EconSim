@@ -142,6 +142,10 @@ public class SimulationConfig : MonoBehaviour{
 	
 	
 	[TabGroup("Taxes")]
+    public bool EnableSubsidies = false;
+	[TabGroup("Taxes")]
+    public SerializedDictionary<string, float> SubsidiesRate = new();
+	[TabGroup("Taxes")]
     public float idleTaxRate = 0f;
 	[TabGroup("Taxes")]
     public bool EnableSalesTax = false;

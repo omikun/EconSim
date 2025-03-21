@@ -1687,6 +1687,7 @@ GameObject:
   - component: {fileID: 194909953}
   - component: {fileID: 194909947}
   - component: {fileID: 194909954}
+  - component: {fileID: 194909955}
   m_Layer: 0
   m_Name: auction house
   m_TagString: Untagged
@@ -1799,6 +1800,9 @@ MonoBehaviour:
   askSortOrder: 0
   askSortBy: 0
   resolveTradePrice: 2
+  EnableSubsidies: 0
+  SubsidiesRate:
+    _serializedList: []
   idleTaxRate: 0
   EnableSalesTax: 0
   SalesTaxRate:
@@ -2031,6 +2035,19 @@ MonoBehaviour:
     pointHover: {fileID: 11475216, guid: 57ee497f5c86d764fa20628075109b20, type: 3}
   SlideTime: 0.5
   EnableDynamicFit: 1
+--- !u!114 &194909955
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 194909945}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9c2d4561557446b5bc827274bac50acf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  config: {fileID: 194909953}
 --- !u!1 &197681509
 GameObject:
   m_ObjectHideFlags: 0
