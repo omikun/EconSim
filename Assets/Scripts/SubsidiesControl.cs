@@ -5,7 +5,7 @@ using UnityEngine;
 
 public class SubsidiesControl : MonoBehaviour
 {
-	private SwitchManager SubsidiesEnable;
+	private SwitchManager enable;
 	private Dictionary<string, SliderControl> controls = new();
 
 	private void Awake()
@@ -14,9 +14,9 @@ public class SubsidiesControl : MonoBehaviour
 		var window = GameObject.Find("Subsidies Window");
 		var content = window.transform.Find("Content").gameObject;
 
-		SubsidiesEnable = content.transform.Find("Subsidies Enable")
+		enable = content.transform.Find("Enable")
 			.GetComponent<SwitchManager>();
-		SubsidiesEnable.onValueChanged.AddListener(UpdateEnable);
+		enable.onValueChanged.AddListener(UpdateEnable);
 		
 		string[] names = { "Food", "Wood", "Ore", "Metal", "Tool" };
 		foreach (var name in names)
@@ -48,16 +48,16 @@ public class SubsidiesControl : MonoBehaviour
 	{
 		Debug.Log(name + " Current value: " + value.ToString());
 		if (value > 0)
-			SubsidiesEnable.SetOn();
+			enable.SetOn();
 		else if (value == 0)
 		{
-			var sum = controls.Values.Sum(c => c.GetSlider().mainSlider.value);
+			var sum = controls.Values.Sum(c => c.value);
 			if (sum == 0)
-				SubsidiesEnable.SetOff();
+				enable.SetOff();
 		}
 		foreach (var (name, control) in controls)
 		{
-			this.GetConfig().SubsidiesRate[name] = control.GetSlider().mainSlider.value;
+			this.GetConfig().SubsidiesRate[name] = control.value;
 		}
 	}
 }

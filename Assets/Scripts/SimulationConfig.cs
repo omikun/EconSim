@@ -7,6 +7,7 @@ using UnityEngine.Assertions;
 using AYellowpaper.SerializedCollections;
 using Sirenix.OdinInspector;
 using EconSim;
+using Sirenix.Serialization;
 using UnityEngine.Serialization;
 
 namespace EconSim
@@ -142,24 +143,33 @@ public class SimulationConfig : MonoBehaviour{
 	
 	
 	[TabGroup("Taxes")]
-    public bool EnableSubsidies = false;
-	[TabGroup("Taxes")]
-    public SerializedDictionary<string, float> SubsidiesRate = new();
-	[TabGroup("Taxes")]
     public float idleTaxRate = 0f;
+    
 	[TabGroup("Taxes")]
     public bool EnableSalesTax = false;
 	[TabGroup("Taxes")]
     [ShowInInspector, DictionaryDrawerSettings(DisplayMode = DictionaryDisplayOptions.OneLine, KeyLabel = "Comm", ValueLabel = "TaxRate")]
     [SerializedDictionary("Comm", "TaxRate")]
     public SerializedDictionary<string, float> SalesTaxRate = new();
+    
+	[TabGroup("Taxes")]
+    [InfoBox("Marginal Income Tax", "@!EnableIncomeTax")]
+    public bool EnableIncomeTax = true;
+	[TabGroup("Taxes")]
+    public List<TaxBracket> taxBrackets = new()
+    {
+	    { new(1, 5, .1f) },
+	    { new(5, 10, .2f) },
+	    { new(10, 100, .5f) }
+    };
+    
+	[TabGroup("Taxes")]
+    public bool EnableSubsidies = false;
+	[TabGroup("Taxes")]
+    public SerializedDictionary<string, float> SubsidiesRate = new();
 
 	[TabGroup("Taxes")] 
 	public bool GovWelfare = true;
-	[TabGroup("Taxes")]
-    [ShowInInspector, DictionaryDrawerSettings(DisplayMode = DictionaryDisplayOptions.OneLine, KeyLabel = "Comm", ValueLabel = "Subsidy")]
-    [SerializedDictionary("Comm", "Subsidy")]
-    public SerializedDictionary<string, float> Subsidy = new();
 	
     [TabGroup("Respawn")]
 	[InfoBox("Enable respawn on starvation")]

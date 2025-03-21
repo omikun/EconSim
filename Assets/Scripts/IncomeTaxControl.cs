@@ -8,8 +8,9 @@ using UnityEngine.Events;
 
 public class IncomeTaxControl : MonoBehaviour
 {
-	[SerializeField] private List<RangeSliderControl> brackets = new();
-	[SerializeField] private List<SliderControl> amounts = new();
+	private SwitchManager enable;
+	private List<RangeSliderControl> brackets = new();
+	private List<SliderControl> amounts = new();
 	private bool reset = true;
 
 	void Awake()
@@ -18,8 +19,15 @@ public class IncomeTaxControl : MonoBehaviour
 		var window = GameObject.Find("Income Tax Window");
 		var content = window.transform.Find("Content").gameObject;
 		
+		enable = content.transform.Find("Enable")
+			.GetComponent<SwitchManager>();
+		enable.onValueChanged.AddListener(UpdateEnable);
 		InitBrackets(content);
 		InitAmounts(content);
+	}
+	void UpdateEnable(bool value)
+	{
+		this.GetConfig().EnableIncomeTax = value;
 	}
 
 	protected RangeSlider FindRangeSlider(GameObject go, string name)
@@ -46,9 +54,9 @@ public class IncomeTaxControl : MonoBehaviour
 		brackets.Add(new (1, FindRangeSlider(content, "TaxBracket2")));
 		brackets.Add(new (2, FindRangeSlider(content, "TaxBracket3")));
 
-		brackets[0].InitBracket(0, 5, 0, 1);
-		brackets[1].InitBracket(1, 10, 1, 5);
-		brackets[2].InitBracket(5, 100, 5, 100);
+		brackets[0].InitBracket(0, 5, 1, 5);
+		brackets[1].InitBracket(1, 10, 5, 10);
+		brackets[2].InitBracket(5, 100, 10, 100);
 		reset = false;
 
 		// for (int i = 0; i < brackets.Count; i++)
@@ -74,22 +82,27 @@ public class IncomeTaxControl : MonoBehaviour
 		}
 		
 		foreach (var amount in amounts)
-			amount.GetSlider().onValueChanged.AddListener(UpdateAmounts);
+			amount.GetSliderEvent().AddListener(UpdateAmounts);
 	}
 
 	protected void UpdateAmounts(float value)
 	{
-		Debug.Log(name + " Current value: " + value.ToString());
+		string msg = " Current value: ";
+		for (int i = 0; i < amounts.Count; i++)
+		{
+			this.GetConfig().taxBrackets[i].taxRate = amounts[i].value;
+			msg += name + ": " + amounts[i].value + " ";
+		}
+		Debug.Log(msg);
 	}
 	protected void UpdateBrackets(int order)
 	{
-		if (!reset)
+		if (!reset) //prevent infinite update callbacks
 			return;
 		Debug.Log("UpdateBrackets " + order);
 		Assert.IsTrue(order >= 0 && order < brackets.Count);
 		
 		reset = false;
-		brackets[0].slider.minSlider.Refresh(0);
 		brackets[2].slider.maxSlider.SetValue(100);
 		if (order > 0)
 		{
@@ -100,6 +113,12 @@ public class IncomeTaxControl : MonoBehaviour
 		if (order < 2)
 		{
 			brackets[order + 1].slider.minSlider.Refresh(brackets[order].slider.CurrentUpperValue);
+		}
+
+		for (int i = 0; i < brackets.Count; i++)
+		{
+			this.GetConfig().taxBrackets[i].min = brackets[i].slider.CurrentLowerValue;
+			this.GetConfig().taxBrackets[i].max = brackets[i].slider.CurrentUpperValue;
 		}
 	}
 

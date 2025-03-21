@@ -46,6 +46,7 @@ public class SliderControl
 		slider.mainSlider.value = value;
 		return this;
 	}
+	public float value { get { return slider.mainSlider.value; } }
 
 	public SliderManager GetSlider()
 	{

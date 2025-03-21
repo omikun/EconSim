@@ -85,6 +85,25 @@ public class Range
 }
 
 [Serializable]
+public class TaxBracket
+{
+    [HorizontalGroup("Range1")] [HideLabel]
+    public float min;
+    [HorizontalGroup("Range1")] [HideLabel]
+    public float max;
+    [HorizontalGroup("Range1")] 
+    public float taxRate;
+
+    public TaxBracket(float _min, float _max, float value)
+    {
+        min = _min;
+        max = _max;
+        taxRate = value;
+    }
+
+}
+
+[Serializable]
 public class FlatTaxPolicy : FiscalPolicy
 {
     public FlatTaxPolicy()
@@ -135,19 +154,7 @@ Reduction of social welfare spending: Cutting back on social programs, which all
     public float WealthTaxRate = .3f;
     public float MinWealthTaxExempt = 50f;
 
-    [InfoBox("Marginal Income Tax", "@!EnableIncomeTax")]
-    public bool EnableIncomeTax = true;
 
-    [ShowInInspector]
-    //, DictionaryDrawerSettings(DisplayMode = DictionaryDisplayOptions.OneLine, KeyLabel = "Income Bracket", ValueLabel = "Marginal Tax Rate")]
-    // [SerializedDictionary("Income Bracket", "Marginal Tax Rate")]
-    [OdinSerialize]
-    private Dictionary<Range, float> taxBracket = new()
-    {
-        {new Range(1, 5), 0.1f },
-        {new Range(5, 10), 0.2f },
-        {new Range(10, 1000), 0.5f },
-    };
     public ProgressivePolicy()
     {
     }
@@ -159,7 +166,7 @@ Reduction of social welfare spending: Cutting back on social programs, which all
 				continue;
             if (EnableIdleWealthTax) applyIdleWealthTax(book, agent);
             if (EnableWealthTax) applyWealthTax(book, agent);
-            if (EnableIncomeTax) applyIncomeTax(book, agent);
+            if (ConfigManager.Config.EnableIncomeTax) applyIncomeTax(book, agent);
         }
     }
     public override void ApplyTax(AuctionBook book, EconAgent agent)
@@ -208,17 +215,17 @@ Reduction of social welfare spending: Cutting back on social programs, which all
         if (income < 0)
             return;
         float prevTaxRate = 0;
-        foreach (var (bracket, taxRate) in taxBracket)
+        foreach (var bracket in ConfigManager.Config.taxBrackets)
         {
             if (income < bracket.min)
                 break;
             if (income < bracket.max)
             {
-                tax += (income - bracket.min) * (taxRate - prevTaxRate);
+                tax += (income - bracket.min) * (bracket.taxRate - prevTaxRate);
                 break;
             } else {
-                tax += (bracket.max - bracket.min) * (taxRate - prevTaxRate);
-                prevTaxRate = taxRate;
+                tax += (bracket.max - bracket.min) * (bracket.taxRate - prevTaxRate);
+                prevTaxRate = bracket.taxRate;
             }
         }
 
