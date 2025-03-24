@@ -9,10 +9,12 @@ public class SalesTaxControl : MonoBehaviour
 	private SwitchManager enable;
 	[ShowInInspector]
 	private Dictionary<string, SliderControl> controls = new();
+
+	public GameObject window;
 	void Start()
 	{
 		//find controls and init them
-		var window = GameObject.Find("Sales Tax Window");
+		// var window = GameObject.Find("Sales Tax Window");
 		var content = window.transform.Find("Content").gameObject;
 		
 		enable = content.transform.Find("Enable")

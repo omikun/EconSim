@@ -92,6 +92,8 @@ public class SimulationConfig : MonoBehaviour{
 	//[CustomValueDrawer("TickIntervalDrawer")]
 	[Range(.001f, 2f)]
     public float tickInterval = .001f;
+	[Tooltip("for looking into recent past on different metrics, like most profitable good")]
+	public int historySize = 10;
 	[TitleGroup("Simulation Settings")]
 	[HorizontalGroup("Simulation Settings/Split")]
 	[VerticalGroup("Simulation Settings/Split/Left")]
@@ -128,34 +130,34 @@ public class SimulationConfig : MonoBehaviour{
 	public int numRoundsNoTrade = 100;
 	
 	//init conditions
-	[TabGroup("Auction Trade")]
+	[TabGroup("multi row", "Auction Trade",  TextColor = "blue")]
 	public TradeResolutionType tradeResolution = TradeResolutionType.XEven;
-	[TabGroup("Auction Trade")]
+	[TabGroup("multi row", "Auction Trade",  TextColor = "blue")]
 	public OfferSortOrder bidSortOrder = OfferSortOrder.Ascending;
-	[TabGroup("Auction Trade")]
+	[TabGroup("multi row", "Auction Trade",  TextColor = "blue")]
 	public OfferSortBy bidSortBy = OfferSortBy.OfferPrice;
-	[TabGroup("Auction Trade")]
+	[TabGroup("multi row", "Auction Trade",  TextColor = "blue")]
 	public OfferSortOrder askSortOrder = OfferSortOrder.Ascending;
-	[TabGroup("Auction Trade")]
+	[TabGroup("multi row", "Auction Trade",  TextColor = "blue")]
 	public OfferSortBy askSortBy = OfferSortBy.OfferPrice;
-	[TabGroup("Auction Trade")] 
+	[TabGroup("multi row", "Auction Trade",  TextColor = "blue")] 
 	public ResolveTradePrice resolveTradePrice = ResolveTradePrice.TakeAveragePrice;
 	
 	
-	[TabGroup("Taxes")]
+	[TabGroup("multi row", "Gov Controls",  TextColor = "blue")]
     public float idleTaxRate = 0f;
     
-	[TabGroup("Taxes")]
+	[TabGroup("multi row", "Gov Controls",  TextColor = "blue")]
     public bool EnableSalesTax = false;
-	[TabGroup("Taxes")]
+	[TabGroup("multi row", "Gov Controls",  TextColor = "blue")]
     [ShowInInspector, DictionaryDrawerSettings(DisplayMode = DictionaryDisplayOptions.OneLine, KeyLabel = "Comm", ValueLabel = "TaxRate")]
     [SerializedDictionary("Comm", "TaxRate")]
     public SerializedDictionary<string, float> SalesTaxRate = new();
     
-	[TabGroup("Taxes")]
+	[TabGroup("multi row", "Gov Controls",  TextColor = "blue")]
     [InfoBox("Marginal Income Tax", "@!EnableIncomeTax")]
     public bool EnableIncomeTax = true;
-	[TabGroup("Taxes")]
+	[TabGroup("multi row", "Gov Controls",  TextColor = "blue")]
     public List<TaxBracket> taxBrackets = new()
     {
 	    { new(1, 5, .1f) },
@@ -163,45 +165,48 @@ public class SimulationConfig : MonoBehaviour{
 	    { new(10, 100, .5f) }
     };
     
-	[TabGroup("Taxes")]
+	[TabGroup("multi row", "Gov Controls",  TextColor = "blue")]
     public bool EnableSubsidies = false;
-	[TabGroup("Taxes")]
+	[TabGroup("multi row", "Gov Controls",  TextColor = "blue")]
     public SerializedDictionary<string, float> SubsidiesRate = new();
 
-	[TabGroup("Taxes")] 
+	[TabGroup("multi row", "Gov Controls",  TextColor = "blue")] 
+	public bool EnableReserve = true;
+	[TabGroup("multi row", "Gov Controls",  TextColor = "blue")] 
+	public SerializedDictionary<string, float> Reserves = new();
+
+	[TabGroup("multi row", "Gov Controls",  TextColor = "blue")] 
 	public bool GovWelfare = true;
 	
-    [TabGroup("Respawn")]
+    [TabGroup("multi row", "Respawn",  TextColor = "blue")]
 	[InfoBox("Enable respawn on starvation")]
 	public bool starvation = false;
-	[TabGroup("Respawn")]
+	[TabGroup("multi row", "Respawn",  TextColor = "blue")]
 	[InfoBox("clear inventory on changeProfession")]
 	public bool clearInventory = false;
-	[TabGroup("Respawn")]
+	[TabGroup("multi row", "Respawn",  TextColor = "blue")]
 	public bool changeProfession = true;
-	[TabGroup("Respawn")]
+	[TabGroup("multi row", "Respawn",  TextColor = "blue")]
 	public bool earlyProfessionChange = false;
-	[TabGroup("Respawn")]
+	[TabGroup("multi row", "Respawn",  TextColor = "blue")]
 	public int changeProfessionAfterNDays = 10;
-	[TabGroup("Respawn")]
+	[TabGroup("multi row", "Respawn",  TextColor = "blue")]
 	public bool declareBankruptcy = true;
-	[Tooltip("for looking into recent past on different metrics, like most profitable good")]
-	public int historySize = 10;
 
-	[TabGroup("Banking")] public float fractionalReserveRatio = 0.1f;
-	[TabGroup("Banking")] public int termInRounds = 30;
-	[TabGroup("Banking")] public float interestRate = 0.02f;
-	[TabGroup("Banking")] public int maxMissedPayments = 5;
-	[TabGroup("Banking")] public float maxPrinciple = 500f;
-	[TabGroup("Banking")] public int maxNumDefaults = 5;
+	[TabGroup("multi row", "Banking",  TextColor = "orange")] public float fractionalReserveRatio = 0.1f;
+	[TabGroup("multi row", "Banking", TextColor = "orange")] public int termInRounds = 30;
+	[TabGroup("multi row", "Banking", TextColor = "orange")] public float interestRate = 0.02f;
+	[TabGroup("multi row", "Banking", TextColor = "orange")] public int maxMissedPayments = 5;
+	[TabGroup("multi row", "Banking", TextColor = "orange")] public float maxPrinciple = 500f;
+	[TabGroup("multi row", "Banking", TextColor = "orange")] public int maxNumDefaults = 5;
 	
-	[TabGroup("tab2", "Agent Initialization")] public AgentType agentType = AgentType.Default;
-	[TabGroup("tab2", "Agent Initialization")] public float initCash = 100;
-	[TabGroup("tab2", "Agent Initialization")] public float initGovCash = 1000;
-	[TabGroup("tab2", "Agent Initialization")] public bool randomInitStock = false;
-	[TabGroup("tab2", "Agent Initialization")] public float initStock = 10;
-	[TabGroup("tab2", "Agent Initialization")] public float maxStock = 20;
-	[TabGroup("tab2", "Agent Initialization")]
+	[TabGroup("multi row", "Agent Initialization", TextColor = "orange")] public AgentType agentType = AgentType.Default;
+	[TabGroup("multi row", "Agent Initialization", TextColor = "orange")] public float initCash = 100;
+	[TabGroup("multi row", "Agent Initialization", TextColor = "orange")] public float initGovCash = 1000;
+	[TabGroup("multi row", "Agent Initialization", TextColor = "orange")] public bool randomInitStock = false;
+	[TabGroup("multi row", "Agent Initialization", TextColor = "orange")] public float initStock = 10;
+	[TabGroup("multi row", "Agent Initialization", TextColor = "orange")] public float maxStock = 20;
+	[TabGroup("multi row", "Agent Initialization", TextColor = "orange")]
 	[SerializedDictionary("Comm", "numAgents")]
 	public SerializedDictionary<string, int> numAgents = new()
 	{
@@ -211,69 +216,69 @@ public class SimulationConfig : MonoBehaviour{
 		{ "Metal", 4 },
 		{ "Tool", 4 }
 	};
-	[TabGroup("tab2", "Agent Initialization")]
+	[TabGroup("multi row", "Agent Initialization", TextColor = "orange")]
 	[SerializedDictionary("ID", "Recipe")]
 	public SerializedDictionary<string, SerializedDictionary<string, float>> initialization = new();
 	
-	[TabGroup("tab2", "Agent FoodConsumption")]
+	[TabGroup("multi row", "Agent FoodConsumption", TextColor = "orange")]
 	public float starvationThreshold = 0.1f;
-	[TabGroup("tab2", "Agent FoodConsumption")]
+	[TabGroup("multi row", "Agent FoodConsumption", TextColor = "orange")]
 	public int maxDaysStarving = 3;
-	[TabGroup("tab2", "Agent FoodConsumption")]
+	[TabGroup("multi row", "Agent FoodConsumption", TextColor = "orange")]
 	public bool foodConsumption = false;
-	[TabGroup("tab2", "Agent FoodConsumption")]
+	[TabGroup("multi row", "Agent FoodConsumption", TextColor = "orange")]
 	public float foodConsumptionRate = 0.1f;
-	[TabGroup("tab2", "Agent FoodConsumption")]
+	[TabGroup("multi row", "Agent FoodConsumption", TextColor = "orange")]
 	public bool useFoodConsumptionCurve = true;
 	[Required]
-	[TabGroup("tab2", "Agent FoodConsumption")]
+	[TabGroup("multi row", "Agent FoodConsumption", TextColor = "orange")]
 	public AnimationCurve foodConsumptionCurve;
-	[TabGroup("tab2", "Agent FoodConsumption")]
+	[TabGroup("multi row", "Agent FoodConsumption", TextColor = "orange")]
 	public float numFoodHappy = 10f;
 
-	[TabGroup("tab2", "Agent Trade")] 
+	[TabGroup("multi row", "Agent Trade", TextColor = "orange")] 
 	public AgentProduction productionRate = AgentProduction.FixedRate;
-	[TabGroup("tab2", "Agent Trade")] 
+	[TabGroup("multi row", "Agent Trade", TextColor = "orange")] 
 	public ConsumerType consumerType = ConsumerType.Default;
-	[TabGroup("tab2", "Agent Trade")] 
+	[TabGroup("multi row", "Agent Trade", TextColor = "orange")] 
 	public AgentSellRate sellRate = AgentSellRate.FixedRate;
-	[TabGroup("tab2", "Agent Trade")] 
+	[TabGroup("multi row", "Agent Trade", TextColor = "orange")] 
 	public AgentSellPrice sellPrice = AgentSellPrice.AtCost;
-	[TabGroup("tab2", "Agent Trade")] 
+	[TabGroup("multi row", "Agent Trade", TextColor = "orange")] 
 	public AgentConsumption consumeRate = AgentConsumption.FixedRate;
-	[TabGroup("tab2", "Agent Trade")] 
+	[TabGroup("multi row", "Agent Trade", TextColor = "orange")] 
 	public AgentBuyPrice buyPrice = AgentBuyPrice.MarketPrice;
 	[InfoBox("Avg bid/ask price; offer price random delta around mkt price")]
-	[TabGroup("tab2", "Agent Trade")] 
+	[TabGroup("multi row", "Agent Trade", TextColor = "orange")] 
 	public bool randomizeSellPrice = false;
 
-	[TabGroup("tab2", "Agent Trade")] public bool sellPriceMinFoodExpense = true;
-	[TabGroup("tab2", "Agent Trade")] 
+	[TabGroup("multi row", "Agent Trade", TextColor = "orange")] public bool sellPriceMinFoodExpense = true;
+	[TabGroup("multi row", "Agent Trade", TextColor = "orange")] 
 	public bool sellPriceMinCost = false;
 
-	[TabGroup("tab2", "Agent Trade")]
+	[TabGroup("multi row", "Agent Trade", TextColor = "orange")]
 	public bool minSellPrice = true;
 	[InfoBox("priced to afford 1 of every other rsc after selling this many output")]
-	[TabGroup("tab2", "Agent Trade")]
+	[TabGroup("multi row", "Agent Trade", TextColor = "orange")]
 	public float minSellToAffordOthers = 10f;
-	[TabGroup("tab2", "Agent Trade")]
+	[TabGroup("multi row", "Agent Trade", TextColor = "orange")]
 	public float minItemRaiseBuyPrice = 3f;
-	[TabGroup("tab2", "Agent Trade")] 
+	[TabGroup("multi row", "Agent Trade", TextColor = "orange")] 
 	public float sellPriceDelta = 0.05f;
-	[TabGroup("tab2", "Agent Trade")] 
+	[TabGroup("multi row", "Agent Trade", TextColor = "orange")] 
 	public float buyPriceDelta = 0.05f;
-	[TabGroup("tab2", "Agent Trade")] 
+	[TabGroup("multi row", "Agent Trade", TextColor = "orange")] 
     public float profitMarkup = 1.05f;
-	[TabGroup("tab2", "Agent Trade")] 
+	[TabGroup("multi row", "Agent Trade", TextColor = "orange")] 
 	[InfoBox("Price and trade volume should remain constant")]
 	public float sanityCheckTradeVolume = 1f;
-	[TabGroup("tab2", "Agent Trade")] 
+	[TabGroup("multi row", "Agent Trade", TextColor = "orange")] 
 	public bool sanityCheckSellQuant = false; 
-	[TabGroup("tab2", "Agent Trade")] 
+	[TabGroup("multi row", "Agent Trade", TextColor = "orange")] 
 	//[OnValueChanged(nameof(ResetSanityCheck))]
 	[InfoBox("Buy quant varies with delta relative to historic average price")]
 	public bool enablePriceFavorability = false;
-	[TabGroup("tab2", "Agent Trade")] 
+	[TabGroup("multi row", "Agent Trade", TextColor = "orange")] 
 	public bool onlyBuyWhatsAffordable = false;
 	
 
