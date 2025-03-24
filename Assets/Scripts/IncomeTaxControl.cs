@@ -81,6 +81,7 @@ public class IncomeTaxControl : MonoBehaviour
 			amounts.Add(sc);
 		}
 		
+		//prevent uninit enable switch from asserting on start up when values are non zero
 		foreach (var amount in amounts)
 			amount.GetSliderEvent().AddListener(UpdateAmounts);
 	}

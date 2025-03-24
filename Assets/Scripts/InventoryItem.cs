@@ -387,7 +387,7 @@ public class InventoryItem {
 	void SanePriceBeliefs()
 	{
 		//minPriceBelief = Mathf.Max(cost, minPriceBelief); TODO maybe consider this eventually?
-		priceBelief = Mathf.Clamp(priceBelief, 0.9f, 900f);
+		priceBelief = Mathf.Clamp(priceBelief, 0.01f, 1000f);
 		// priceBelief = Mathf.Max(minPriceBelief*1.1f, priceBelief);
 		// priceBelief = Mathf.Clamp(priceBelief, 1.1f, 1000f);
         // Assert.IsTrue(minPriceBelief < priceBelief);
