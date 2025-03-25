@@ -37,8 +37,8 @@ public class QoLSimpleAgent : EconAgent
             DaysStarving++;
         else
             DaysStarving = 0;
-        var nonFarmerDying = (outputName != "Food" && DaysStarving >= config.maxDaysStarving);
-        var farmerDying = (outputName == "Food" && DaysStarving >= 2*config.maxDaysStarving);
+        var nonFarmerDying = (outputName != "Food" && DaysStarving >= config.maxDaysAliveWhileStarving);
+        var farmerDying = (outputName == "Food" && DaysStarving >= 2*config.maxDaysAliveWhileStarving);
         return nonFarmerDying || farmerDying;
     }
     public override float Tick(Government gov, ref bool changedProfession, ref bool bankrupted, ref bool starving)

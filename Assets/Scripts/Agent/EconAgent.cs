@@ -66,7 +66,7 @@ public partial class EconAgent : MonoBehaviour
 		}
 
 		log += header + "cash, stock, " + Cash + ", n/a\n";
-		log += header + "profit, stock, " + Profit + ", n/a\n";
+		log += header + "profit, stock, " + Income + ", n/a\n";
 		log += header + "taxes, idle, " + taxesPaidThisRound + ", n/a\n";
 		foreach (var (good, quantity) in producedThisRound)
 		{
@@ -277,7 +277,7 @@ public partial class EconAgent : MonoBehaviour
 			{
 				Alive = false;
 			}
-			foodExpense = Mathf.Max(0, foodExpense - Mathf.Max(0, Profit));
+			foodExpense = Mathf.Max(0, foodExpense - Mathf.Max(0, Income));
 		}
 
 		foreach (var entry in inventory)

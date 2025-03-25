@@ -31,7 +31,7 @@ public class ResourceController
  	public ESList trades = new();
  	public ESList inventory = new();
  	public ESList cash = new();
- 	public ESList profits = new();
+ 	public ESList incomes = new();
  	public ESList changedProfession = new();
  	public ESList bankrupted = new();
  	public ESList starving = new();
@@ -86,7 +86,7 @@ public class ResourceController
 		avgClearingPrice.Add(setPrice);
 		minClearingPrice.Add(setPrice);
 		maxClearingPrice.Add(setPrice);
-		profits.Add(1);
+		incomes.Add(1);
 		bankrupted.Add(1);
 		starving.Add(1);
 		changedProfession.Add(1);

@@ -5,7 +5,7 @@ public partial class EconAgent
 {
     protected float prevCash;
     protected internal float foodExpense = 0;
-    public float Profit { get; protected set; }
+    public float Income { get; protected set; }
     public float TaxableProfit { get; protected set; }
     private float taxesPaidThisRound = 0;
 
@@ -48,7 +48,7 @@ public partial class EconAgent
         var prevLosses = losses;
         var delta = Cash - prevCash;
         prevCash = Cash;
-        Profit = delta;
+        Income = delta;
         var cumDelta = delta + prevLosses;
         losses = Mathf.Min(0, cumDelta);
         TaxableProfit = Mathf.Max(0, cumDelta);

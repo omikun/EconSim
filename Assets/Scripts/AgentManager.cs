@@ -66,10 +66,10 @@ public class AgentManager
                 if (agent.CalcMinProduction() < 1)
                     book[profession].numNoInput++;
 			
-                if (agent.Profit < 0)
+                if (agent.Income < 0)
                     book[profession].numNegProfit++;
 
-                book[profession].profits[^1] += agent.Profit;
+                book[profession].incomes[^1] += agent.Income;
             }
 			
             var cash = agent.Tick(auctionHouse.gov, ref changedProfession, ref bankrupted, ref starving);

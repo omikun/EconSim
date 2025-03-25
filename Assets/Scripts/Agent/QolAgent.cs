@@ -29,6 +29,7 @@ public partial class QolAgent : EconAgent
             var rsc = book[outputName];
             var stock = inventory[outputName];
             var numBatches = NumBatchesProduceable(rsc, stock);
+            // var minInputBatches = productionStrategy.NumBatchesProduceable(rsc, inventory[outputName]);
             var numProduced = Produce(numBatches);
             numUnitsProducedLastRound = numUnitsProducedThisRound;
             numUnitsProducedThisRound = numProduced;
@@ -207,8 +208,8 @@ public partial class QolAgent : EconAgent
             DaysStarving++;
         else
             DaysStarving = 0;
-        var nonFarmerDying = (outputName != "Food" && DaysStarving >= config.maxDaysStarving);
-        var farmerDying = (outputName == "Food" && DaysStarving >= 2*config.maxDaysStarving);
+        var nonFarmerDying = (outputName != "Food" && DaysStarving >= config.maxDaysAliveWhileStarving);
+        var farmerDying = (outputName == "Food" && DaysStarving >= 2*config.maxDaysAliveWhileStarving);
         return nonFarmerDying || farmerDying;
     }
     public override float Tick(Government gov, ref bool changedProfession, ref bool bankrupted, ref bool starving)

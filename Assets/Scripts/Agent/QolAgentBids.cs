@@ -374,7 +374,7 @@ public partial class QolAgent
         if (outputName == "Food")
             return 0f;
 
-        int daysToDeath = config.maxDaysStarving - DaysStarving;
+        int daysToDeath = config.maxDaysAliveWhileStarving - DaysStarving;
         Assert.IsTrue(daysToDeath >= 0);
         var numFood =  (int)inventory["Food"].Quantity;
         float minFoodToBuy = (DaysStarving > 0) ? 1 : 0;

@@ -129,7 +129,7 @@ public class SimulationConfig : MonoBehaviour{
 	[LabelWidth(150)]
 	public int numRoundsNoTrade = 100;
 	
-	//init conditions
+	/// Auction Trade //////////////////////////////////////////////
 	[TabGroup("multi row", "Auction Trade",  TextColor = "blue")]
 	public TradeResolutionType tradeResolution = TradeResolutionType.XEven;
 	[TabGroup("multi row", "Auction Trade",  TextColor = "blue")]
@@ -144,6 +144,7 @@ public class SimulationConfig : MonoBehaviour{
 	public ResolveTradePrice resolveTradePrice = ResolveTradePrice.TakeAveragePrice;
 	
 	
+	/// Gov Controls //////////////////////////////////////////////
 	[TabGroup("multi row", "Gov Controls",  TextColor = "blue")]
     public float idleTaxRate = 0f;
     
@@ -179,7 +180,11 @@ public class SimulationConfig : MonoBehaviour{
 
 	[TabGroup("multi row", "Gov Controls",  TextColor = "blue")] 
 	public bool GovWelfare = true;
+
+	[TabGroup("multi row", "Gov Controls", TextColor = "blue")]
+	public float DaysStarvingThreshold = 5f;
 	
+	/// Respawn //////////////////////////////////////////////
     [TabGroup("multi row", "Respawn",  TextColor = "blue")]
 	[InfoBox("Enable respawn on starvation")]
 	public bool starvation = false;
@@ -195,6 +200,7 @@ public class SimulationConfig : MonoBehaviour{
 	[TabGroup("multi row", "Respawn",  TextColor = "blue")]
 	public bool declareBankruptcy = true;
 
+	/// Banking //////////////////////////////////////////////
 	[TabGroup("multi row", "Banking",  TextColor = "orange")] public float fractionalReserveRatio = 0.1f;
 	[TabGroup("multi row", "Banking", TextColor = "orange")] public int termInRounds = 30;
 	[TabGroup("multi row", "Banking", TextColor = "orange")] public float interestRate = 0.02f;
@@ -202,6 +208,7 @@ public class SimulationConfig : MonoBehaviour{
 	[TabGroup("multi row", "Banking", TextColor = "orange")] public float maxPrinciple = 500f;
 	[TabGroup("multi row", "Banking", TextColor = "orange")] public int maxNumDefaults = 5;
 	
+	/// Agent init //////////////////////////////////////////////
 	[TabGroup("multi row", "Agent Initialization", TextColor = "orange")] public AgentType agentType = AgentType.Default;
 	[TabGroup("multi row", "Agent Initialization", TextColor = "orange")] public float initCash = 100;
 	[TabGroup("multi row", "Agent Initialization", TextColor = "orange")] public float initGovCash = 1000;
@@ -222,10 +229,11 @@ public class SimulationConfig : MonoBehaviour{
 	[SerializedDictionary("ID", "Recipe")]
 	public SerializedDictionary<string, SerializedDictionary<string, float>> initialization = new();
 	
+	/// Food consumption //////////////////////////////////////////////
 	[TabGroup("multi row", "Agent FoodConsumption", TextColor = "orange")]
 	public float starvationThreshold = 0.1f;
 	[TabGroup("multi row", "Agent FoodConsumption", TextColor = "orange")]
-	public int maxDaysStarving = 3;
+	public int maxDaysAliveWhileStarving = 3;
 	[TabGroup("multi row", "Agent FoodConsumption", TextColor = "orange")]
 	public bool foodConsumption = false;
 	[TabGroup("multi row", "Agent FoodConsumption", TextColor = "orange")]
@@ -238,6 +246,7 @@ public class SimulationConfig : MonoBehaviour{
 	[TabGroup("multi row", "Agent FoodConsumption", TextColor = "orange")]
 	public float numFoodHappy = 10f;
 
+	/// Agent Trade //////////////////////////////////////////////
 	[TabGroup("multi row", "Agent Trade", TextColor = "orange")] 
 	public AgentProduction productionRate = AgentProduction.FixedRate;
 	[TabGroup("multi row", "Agent Trade", TextColor = "orange")] 

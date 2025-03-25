@@ -102,7 +102,7 @@ public class QoLConsumer : Consumer
 	    if (agent.Cash <= 0)
 		    return bids;
 	    //if not profiting, just buy food if needed
-	    if (agent.Profit > 0)
+	    if (agent.Income > 0)
 	    {
 		    //how many days of food left?
 		    //get days of food DoF/$

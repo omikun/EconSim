@@ -73,7 +73,7 @@ public class Government : EconAgent {
 			log += stock.Value.Stats(header);
 		}
 		log += header + "cash, stock, " + Cash + ", n/a\n";
-		log += header + "profit, stock, " + Profit + ", n/a\n";
+		log += header + "profit, stock, " + Income + ", n/a\n";
 		foreach (var (good, quantity) in producedThisRound)
 		{
 			log += header + good + ", produced, " + quantity + ", n/a\n";
@@ -191,7 +191,7 @@ public class Government : EconAgent {
 		//should not be negative in case agent has more than 2 already
 		var agentFood = agent.FoodInv();
 		var govFood = FoodInv();
-		var refillThreshold = 5f;
+		var refillThreshold = config.DaysStarvingThreshold;
 		if (agent.DaysStarving >= refillThreshold)
 		{
 			var refill = 1f;

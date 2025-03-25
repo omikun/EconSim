@@ -57,7 +57,7 @@ public class AuctionStats : MonoBehaviour
 
 		foreach (var entry in book.Values)
 		{
-			entry.profits.Add(0);
+			entry.incomes.Add(0);
 			entry.starving.Add(0);
 			entry.bankrupted.Add(0);
 			entry.changedProfession.Add(0);
@@ -123,7 +123,7 @@ public class AuctionStats : MonoBehaviour
 				continue;
 			}
 
-			var profitHistory = entry.Value.profits;
+			var profitHistory = entry.Value.incomes;
 			//WARNING this history refers to the last # agents' profits, not last # rounds... short history if popular profession...
 			var profit = profitHistory.LastAverage(historySize);
 			if (profit > mostProfit)

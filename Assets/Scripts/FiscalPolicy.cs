@@ -207,7 +207,7 @@ Reduction of social welfare spending: Cutting back on social programs, which all
     void applyIncomeTax(AuctionBook book, EconAgent agent)
     {
         float tax = 0;
-        var income = agent.Profit;
+        var income = agent.Income;
         if (income < 0)
             return;
         float prevTaxRate = 0;
