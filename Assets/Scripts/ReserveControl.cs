@@ -9,7 +9,7 @@ public class ReserveControl : MonoBehaviour
 	public GameObject window;
 	private SwitchManager enable;
 	private Dictionary<string, SliderControl> controls = new();
-	void Start()
+	void Awake()
 	{
 		// var window = GameObject.Find("Reserve Window");
 		var content = window.transform.Find("Content").gameObject;

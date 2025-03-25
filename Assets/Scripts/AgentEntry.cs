@@ -151,9 +151,8 @@ public class AgentEntry
 		//if bank/gov/unemployed/employed
 		if (agent.book.ContainsKey(agent.outputName) == false)
 		{
-			foreach (var (com, numDepends) in agent.inventory)
+			foreach (var (com, item) in agent.inventory)
 			{
-				var item = agent.inventory[com];
 				Bids.Add(new (com, item.offersThisRound, item.GetPrice()));
 			}
 

@@ -42,11 +42,15 @@ public class Government : EconAgent {
             AddToInventory(name, 0, maxstock, good.Value);
         }
 		
-        var com = "Labor";
-        AddToInventory(com, 1, 1, book[com]);
-		inventory["Food"].Increase(FoodTarget);
-		inventory["Food"].TargetQuantity = FoodTarget;
-    }
+        var labor = "Labor";
+        AddToInventory(labor, 1, 1, book[labor]);
+		foreach (var (com, reserveTarget) in ConfigManager.Config.Reserves)
+		{
+			var item = inventory[com];
+			item.TargetQuantity = reserveTarget;
+			item.Increase(reserveTarget);
+		}
+	}
 
     public override void Decide() {
 	    //pay employees
@@ -93,17 +97,22 @@ public class Government : EconAgent {
         if (EmploymentTarget > Employees.Count)
         {
 	        var offerQuantity = EmploymentTarget - Employees.Count;
-	        var com = "Labor";
-	        bids.Add(com, new Offer(com, book["Food"].marketPrice * payCoefficient, offerQuantity, this));
+	        var labor = "Labor";
+	        bids.Add(labor, new Offer(labor, book["Food"].marketPrice * payCoefficient, offerQuantity, this));
         }
 
         //replenish depended commodities
         foreach (var (com,item) in inventory)
 		{
+	        if (ConfigManager.Config.Reserves.ContainsKey(com))
+		        item.TargetQuantity = ConfigManager.Config.Reserves[com];
+	        
 			if ((int)item.TargetQuantity <= (int)item.Quantity)
 				continue;
+			
 			var offerQuantity = item.TargetQuantity - item.Quantity;
 			var offerPrice = book[com].marketPrice * .93f;
+			item.offersThisRound = offerQuantity;
 			bids.Add(com, new Offer(com, offerPrice, offerQuantity, this));
 		}
         return bids;
@@ -113,7 +122,10 @@ public class Government : EconAgent {
 		var asks = new Offers();
 
         foreach (var (com,item) in inventory)
-		{
+        {
+	        if (ConfigManager.Config.Reserves.ContainsKey(com))
+		        item.TargetQuantity = ConfigManager.Config.Reserves[com];
+	        
 			if ((int)item.TargetQuantity >= (int)item.Quantity)
 				continue;
 
