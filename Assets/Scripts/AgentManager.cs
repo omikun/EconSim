@@ -86,30 +86,7 @@ public class AgentManager
                 continue;
             } else if (cash > 0)
             {
-                if (cash == 1f)
-                    cash = 0;
-                var prefab = GetAgentPrefab();
-                var chance = UnityEngine.Random.Range(0f, 1f);
-                // spawn new agent! if 1 spawn as wood worker or ore miner
-                // else spawn as most profitable profession
-                // var newAgent = NewAgent(prefab, agent.Profession, amount);
-                GameObject go = Object.Instantiate(prefab) as GameObject;
-                go.transform.parent = auctionHouse.transform;
-			
-                var newAgent = go.GetComponent<EconAgent>();
-                // InitAgent(newAgent, profession, cash);
-                newAgent.Init(auctionHouse.config, auctionHouse.district, "Unemployed", 0, 50, cash);  //available for hire
-                go.name = "agent" + newAgent.uid.ToString(); //uid only initialized after agent.Init
-                newAgents.Add(newAgent);
-                Debug.Log(auctionHouse.district.round + " new agent: " + go.name + " uid: " + newAgent.uid.ToString());
-                if (agent.Profession != "Unemployed") // && agent.Profession != "Labor")
-                {
-                    // if (agent.Employer != null)
-                    // 	agent.Employer.Hire(newAgent, cash);
-                    // else 
-                    if (agent.Profession != "Labor")
-                        agent.Hire(newAgent, cash);
-                }
+                SpawnNewAgent(cash, newAgents, agent);
                 // Debug.Log(auctionStats.round + " New agent " + gameObject.name + " uid: " + uid + " cash: " + Cash.ToString("c2") + " has " + inventory[buildable].Quantity + " " + buildable);
             }
             // gov.Pay(amount); //welfare?
@@ -165,6 +142,34 @@ public class AgentManager
         auctionHouse.district.happiness = approval / agents.Count;
         auctionHouse.district.approval = approval / agents.Count;
         auctionHouse.district.gini = GetGini(GetWealthOfAgents());
+    }
+
+    private void SpawnNewAgent(float cash, List<EconAgent> newAgents, EconAgent agent)
+    {
+        if (cash == 1f)
+            cash = 0;
+        var prefab = GetAgentPrefab();
+        var chance = UnityEngine.Random.Range(0f, 1f);
+        // spawn new agent! if 1 spawn as wood worker or ore miner
+        // else spawn as most profitable profession
+        // var newAgent = NewAgent(prefab, agent.Profession, amount);
+        GameObject go = Object.Instantiate(prefab) as GameObject;
+        go.transform.parent = auctionHouse.transform;
+			
+        var newAgent = go.GetComponent<EconAgent>();
+        // InitAgent(newAgent, profession, cash);
+        newAgent.Init(auctionHouse.config, auctionHouse.district, "Unemployed", 0, 50, cash);  //available for hire
+        go.name = "agent" + newAgent.uid.ToString(); //uid only initialized after agent.Init
+        newAgents.Add(newAgent);
+        Debug.Log(auctionHouse.district.round + " new agent: " + go.name + " uid: " + newAgent.uid.ToString());
+        if (agent.Profession != "Unemployed") // && agent.Profession != "Labor")
+        {
+            // if (agent.Employer != null)
+            // 	agent.Employer.Hire(newAgent, cash);
+            // else 
+            if (agent.Profession != "Labor")
+                agent.Hire(newAgent, cash);
+        }
     }
 
     [PropertyOrder(5)] [HorizontalGroup("KillAgent")]

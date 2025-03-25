@@ -200,6 +200,16 @@ public class SimulationConfig : MonoBehaviour{
 	[TabGroup("multi row", "Respawn",  TextColor = "blue")]
 	public bool declareBankruptcy = true;
 
+	// [BoxGroup("Offspring", false)]
+	[TabGroup("multi row", "Pop Growth", TextColor = "blue")]
+	public bool SpawnNewAgent = false;
+	[TabGroup("multi row", "Pop Growth", TextColor = "blue")]
+	[InfoBox("Must wait this long before next offspring")]
+	public int MinDaysSinceLastOffspring = 5;
+	[TabGroup("multi row", "Pop Growth", TextColor = "blue")]
+	[InfoBox("Must have cash for this many days to spawn new agent")]
+	public int MinDaysHaveCash = 5;
+
 	/// Banking //////////////////////////////////////////////
 	[TabGroup("multi row", "Banking",  TextColor = "orange")] public float fractionalReserveRatio = 0.1f;
 	[TabGroup("multi row", "Banking", TextColor = "orange")] public int termInRounds = 30;

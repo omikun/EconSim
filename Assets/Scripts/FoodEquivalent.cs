@@ -54,7 +54,7 @@ public class FoodEquivalent
 		var numFoodPerOutput = GetNumFoodPerOutput();
 		var outputItem = agent.inventory[agent.Profession];
 		var outputRsc = agent.book[agent.Profession];
-		var numBatches= agent.productionStrategy.NumBatchesProduceable(outputRsc, outputItem);
+		var numBatches= agent.productionStrategy.MinNumBatchesProduceable(outputRsc, outputItem);
 		var numOutputs = Mathf.Min(numBatches, outputItem.GetMaxProductionRate(numBatches));
 		var numFood = numOutputs * numFoodPerOutput;
 		return numBatches;

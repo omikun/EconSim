@@ -31,7 +31,7 @@ public partial class EconAgent
         Assert.IsTrue(book.ContainsKey(outputName));
         var rsc = book[outputName];
         var item = inventory[rsc.name];
-        return productionStrategy.NumBatchesProduceable(rsc, item);
+        return productionStrategy.MinNumBatchesProduceable(rsc, item);
     }
 
     protected internal void ConsumeInput(ResourceController rsc, float numProduced, ref string msg)

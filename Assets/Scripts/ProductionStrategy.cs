@@ -10,7 +10,7 @@ public abstract class ProductionStrategy
     {
         agent = a;
     }
-	public float NumBatchesProduceable(ResourceController rsc, InventoryItem outputItem)
+	public float MinNumBatchesProduceable(ResourceController rsc, InventoryItem outputItem)
 	{
 		float numBatches = float.MaxValue;
 		
@@ -75,7 +75,7 @@ public class FixedProduction : ProductionStrategy
     public FixedProduction(EconAgent a) : base(a) {}
 	protected internal override float CalculateNumProduced(ResourceController rsc, InventoryItem item)
 	{
-		var numProduced = NumBatchesProduceable(rsc, item);
+		var numProduced = MinNumBatchesProduceable(rsc, item);
 		//can only build fixed rate at a time
 		numProduced = Mathf.Clamp(numProduced, 0, item.GetMaxProductionRate());
 		numProduced = Mathf.Floor(numProduced);

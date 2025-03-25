@@ -43,6 +43,15 @@ public partial class QolAgent
         //bid for food
         inventory["Food"].offersThisRound = Mathf.Floor(Cash / foodMarketPrice);
     }
+    
+    protected void PopulateOffersFromInventory()
+    {
+        if (outputName == "Unemployed" || outputName == "Labor")
+            PopulateOffersLaborers();
+        else
+            PopulateOffers();
+    }
+    
     protected void DecideToHire()
     {
         //if demand >> supply such that additional goods can be sold to cover cost of new hire
@@ -60,16 +69,13 @@ public partial class QolAgent
         if (excessDemand - excessProduceable > 0) //should be in excess of cost of an additional laborer
         {
             inventory["Labor"].offersThisRound++;
+            Debug.Log(name + " bids labor | excessDemand=" + excessDemand + " excessProduceable=" + excessProduceable);
         }
     }
-    protected void PopulateOffersFromInventory()
+
+    protected void PopulateOffers()
     {
-        if (outputName == "Unemployed" || outputName == "Labor")
-        {
-            PopulateOffersLaborers();
-            return;
-        }
-        
+        //reset
         foreach (var item in inventory.Values)
         {
             item.offersThisRound = 0;
@@ -80,7 +86,6 @@ public partial class QolAgent
         var reason = "";
 
         DecideToHire();
-        // float minQuant = 3f;
         // float outputPressure = buyOutputPressure(minQuant);
         float numBatchInputToBid = 0;
         // var inputFood = foodEquivalent.GetInputFood();
@@ -92,22 +97,10 @@ public partial class QolAgent
         var inputBatchCost = GetInputBatchCost();
         var output = book[outputName];
         var inputCashEquivalent = inputInventoryCashEquivalent(output.recipe);
-        var minInputBatches = productionStrategy.NumBatchesProduceable(output, foodItem);
+        var minInputBatches = productionStrategy.MinNumBatchesProduceable(output, foodItem);
         
-        //deposit excess cash or withdraw as needed
-        var operatingCash = 30 * (inputBatchCost + foodMarketPrice);
-        if (Cash > operatingCash)
-        {
-            var deposit = Cash - operatingCash;
-            deposit = auctionStats.bank.Deposit(this, deposit, "Cash");
-            Cash -= deposit;
-        }
-        else if (Cash < operatingCash)
-        {
-            Cash += auctionStats.bank.Withdraw(this, operatingCash, "Cash");
-        }
+        var remainingCash = DepositOrWithdraw(inputBatchCost, foodMarketPrice);
 
-        var remainingCash = Cash;
         //if cash can't obtain 1 inputBatch (inventory may have some stuff), borrow enough money to pay for cash
         //need money equivalent of inputs that contributes towards one batch
         //(say 3 wood 0 tool, only 2 of those woods contribute to a batch)
@@ -128,6 +121,53 @@ public partial class QolAgent
             }
         }
 
+        numBatchInputToBid = CalcNumBatchInputToBid(remainingInputCash, inputBatchCost, numBatchInputToBid, remainingCash, foodItem, foodMarketPrice, ref reason, ref numFoodToBid);
+
+        //for cases where can't afford to buy enough inputs this round, ends up spending all money to food
+        //ends up never enough to produce, always broke
+        if (minInputBatches == 0 && numBatchInputToBid == 0 && foodItem.Quantity > 0)
+        {
+            numFoodToBid = 0;
+            reason += " no bid food bc didn't bid on inputs when <1 batch inputs ";
+        }
+        //loop over each inventory item and update offersThisRound
+        inventory["Food"].offersThisRound = numFoodToBid;
+        //only buy missing inputs to get to numBatchInput
+        //determine how many batches of each input in current inventory
+        //add numBatchInput - item.numbatches + minbatch
+        {
+            var cashForInputs = Cash - numFoodToBid * foodMarketPrice;
+            // var cashForInputs = numBatchInputToBid * inputBatchCost - inputCashEquivalent;
+            var bids = fillInputBids(cashForInputs);
+            reason += " #inputs " + numBatchInputToBid.ToString("n2")  
+                                  + " addtl input$ " + cashForInputs.ToString("c2")
+                                  + " inputCost " + inputBatchCost.ToString("c2") 
+                                  + " input$eq " + inputCashEquivalent.ToString("c2");
+        }
+        Debug.Log(name + " reason " + reason);
+    }
+
+    private float DepositOrWithdraw(float inputBatchCost, float foodMarketPrice)
+    {
+        //deposit excess cash or withdraw as needed
+        var operatingCash = 30 * (inputBatchCost + foodMarketPrice);
+        if (Cash > operatingCash)
+        {
+            var deposit = Cash - operatingCash;
+            deposit = auctionStats.bank.Deposit(this, deposit, "Cash");
+            Cash -= deposit;
+        }
+        else if (Cash < operatingCash)
+        {
+            Cash += auctionStats.bank.Withdraw(this, operatingCash, "Cash");
+        }
+
+        return Cash;
+    }
+
+    private float CalcNumBatchInputToBid(float remainingInputCash, float inputBatchCost, float numBatchInputToBid,
+        float remainingCash, InventoryItem foodItem, float foodMarketPrice, ref string reason, ref int numFoodToBid)
+    {
         if (outputName == "Food")
         {
             bool keepGoing = true;
@@ -211,28 +251,7 @@ public partial class QolAgent
             }
         }
 
-        //for cases where can't afford to buy enough inputs this round, ends up spending all money to food
-        //ends up never enough to produce, always broke
-        if (minInputBatches == 0 && numBatchInputToBid == 0 && foodItem.Quantity > 0)
-        {
-            numFoodToBid = 0;
-            reason += " no bid food bc didn't bid on inputs when <1 batch inputs ";
-        }
-        //loop over each inventory item and update offersThisRound
-        inventory["Food"].offersThisRound = numFoodToBid;
-        //only buy missing inputs to get to numBatchInput
-        //determine how many batches of each input in current inventory
-        //add numBatchInput - item.numbatches + minbatch
-        {
-            var cashForInputs = Cash - numFoodToBid * foodMarketPrice;
-            // var cashForInputs = numBatchInputToBid * inputBatchCost - inputCashEquivalent;
-            var bids = fillInputBids(cashForInputs);
-            reason += " #inputs " + numBatchInputToBid.ToString("n2")  
-                                  + " addtl input$ " + cashForInputs.ToString("c2")
-                                  + " inputCost " + inputBatchCost.ToString("c2") 
-                                  + " input$eq " + inputCashEquivalent.ToString("c2");
-        }
-        Debug.Log(name + " reason " + reason);
+        return numBatchInputToBid;
     }
 
     private bool DecideAndBorrow(ref float remainingCash, float inputBatchCost, float foodMarketPrice)

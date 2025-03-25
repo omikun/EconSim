@@ -259,7 +259,9 @@ public partial class QolAgent : EconAgent
         
         //chance of reproducing
         Debug.Log(auctionStats.round + " " + name + " since last birth " + numRoundsSinceLastBirth +  " fmaily planning " + numRoundsPlanFamily);
-        if (numRoundsSinceLastBirth > 5 && numRoundsPlanFamily > 5)
+        if (config.SpawnNewAgent
+            && numRoundsSinceLastBirth > config.MinDaysSinceLastOffspring 
+            && numRoundsPlanFamily > config.MinDaysHaveCash)
         {
             if (UnityEngine.Random.Range(0, 1f) > .1f)
                 return 0;
