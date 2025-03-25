@@ -230,11 +230,12 @@ public abstract class TradeResolution
 		//transfer goods from seller to buyer
 		auctionTracker.Transfer(ask.agent, bid.agent, rsc.name, tradeQuantity);
 		//transfer cash from buyer to seller
-		auctionTracker.Transfer(bid.agent, ask.agent, "Cash", tradeQuantity * clearingPrice);
+		var tradeCash = tradeQuantity * clearingPrice;
+		auctionTracker.Transfer(bid.agent, ask.agent, "Cash", tradeCash);
 		
 		bid.agent.Buy(rsc.name, tradeQuantity, clearingPrice);
 		ask.agent.Sell(rsc.name, tradeQuantity, clearingPrice);
-		fiscalPolicy.CollectSalesTax(rsc.name, tradeQuantity, clearingPrice, bid.agent);
+		fiscalPolicy.CollectSalesTax(rsc.name, tradeQuantity, clearingPrice, bid.agent, ask.agent);
 
 		Debug.Log("Trade(), " + auctionTracker.round + ", " + ask.agent.name + ", " + bid.agent.name + ", " + 
 			rsc.name + ", " + tradeQuantity.ToString("n2") + ", " + clearingPrice.ToString("c2") +

@@ -150,6 +150,8 @@ public class SimulationConfig : MonoBehaviour{
 	[TabGroup("multi row", "Gov Controls",  TextColor = "blue")]
     public bool EnableSalesTax = false;
 	[TabGroup("multi row", "Gov Controls",  TextColor = "blue")]
+    public bool PostSalesTax = false;
+	[TabGroup("multi row", "Gov Controls",  TextColor = "blue")]
     [ShowInInspector, DictionaryDrawerSettings(DisplayMode = DictionaryDisplayOptions.OneLine, KeyLabel = "Comm", ValueLabel = "TaxRate")]
     [SerializedDictionary("Comm", "TaxRate")]
     public SerializedDictionary<string, float> SalesTaxRate = new();

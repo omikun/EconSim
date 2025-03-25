@@ -47,11 +47,27 @@ public class FiscalPolicy
     {
         //do nothing
     }
-    public virtual float CollectSalesTax(string com, float quant, float price, EconAgent buyer)
+    public virtual float CollectSalesTax(string com, float quant, float price, EconAgent buyer, EconAgent seller)
     {
         if (false == config.EnableSalesTax)
             return 0;
-        var salesTax = config.SalesTaxRate[com] * quant * price;
+        
+		var tradeCash = quant * price;
+		float askerRevenue = tradeCash;
+		var salesTaxRate = config.SalesTaxRate[com];
+        float salesTax = 0f;
+		if (ConfigManager.Config.PostSalesTax == false) //presale tax
+		{
+			//take some money from bidder meant for seller
+			// final tradeCash = 1.s * sum
+			// final / 1.s = sum
+			askerRevenue = tradeCash / Mathf.Max(1f, 1f + salesTaxRate);
+			salesTax = tradeCash - askerRevenue;
+		} else //post sale tax
+		{
+			//charge more from bidder
+            salesTax = salesTaxRate * tradeCash;
+		}
         buyer.Pay(salesTax);
         gov.Pay(-salesTax);
         taxed += salesTax;
@@ -110,16 +126,6 @@ public class FlatTaxPolicy : FiscalPolicy
     {
     }
 
-    public override float CollectSalesTax(string com, float quant, float price, EconAgent buyer)
-    {
-        if (false == config.EnableSalesTax)
-            return 0;
-        var salesTax = config.SalesTaxRate[com] * quant * price;
-        buyer.Pay(salesTax);
-        gov.Pay(-salesTax);
-        taxed += salesTax;
-        return salesTax;
-    }
 }
 
 [Serializable]
@@ -197,16 +203,6 @@ Reduction of social welfare spending: Cutting back on social programs, which all
         Debug.Log(auctionStats.round + " " + agent.name + " has "
             + agent.Cash.ToString("c2") + " produced " + numProduced
             + " goods and idle taxed " + idleTax.ToString("c2"));
-    }
-    public override float CollectSalesTax(string com, float quant, float price, EconAgent buyer)
-    {
-        if (false == config.EnableSalesTax)
-            return 0;
-        var salesTax = config.SalesTaxRate[com] * quant * price;
-        buyer.Pay(salesTax);
-        gov.Pay(-salesTax);
-        taxed += salesTax;
-        return salesTax;
     }
     void applyIncomeTax(AuctionBook book, EconAgent agent)
     {
