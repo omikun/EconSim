@@ -255,7 +255,7 @@ public class InventoryItem {
             buyHistory.Add(new InventoryTransaction(price, quant));
         }
         boughtThisRound = true;
-        Assert.IsFalse(soldThisRound);
+        Assert.IsFalse(soldThisRound, agent.name + " " + name);
 		//return adjusted quant;
 	}
 	public void Sell(float quant, float price)

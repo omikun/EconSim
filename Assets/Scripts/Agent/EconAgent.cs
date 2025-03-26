@@ -328,8 +328,10 @@ public partial class EconAgent : MonoBehaviour
 
 	public virtual float EvaluateHappiness()
 	{
-		var numFoodEq = foodEquivalent.GetHappyLevel(book, config.numFoodHappy);
-		return Mathf.Log10(numFoodEq);
+		// var numFoodEq = foodEquivalent.GetHappyLevel(book, config.numFoodHappy);
+		var numFood = FoodInv();
+		var scaledFood = (numFood + 10) / 10;
+		return Mathf.Log10(scaledFood) / Mathf.Log10(scaledFood + 1);
 	}
 
 	public void BecomesUnemployed()

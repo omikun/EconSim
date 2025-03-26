@@ -53,12 +53,14 @@ public class AgentManager
             string profession = agent.Profession;
 
 
+            if (agent is not Government && agent is not Bank)
+                approval += agent.EvaluateHappiness();
+            
             if (profession != "Unemployed")
             {
                 book[profession].numAgents++;
                 book[profession].numAgents += agent.NumEmployees;
 
-                approval += agent.EvaluateHappiness();
 
                 if (agent.Cash < 0.0f)
                     book[profession].numBankrupted++;
