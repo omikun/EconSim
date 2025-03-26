@@ -15,26 +15,26 @@ public class Recipe : Dictionary<string, float>
 public class ResourceController
 {
 	const float defaultPrice = 1;
-	public ESList buyers = new();
-	public ESList sellers = new();
- 	public ESList bids = new();
- 	public ESList asks = new();
- 	public ESList avgBidPrice = new();
- 	public ESList minBidPrice = new();
- 	public ESList maxBidPrice = new();
- 	public ESList avgAskPrice = new();
- 	public ESList minAskPrice = new();
- 	public ESList maxAskPrice = new();
- 	public ESList avgClearingPrice = new();
- 	public ESList minClearingPrice = new();
- 	public ESList maxClearingPrice = new();
- 	public ESList trades = new();
- 	public ESList inventory = new();
- 	public ESList cash = new();
- 	public ESList incomes = new();
- 	public ESList changedProfession = new();
- 	public ESList bankrupted = new();
- 	public ESList starving = new();
+	public ESHistory buyers = new();
+	public ESHistory sellers = new();
+ 	public ESHistory bids = new();
+ 	public ESHistory asks = new();
+ 	public ESHistory avgBidPrice = new();
+ 	public ESHistory minBidPrice = new();
+ 	public ESHistory maxBidPrice = new();
+ 	public ESHistory avgAskPrice = new();
+ 	public ESHistory minAskPrice = new();
+ 	public ESHistory maxAskPrice = new();
+ 	public ESHistory avgClearingPrice = new();
+ 	public ESHistory minClearingPrice = new();
+ 	public ESHistory maxClearingPrice = new();
+ 	public ESHistory trades = new();
+ 	public ESHistory inventory = new();
+ 	public ESHistory cash = new();
+ 	public ESHistory incomes = new();
+ 	public ESHistory changedProfession = new();
+ 	public ESHistory bankrupted = new();
+ 	public ESHistory starving = new();
 
 	public int numAgents; //num agents in this profession for current round before profession changes
 	public float happiness;
@@ -51,12 +51,6 @@ public class ResourceController
 	float avgPrice = 1;
     public float setPrice = 1; //predetermined price from initializer for sanity check
     public float breakdown_chance = 1;
-	public float GetAvgPrice(int history) //average of last history size
-	{
-        var skip = Mathf.Max(0, avgClearingPrice.Count - history);
-        avgPrice = avgClearingPrice.Skip(skip).Average();
-        return avgPrice;
-	}
 	public ResourceController(string n, float p, float bp, float br, float pm, float sp, float bc, Recipe r)
 	{
 		name = n;

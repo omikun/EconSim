@@ -28,7 +28,7 @@ public class InfoDisplay : MonoBehaviour
         {
             return;
         }
-        UpdateValue<float>(ref inflation, district.inflation);
+        UpdateValue<float>(ref inflation, district.inflation.ExpAverage);
         UpdateValue<float>(ref happiness, district.happiness);
         UpdateValue<int>(ref numLowStock, district.numNoInput);
         UpdateValue<int>(ref numNegProfit, district.numNegProfit);

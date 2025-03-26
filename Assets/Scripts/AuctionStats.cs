@@ -26,7 +26,7 @@ public class AuctionStats : MonoBehaviour
 	public SimulationConfig config;
 	public Dictionary<string, List<GenericTransaction>> transactions = new();
 	public int round { get; private set; }
-	[DisableInEditorMode] public float inflation;
+	[DisableInEditorMode] public ESHistory inflation = new();
 	[DisableInEditorMode] public float happiness;
 	[DisableInEditorMode] public float approval;
 	[DisableInEditorMode] public int numBankrupted;
@@ -197,9 +197,9 @@ public class AuctionStats : MonoBehaviour
 		picker.Clear();
 		foreach (var c in book)
 		{
-			var asks = c.Value.asks.ExpAverage();
+			var asks = c.Value.asks.ExpAverage;
 			asks = Mathf.Max(asks, 0.1f);
-			var bids = c.Value.bids.ExpAverage();
+			var bids = c.Value.bids.ExpAverage;
 			var ratio = bids / asks;
 
 			if (best_ratio < ratio)
@@ -441,8 +441,8 @@ public class AuctionStats : MonoBehaviour
 		string header = round + ", auction, none, " + c + ", ";
 		string msg = header + "bid, " + buy + ", n/a\n";
 		msg += header + "ask, " + sell + ", n/a\n";
-		msg += header + "avgAskPrice, " + book[c].avgAskPrice[^1] + ", n/a\n";
-		msg += header + "avgBidPrice, " + book[c].avgBidPrice[^1] + ", n/a\n";
+		msg += header + "avgAskPrice, " + book[c].avgAskPrice.Last() + ", n/a\n";
+		msg += header + "avgBidPrice, " + book[c].avgBidPrice.Last() + ", n/a\n";
 
 		auctionHouse.logger.PrintToFile(msg);
 	}

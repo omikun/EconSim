@@ -56,8 +56,8 @@ public partial class QolAgent
     {
         //if demand >> supply such that additional goods can be sold to cover cost of new hire
         //if current production does not cover additional demand or at max production already
-        var demand = book[outputName].bids.ExpAverage();
-        var supply = book[outputName].asks.ExpAverage();
+        var demand = book[outputName].bids.ExpAverage;
+        var supply = book[outputName].asks.ExpAverage;
         var excessDemand = demand - supply;
         
         var outputItem = inventory[outputName];

@@ -200,7 +200,7 @@ public partial class AuctionHouse : MonoBehaviour {
 			TradeStats stats = new();
 			tradeResolver.ResolveOffers(entry.Value, ref stats);
 			district.RecordStats(entry.Value, stats);
-			Debug.Log(entry.Key + ": have " + entry.Value.trades[^1] 
+			Debug.Log(entry.Key + ": have " + entry.Value.trades.Last()
 				+ " at price: " + entry.Value.marketPrice.ToString("c2"));
 		}
 

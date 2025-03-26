@@ -28,33 +28,91 @@ public class Utilities
     }
 }
 
-public class ESList : List<float>
+public class FixedCircularList<T>
+{
+    protected readonly T[] buffer;
+    private int index = 0;
+    private int count = 0;
+
+    public FixedCircularList(int size)
+    {
+        buffer = new T[size];
+        Assert.IsTrue(size >= 2);
+    }
+
+    public void Add(T item)
+    {
+        buffer[index] = item;
+        index = (index + 1) % buffer.Length;
+        if (count < buffer.Length) count++;
+    }
+
+    public ref T Last()
+    {
+        var idx = (index + buffer.Length - 1) % buffer.Length;
+        return ref buffer[idx];
+    }
+    public T LastLast()
+    {
+        var idx = (index + buffer.Length - 2) % buffer.Length;
+        return buffer[idx];
+    }
+
+    public T Get(int i)
+    {
+        if (i < 0 || i >= count) throw new ArgumentOutOfRangeException();
+        return buffer[(index - count + i + buffer.Length) % buffer.Length];
+    }
+
+    public void PrintList()
+    {
+        for (int i = 0; i < count; i++)
+            Console.Write(buffer[(index - count + i + buffer.Length) % buffer.Length] + " ");
+        Console.WriteLine();
+    }
+}
+
+
+public class ESHistory : FixedCircularList<float> 
 {
     float avg;
     private float ema = 0; //exponential moving average
-    public ESList()
-    {
+    public float ExpAverage {
+        get{ return ema;}
     }
-    new public void Add(float num)
+    public ESHistory() : base(21) { }
+
+    public float Min { get { return buffer.Min(); } }
+    public float Max { get { return buffer.Max(); } }
+
+    public void Add(float num)
     {
         base.Add(num);
         float period = 3;
         ema = (num - ema) * 2 / (period + 1) + ema;
     }
-    public float LastHighest(int history)
+    // public float LastHighest(int history)
+    // {
+    //     if (base.Count == 0)
+    //     {
+    //         return 0;
+    //     }
+    //     var skip = Mathf.Max(0, base.Count - history);
+    //     var end = Math.Min(history, base.Count);
+    //     if (skip == end)
+    //     {
+    //         return 0;
+    //     }
+    //     return base.GetRange(skip, end).Max();
+    // }
+#if false
+    public float LastAverage { get { return ExpAverage; } }
+#elif true
+    public float LastAverage(int history)
     {
-        if (base.Count == 0)
-        {
-            return 0;
-        }
-        var skip = Mathf.Max(0, base.Count - history);
-        var end = Math.Min(history, base.Count);
-        if (skip == end)
-        {
-            return 0;
-        }
-        return base.GetRange(skip, end).Max();
+        return ExpAverage; 
     }
+#else
     public float LastAverage(int history)
     {
         if (base.Count == 0)
@@ -65,14 +123,12 @@ public class ESList : List<float>
         var count = Math.Min(history, base.Count);
         return base.GetRange(index, count).Average();
     }
+#endif
 
-    public float ExpAverage()
-    {
-        return ema;
-    }
 
     public float LastSum(int history)
     {
+#if false
         if (base.Count == 0)
         {
             return 0;
@@ -80,6 +136,9 @@ public class ESList : List<float>
         var skip = Mathf.Max(0, base.Count - history);
         var numElements = Math.Min(history, base.Count);
         return base.GetRange(skip, numElements).Sum();
+#else
+        return (ExpAverage > 0.1f) ? ExpAverage : 0;
+#endif
     }
 }
 

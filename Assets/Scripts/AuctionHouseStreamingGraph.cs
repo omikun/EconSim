@@ -192,7 +192,7 @@ public class ESStreamingGraph : MonoBehaviour
     public float SlideTime = -1f;//.5f; //-1 will update y axis?
     List<float> starvValues = new();
 
-    private ESList perAgentValues = new();
+    private ESHistory perAgentValues = new();
 
     public void UpdateGraphs()
     {
@@ -242,7 +242,7 @@ public class ESStreamingGraph : MonoBehaviour
             }
         }
         perAgentValues.Add((float)newMaxY);
-        newMaxY = Math.Max(newMaxY, perAgentValues.TakeLast(TotalPoints+1).Max());
+        newMaxY = Math.Max(newMaxY, perAgentValues.Max);
 
         perAgentGraph.DataSource.VerticalViewSize = nearestBracket(vaxisPerAgentGraph, newMaxY);
         

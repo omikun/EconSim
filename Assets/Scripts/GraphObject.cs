@@ -26,7 +26,7 @@ public class GraphObject
         newMinY = 0;
     }
 
-    public void Plot(AuctionBook book, Func<ResourceController, ESList> selector, 
+    public void Plot(AuctionBook book, Func<ResourceController, ESHistory> selector, 
                      float lastX, float SlideTime)
     {
         if (!chart.gameObject.activeSelf)
@@ -37,9 +37,9 @@ public class GraphObject
         foreach (var rsc in book.Values)
         {
             var values = selector(rsc);
-            chart.DataSource.AddPointToCategoryRealtime(rsc.name, lastX, values[^1], SlideTime);
-            newMaxY  = Math.Max(newMaxY,  values.TakeLast(TotalPoints+1).Max());
-            newMinY  = Math.Min(newMinY,  values.TakeLast(TotalPoints+1).Min());
+            chart.DataSource.AddPointToCategoryRealtime(rsc.name, lastX, values.Last(), SlideTime);
+            newMaxY  = Math.Max(newMaxY,  values.Max);
+            newMinY  = Math.Min(newMinY,  values.Min);
         }
 
         chart.DataSource.VerticalViewSize = nearestBracket(vaxis, newMaxY) - newMinY;

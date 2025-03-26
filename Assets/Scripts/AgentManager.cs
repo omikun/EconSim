@@ -71,7 +71,7 @@ public class AgentManager
                 if (agent.Income < 0)
                     book[profession].numNegProfit++;
 
-                book[profession].incomes[^1] += agent.Income;
+                book[profession].incomes.Last() += agent.Income;
             }
 			
             var cash = agent.Tick(auctionHouse.gov, ref changedProfession, ref bankrupted, ref starving);
@@ -97,13 +97,13 @@ public class AgentManager
             {
                 if (starving)
                 {
-                    book[profession].starving[^1]++;
+                    book[profession].starving.Last()++;
                     book[profession].numStarving++;
                 }
                 if (bankrupted)
-                    book[profession].bankrupted[^1]++;
+                    book[profession].bankrupted.Last()++;
                 if (changedProfession)
-                    book[profession].changedProfession[^1]++;
+                    book[profession].changedProfession.Last()++;
             }
             // Debug.Log(agent.name + " total cash line: " + agents.Sum(x => x.cash).ToString("c2") + amount.ToString("c2"));
 
@@ -122,25 +122,26 @@ public class AgentManager
         foreach (var rsc in book.Values)
         {
             rsc.happiness /= rsc.numAgents;
-            rsc.gdp = rsc.trades[^1] * rsc.marketPrice;
+            rsc.gdp = rsc.trades.Last() * rsc.marketPrice;
             auctionHouse.district.gdp += rsc.gdp;
 
             auctionHouse.district.numBankrupted += rsc.numBankrupted;
             //district.numStarving += rsc.numStarving;
             auctionHouse.district.numNoInput += rsc.numNoInput;
             auctionHouse.district.numNegProfit += rsc.numNegProfit;
-            rsc.numChangedProfession = (int)rsc.changedProfession[^1];
+            rsc.numChangedProfession = (int)rsc.changedProfession.Last();
             auctionHouse.district.numChangedProfession += rsc.numChangedProfession;
 
-            var prevPrice = rsc.avgClearingPrice[^2];
-            var currPrice = rsc.avgClearingPrice[^1];
+            var prevPrice = rsc.avgClearingPrice.LastLast();
+            var currPrice = rsc.avgClearingPrice.Last();
             if (prevPrice != 0)
                 inflation += (currPrice - prevPrice) / prevPrice;
             Debug.Log("inflation current for " + rsc.name + " is " + inflation.ToString("p2"));
         }
 
-        inflation /= 3f;//(float)book.Count;
-        auctionHouse.district.inflation = (!float.IsNaN(inflation) && !float.IsInfinity(inflation)) ? inflation : 0;
+        inflation /= 5f;//(float)book.Count;
+        inflation = (!float.IsNaN(inflation) && !float.IsInfinity(inflation)) ? inflation : 0;
+        auctionHouse.district.inflation.Add(inflation);
         auctionHouse.district.happiness = approval / agents.Count;
         auctionHouse.district.approval = approval / agents.Count;
         auctionHouse.district.gini = GetGini(GetWealthOfAgents());
