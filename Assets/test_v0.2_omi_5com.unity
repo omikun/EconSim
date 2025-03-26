@@ -1258,7 +1258,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4337610018798286363, guid: 4b5c2d45d85f8f54a8b5c1df3c1d77d0, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: -6.300026
+      value: -6.3000336
       objectReference: {fileID: 0}
     - target: {fileID: 4337784471404341995, guid: 4b5c2d45d85f8f54a8b5c1df3c1d77d0, type: 3}
       propertyPath: m_AnchorMax.x
@@ -1705,6 +1705,7 @@ MonoBehaviour:
     config: {fileID: 0}
     auctionStats: {fileID: 0}
     taxed: 0
+    subsidized: 0
     gov: {fileID: 0}
     EnableIdleWealthTax: 0
     EnableWealthTax: 0
@@ -1714,6 +1715,7 @@ MonoBehaviour:
     config: {fileID: 0}
     auctionStats: {fileID: 0}
     taxed: 0
+    subsidized: 0
     gov: {fileID: 0}
   bidCom: Wood
   bidQuant: 0
@@ -1735,7 +1737,6 @@ MonoBehaviour:
   probabilisticHottestGood: 0
   bank: {fileID: 0}
   config: {fileID: 194909953}
-  inflation: 0
   happiness: 0
   approval: 0
   numBankrupted: 0
@@ -1822,7 +1823,7 @@ MonoBehaviour:
   EnableReserve: 1
   Reserves:
     _serializedList: []
-  GovWelfare: 0
+  GovWelfare: 1
   DaysStarvingThreshold: 1
   starvation: 1
   clearInventory: 0
@@ -3723,7 +3724,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4337610018798286363, guid: 4b5c2d45d85f8f54a8b5c1df3c1d77d0, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: -6.300026
+      value: -6.3000336
       objectReference: {fileID: 0}
     - target: {fileID: 4337784471404341995, guid: 4b5c2d45d85f8f54a8b5c1df3c1d77d0, type: 3}
       propertyPath: m_AnchorMax.x
@@ -5848,7 +5849,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4337610018798286363, guid: 4b5c2d45d85f8f54a8b5c1df3c1d77d0, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: -6.300026
+      value: -6.3000336
       objectReference: {fileID: 0}
     - target: {fileID: 4337784471404341995, guid: 4b5c2d45d85f8f54a8b5c1df3c1d77d0, type: 3}
       propertyPath: m_AnchorMax.x

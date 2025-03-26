@@ -26,7 +26,7 @@ public class SalesTaxControl : MonoBehaviour
 		{
 			controls[name] = InitController(content, name)
 				.SetMinValue(0)
-				.SetMaxValue(.4f)
+				.SetMaxValue(1f)
 				.SetValue(.0f)
 				.SetPercent(true)
 				.SetRoundValue(false);

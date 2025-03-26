@@ -236,6 +236,7 @@ public abstract class TradeResolution
 		bid.agent.Buy(rsc.name, tradeQuantity, clearingPrice);
 		ask.agent.Sell(rsc.name, tradeQuantity, clearingPrice);
 		fiscalPolicy.CollectSalesTax(rsc.name, tradeQuantity, clearingPrice, bid.agent, ask.agent);
+		fiscalPolicy.Subsidize(rsc.name, tradeQuantity, clearingPrice, bid.agent, ask.agent);
 
 		Debug.Log("Trade(), " + auctionTracker.round + ", " + ask.agent.name + ", " + bid.agent.name + ", " + 
 			rsc.name + ", " + tradeQuantity.ToString("n2") + ", " + clearingPrice.ToString("c2") +

@@ -25,7 +25,7 @@ public partial class EconAgent
         //pay them to keep them alive!
         var firstPaycheck = Mathf.Min(Cash, book["Food"].marketPrice * .8f);
         firstPaycheck = Mathf.Max(0, firstPaycheck);
-        agent.Earn(firstPaycheck);
+        agent.Collect(firstPaycheck);
     }
 
     public void EmployeeQuit(EconAgent employee)

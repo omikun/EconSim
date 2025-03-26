@@ -25,6 +25,7 @@ public class OfferTable : Dictionary<CommodityName, OfferList>
 			var commodity = entry.Key;
 			var trade = entry.Value;
 			base[commodity].Add(trade);
+			Assert.IsTrue(trade.remainingQuantity > 0, "trying to add 0 offers??");
 		}
 	}
 }

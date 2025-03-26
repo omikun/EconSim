@@ -57,7 +57,7 @@ public class Government : EconAgent {
 	    foreach (var (employee,wage) in Employees)
 	    {
 		    var pay = book["Food"].marketPrice * payCoefficient;
-		    employee.Earn(pay);
+		    employee.Collect(pay);
 		    Cash -= pay;
 	    }
     }

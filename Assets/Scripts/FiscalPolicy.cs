@@ -19,6 +19,7 @@ public class FiscalPolicy
     public SimulationConfig config;
     public AuctionStats auctionStats;
     public float taxed = 0;
+    public float subsidized = 0;
     public Government gov;
 
     public FiscalPolicy()
@@ -56,22 +57,49 @@ public class FiscalPolicy
 		float askerRevenue = tradeCash;
 		var salesTaxRate = config.SalesTaxRate[com];
         float salesTax = 0f;
-		if (ConfigManager.Config.PostSalesTax == false) //presale tax
-		{
-			//take some money from bidder meant for seller
-			// final tradeCash = 1.s * sum
-			// final / 1.s = sum
-			askerRevenue = tradeCash / Mathf.Max(1f, 1f + salesTaxRate);
-			salesTax = tradeCash - askerRevenue;
-		} else //post sale tax
+		// if (ConfigManager.Config.PostSalesTax == false) //presale tax equivalent to collect from asker
+		// {
+		// 	//take some money from bidder meant for seller
+		// 	// final_tradeCash = tax + amountToSeller
+		// 	// final_tradeCash - tax = amountToSeller
+  //           // tax = amountToSeller * taxRate
+  //           // final_tradeCash = amountToSeller * taxRate + amountToSeller
+  //           // final_tradeCash = (1 + taxRate) * amountToSeller
+  //           // amountToSeller = (final_tradeCash) / (1 + taxRate)
+		// 	askerRevenue = tradeCash / Mathf.Max(1f, 1f + salesTaxRate);
+		// 	salesTax = tradeCash - askerRevenue;
+  //           seller.Pay(salesTax);
+		// } else //post sale tax collect additional cash from bidder
 		{
 			//charge more from bidder
             salesTax = salesTaxRate * tradeCash;
+            buyer.Pay(salesTax);
 		}
-        buyer.Pay(salesTax);
-        gov.Pay(-salesTax);
+        
+        gov.Collect(salesTax);
         taxed += salesTax;
+        
+        Debug.Log(auctionStats.round + " " + buyer.name 
+                  + " buys " + quant + " " + com  
+                  + " from " + seller.name 
+                  + " at " + price.ToString("c2")
+                  + " totaled " + tradeCash.ToString("c2") 
+                  + " sales taxed " + salesTax.ToString("c2"));
         return salesTax;
+    }
+
+    public virtual float Subsidize(string com, float quant, float price, EconAgent buyer, EconAgent seller)
+    {
+        if (false == config.EnableSubsidies)
+            return 0;
+        float subsidyRate = config.SubsidiesRate[com];
+        float subsidy = quant * price * subsidyRate;
+        
+        buyer.Collect(subsidy);
+        gov.Pay(subsidy);
+        subsidized += subsidy;
+        
+        return subsidy;
     }
 }
 [Serializable]

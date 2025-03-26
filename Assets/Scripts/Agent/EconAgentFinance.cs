@@ -26,7 +26,7 @@ public partial class EconAgent
         Assert.IsTrue(Cash >= 0, name + " has minus cash " + Cash.ToString("c2"));
     }
 
-    public void Earn(float amount)
+    public void Collect(float amount)
     {
         Cash += amount;
         Assert.IsTrue(Cash >= 0, name + " has minus cash " + Cash.ToString("c2"));
@@ -52,6 +52,9 @@ public partial class EconAgent
         var cumDelta = delta + prevLosses;
         losses = Mathf.Min(0, cumDelta);
         TaxableProfit = Mathf.Max(0, cumDelta);
+        Debug.Log(auctionStats.round + " " + name + " profit this round: " + delta 
+                  + " cumulative losses: " + losses
+                  + " taxable profit: " + TaxableProfit);
     }
 
     public void AddToCash(float quant)

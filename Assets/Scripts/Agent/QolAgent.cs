@@ -221,7 +221,7 @@ public partial class QolAgent : EconAgent
             foreach (var (employee,wage) in Employees)
             {
                 var pay = book["Food"].marketPrice * .5f;
-                employee.Earn(pay);
+                employee.Collect(pay);
                 Cash -= pay;
             }
         
