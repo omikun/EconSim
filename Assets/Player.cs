@@ -9,9 +9,6 @@ using UnityEngine.UI;
 using TMPro;
 using System;
 using Sirenix.Serialization;
-using Sirenix.OdinInspector.Editor.ValueResolvers;
-using Sirenix.OdinInspector.Editor;
-using Sirenix.Utilities.Editor;
 
 [System.Serializable]
 public class Player : MonoBehaviour

@@ -11,7 +11,6 @@ using ChartAndGraph;
 using EconSim;
 using Michsky.MUIP;
 using Sirenix.Serialization;
-using Sirenix.OdinInspector.Editor.ValueResolvers;
 using UnityEngine.Serialization;
 
 [Serializable]

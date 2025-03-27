@@ -10,7 +10,6 @@ using Sirenix.OdinInspector;
 using ChartAndGraph;
 using EconSim;
 using Sirenix.Serialization;
-using Sirenix.OdinInspector.Editor.ValueResolvers;
 using UnityEngine.Serialization;
 
 public partial class AuctionHouse : MonoBehaviour {
@@ -207,11 +206,13 @@ public partial class AuctionHouse : MonoBehaviour {
 		district.PrintAuctionStats();
 
 		foreach (var agent in AgentManager.agents) //including gov
-		{
 			agent.CalculateProfit();
-		}
 		
 		progressivePolicy.Tax(book, AgentManager.agents);
+		
+		foreach (var agent in AgentManager.agents) //including gov
+			agent.UpdatePrevCash();
+		
 		logAgentsStats();
 		district.ClearStats();
 		AgentManager.TickAgent();

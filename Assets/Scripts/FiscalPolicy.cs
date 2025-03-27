@@ -4,13 +4,10 @@ using System;
 using System.Collections.Generic;
 using System.Security.Cryptography.X509Certificates;
 using JetBrains.Annotations;
-using UnityEditor.VersionControl;
 using UnityEngine;
 using UnityEditor;
 using AYellowpaper.SerializedCollections;
 using Sirenix.OdinInspector;
-using Sirenix.OdinInspector.Editor;
-using Sirenix.Utilities.Editor;
 using Sirenix.Serialization;
 using UnityEngine.Assertions;
 
@@ -259,7 +256,7 @@ Reduction of social welfare spending: Cutting back on social programs, which all
         agent.Pay(tax);
         gov.Pay(-tax);
         taxed += tax;
-        Debug.Log(auctionStats.round + " " + agent.name + " has "
+        Debug.Log(auctionStats.round + " income " + agent.name + " has "
             + agent.Cash.ToString("c2") + " income " + income.ToString("c2")
             + " taxed " + tax.ToString("c2") + " at rate of " + finalTaxRate.ToString("P2"));
     }

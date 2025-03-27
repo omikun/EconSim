@@ -85,7 +85,7 @@ public class ESHistory : FixedCircularList<float>
     public float Min { get { return buffer.Min(); } }
     public float Max { get { return buffer.Max(); } }
 
-    public void Add(float num)
+    new public void Add(float num)
     {
         base.Add(num);
         float period = 3;

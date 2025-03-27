@@ -10,7 +10,6 @@ using Sirenix.OdinInspector;
 using ChartAndGraph;
 using EconSim;
 using Sirenix.Serialization;
-using Sirenix.OdinInspector.Editor.ValueResolvers;
 using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.Profiling;

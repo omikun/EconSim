@@ -45,11 +45,11 @@ public partial class EconAgent
         Assert.IsTrue(quantity > 0);
 
         inventory[commodity].Buy(quantity, price);
-        Debug.Log(name + " has " + Cash.ToString("c2")
-                  + " want to buy " + quantity.ToString("n2") + " " + commodity
-                  + " for " + price.ToString("c2") + " bought " + quantity.ToString("n2"));
-        Assert.IsFalse(outputName.Contains(commodity), name + " buying own output: " + outputName);
         Cash -= price * quantity;
+        Debug.Log(name + " has " + Cash.ToString("c2")
+                  + " after wanting to buy " + quantity.ToString("n2") + " " + commodity
+                  + " for " + price.ToString("c2") + " and bought " + quantity.ToString("n2"));
+        Assert.IsFalse(outputName.Contains(commodity), name + " buying own output: " + outputName);
         return quantity;
     }
 
@@ -64,6 +64,9 @@ public partial class EconAgent
         inventory[commodity].Sell(quantity, price);
         Assert.IsTrue(inventory[commodity].Quantity >= 0);
         Cash += price * quantity;
+        Debug.Log(name + " has " + Cash.ToString("c2")
+                  + " after asking " + quantity.ToString("n2") + " " + commodity
+                  + " for " + price.ToString("c2") + " and sold " + quantity.ToString("n2"));
     }
 
     public void UpdateSellerPriceBelief(in Offer trade, in ResourceController rsc)

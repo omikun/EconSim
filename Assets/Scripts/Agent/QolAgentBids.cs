@@ -83,6 +83,7 @@ public partial class QolAgent
             item.CanOfferAdditionalThisRound = true;
         }
 
+        Assert.IsTrue(Cash > 0);
         var reason = "";
 
         DecideToHire();

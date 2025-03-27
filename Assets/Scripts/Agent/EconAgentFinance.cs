@@ -47,14 +47,20 @@ public partial class EconAgent
     {
         var prevLosses = losses;
         var delta = Cash - prevCash;
+        var prevCash2 = prevCash;
         prevCash = Cash;
         Income = delta;
         var cumDelta = delta + prevLosses;
         losses = Mathf.Min(0, cumDelta);
         TaxableProfit = Mathf.Max(0, cumDelta);
-        Debug.Log(auctionStats.round + " " + name + " profit this round: " + delta 
+        Debug.Log(auctionStats.round + " income " + name + " prevCash " + prevCash2 + " has " + Cash + " profit this round: " + delta 
                   + " cumulative losses: " + losses
                   + " taxable profit: " + TaxableProfit);
+    }
+
+    public void UpdatePrevCash()
+    {
+        prevCash = Cash;
     }
 
     public void AddToCash(float quant)
