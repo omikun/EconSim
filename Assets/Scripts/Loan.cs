@@ -62,7 +62,7 @@ public class Loan
         interestPaid += Mathf.Min(amount, interest);
         
         principle -= Mathf.Max(0, amount - interest);
-        Debug.Log("Paid() " + principle + " -= " + amount + " - " + interest);
+        Debug.Log("Paid() " + amount + " w/ interest = " + interest + " remaining = " + principle);
         paidOff = (principle < 0.01f);
         return paidOff;
     }

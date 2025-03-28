@@ -209,6 +209,12 @@ public class InventoryItem {
         OfferPrice = price;
 
     }
+    public float Set(float quant)
+    {
+        Quantity = quant;
+        Assert.IsTrue(quant >= 0);
+        return Quantity;
+    }
     public float Increase(float quant)
     {
 	    Assert.IsFalse(name == "Labor"); //should never increase labor unless fired

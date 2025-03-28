@@ -336,6 +336,7 @@ public partial class EconAgent : MonoBehaviour
 	public void BecomesUnemployed()
 	{
 		outputName = "Unemployed";
+		inventory["Labor"].Set(1);
 	}
 
 	public void SetEmployed()

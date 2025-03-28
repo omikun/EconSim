@@ -91,13 +91,6 @@ public partial class Bank
         var principle = paymentByAgent - interestPaidByAgent;
         Wealth += interestPaidByAgent;
         liability -= principle;
-
-        if (loans.numDefaults > maxNumDefaults)
-        {
-            //bank gets to own all assets, agent becomes unemployed
-            agent.BecomesUnemployed();
-            LiquidateInventory(agent.inventory);
-        }
     }
 
     private void AgentBorrowsShortfall(EconAgent agent, ref float tempLiability, float paymentByAgent, float agentMonies)
@@ -175,6 +168,8 @@ public partial class Bank
                     loan.defaulted = true; //NOTE numDefaults could be larger than maxNumDefaults
                     if (loans.numDefaults > maxNumDefaults)
                     {
+                        Debug.Log(auctionStats.round + " " + agent.name 
+                                  + " is bankrupt, max defaults, to be liquidated ");
                         agent.BecomesUnemployed();
                         LiquidateInventory(agent.inventory);
                     }
