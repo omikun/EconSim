@@ -44,15 +44,9 @@ public abstract class AskPriceStrategy
 			float sellQuantity = FindSellCount(commodityName);
 			if (sellQuantity <= 0)
 				continue;
-			//float sellPrice = sellStock.GetPrice();
-			// + cost of food since last sell
+			
+			stock.CalculateSellPrice(sellQuantity);
 			float sellPrice = GetSellPrice(commodityName);
-			if (agent.config.sellPriceMinFoodExpense)
-			{
-				var minCost = stock.unitCost + (agent.foodExpense / sellQuantity);
-				sellPrice = Mathf.Max(sellPrice, minCost);
-				Assert.IsTrue(sellPrice > 0f);
-			}
 
 			if (agent.config.sanityCheckSellQuant)
 			{

@@ -378,6 +378,18 @@ public class InventoryItem {
 		UpdateNiceness = false;
 		return _niceness;
     }
+
+    public void CalculateSellPrice(float sellQuantity)
+    {
+		if (agent.config.sellPriceMinFoodExpense)
+		{
+			var minCost = unitCost + (agent.foodExpense / sellQuantity);
+			priceBelief = Mathf.Max(priceBelief, minCost);
+			Assert.IsTrue(priceBelief > 0f);
+		}
+		//TODO need to know supply and demand
+		//if demand is small, assume only able to sell demand amount and price at that level?
+    }
 	public float GetPrice()
 	{
 		//SanePriceBeliefs();
@@ -630,24 +642,24 @@ public class InventoryItem {
 	        Assert.IsTrue(sellPriceMultiplier > .5f && sellPriceMultiplier < 1.5f);
 	        priceBelief *= sellPriceMultiplier;
 	        tempPriceBelief = priceBelief;
-
-            // Additional constraint: Ensure minimum sell price based on costs
-	        if (agent.config.minSellPrice)
-	        {
-                // Calculate total input costs
-		        var otherCosts = agent.inventory.Values
-			        .Where(item => agent.inputs.Contains(item.name))
-			        .Sum(item => agent.book[item.name].marketPrice);
-		        otherCosts += agent.book["Food"].marketPrice * 2 ;
-                
-                // Compute amortized quantity for cost per unit
-                var amortizedQuantity = Mathf.Max(rsc.productionPerBatch, Quantity * 0.8f);
-                var minCost = otherCosts / amortizedQuantity;
-                // Ensure price is at least the cost
-		        reason += " raise min cost " + minCost.ToString("c2") + " price belief: " + priceBelief.ToString("c2");
-                priceBelief = Mathf.Max(minCost, priceBelief);
-	        }
         }
+
+	    // Additional constraint: Ensure minimum sell price based on costs
+	    if (agent.config.minSellPrice)
+	    {
+		    // Calculate total input costs
+		    var otherCosts = agent.inventory.Values
+			    .Where(item => agent.inputs.Contains(item.name))
+			    .Sum(item => agent.book[item.name].marketPrice);
+		    otherCosts += agent.book["Food"].marketPrice * 2 ;
+                
+		    // Compute amortized quantity for cost per unit
+		    var amortizedQuantity = Mathf.Max(rsc.productionPerBatch, Quantity * 0.8f);
+		    var minCost = otherCosts / amortizedQuantity;
+		    // Ensure price is at least the cost
+		    reason += " raise min cost " + minCost.ToString("c2") + " price belief: " + priceBelief.ToString("c2");
+		    priceBelief = Mathf.Max(minCost, priceBelief);
+	    }
 
 		SanePriceBeliefs();
         // Log the update for debugging purposes

@@ -116,12 +116,14 @@ public partial class QolAgent : EconAgent
             if (item.offersThisRound <= 0)
                 continue;
             
-            var price = item.GetPrice();
             var selling = !isConsumable(itemName);
             if (itemName == "Labor")
                 selling = Profession == "Unemployed";
             
             var offers = (selling) ? asks : bids;
+            
+            item.CalculateSellPrice(item.offersThisRound);
+            var price = item.GetPrice();
             offers.Add(itemName, new Offer(itemName, price, item.offersThisRound, this));
             item.offersThisRound = 0;
             if (selling)
