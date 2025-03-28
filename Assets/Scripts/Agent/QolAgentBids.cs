@@ -93,10 +93,11 @@ public partial class QolAgent
         // var outputFood = foodEquivalent.GetOutputFood();
 
         var numFoodToBid = 0;
+        var output = book[outputName];
         var foodItem = inventory["Food"];
         var foodMarketPrice = (outputName == "Food") ? 0 : book["Food"].marketPrice;
+        
         var inputBatchCost = GetInputBatchCost();
-        var output = book[outputName];
         var inputCashEquivalent = inputInventoryCashEquivalent(output.recipe);
         var minInputBatches = productionStrategy.MinNumBatchesProduceable(output, foodItem);
         
@@ -331,8 +332,12 @@ public partial class QolAgent
             float bidNumBatches = Mathf.Floor(totalCashEquivalent / batchCost);
 
             recompute = false;
-            foreach (var (input, amount) in _recipe.ToList()) {
-                float amountNeeded = bidNumBatches * amount - inventory[input].Quantity;
+            foreach (var (input, amount) in _recipe.ToList())
+            {
+                var chance = book[input].breakdown_chance;
+                float amountNeeded = bidNumBatches * amount * chance - inventory[input].Quantity;
+                amountNeeded = Mathf.Ceil(amountNeeded);
+                
                 if (amountNeeded < 0) {     //more than needed, can discard and recompute w/o
                     recompute = true;
                     _recipe.Remove(input);
@@ -375,12 +380,13 @@ public partial class QolAgent
             return 0;
         
         //get numNeeded of each input for batch
-        var rsc = book[outputName];
+        var outputRsc = book[outputName];
         var totalCost = 0f;
-        foreach (var com in rsc.recipe.Keys)
+        foreach (var com in outputRsc.recipe.Keys)
         {
-            var numNeeded = rsc.recipe[com];
-            var cost = inventory[com].GetPrice(); //rsc.avgBidPrice.Last();
+            var numNeeded = outputRsc.recipe[com];
+            var fractionConsumed = book[com].breakdown_chance;
+            var cost = inventory[com].GetPrice() * fractionConsumed; //rsc.avgBidPrice.Last();
             totalCost += numNeeded * cost;
         }
 

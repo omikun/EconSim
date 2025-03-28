@@ -206,7 +206,7 @@ public abstract class TradeResolution
 	{
 		if (bid.agent.config.onlyBuyWhatsAffordable)
 		{
-			quantity = Mathf.Clamp((float)(int)(bid.agent.Cash/price), 0, quantity);
+			quantity = Mathf.Clamp(Mathf.Floor(bid.agent.Cash/price), 0, quantity);
 			bid.UpdateOffer(quantity);
 			Debug.Log(bid.agent.name + " only buying " + quantity.ToString("n2") + " " + ask.commodityName +
 			          " new bid " + bid.offerQuantity.ToString("n2") + " remaining " +
