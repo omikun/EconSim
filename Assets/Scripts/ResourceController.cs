@@ -36,6 +36,9 @@ public class ResourceController
  	public ESHistory bankrupted = new();
  	public ESHistory starving = new();
 
+	public string name { get; private set; }
+	public string profession { get; private set; }
+	private float _marketPrice;
 	public int numAgents; //num agents in this profession for current round before profession changes
 	public float happiness;
 	public float approval;
@@ -51,9 +54,10 @@ public class ResourceController
 	float avgPrice = 1;
     public float setPrice = 1; //predetermined price from initializer for sanity check
     public float breakdown_chance = 1;
-	public ResourceController(string n, float p, float bp, float br, float pm, float sp, float bc, Recipe r)
+	public ResourceController(string n, string prof, float p, float bp, float br, float pm, float sp, float bc, Recipe r)
 	{
 		name = n;
+		profession = prof;
 		productionPerBatch = p;
 		baseProduction = bp;
 		batchRate = br;
@@ -94,8 +98,6 @@ public class ResourceController
 	{
 		productionMultiplier = pm;
 	}
-	public string name { get; private set; }
-	private float _marketPrice;
 	public float marketPrice
 	{
 		get { return _marketPrice;}

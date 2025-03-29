@@ -87,11 +87,12 @@ public class ESStreamingGraph : MonoBehaviour
 
         int index = 0;
         chart.DataSource.Clear();
-        foreach (var good in auctionTracker.book.Keys)
+        foreach (var rsc in auctionTracker.book.Values)
         {
             //chart.DataSource.SetCategoryLine(good, template.lineMaterials[index], template.lineThickness, template.lineTiling);
             //chart.DataSource.SetCategoryFill(good, null, false);
-            Debug.Log("init line material for " + good);
+            chart.DataSource.RenameCategory(rsc.name, rsc.profession);
+            Debug.Log("init line material for " + rsc.profession);
             index++;
         }
         chart.DataSource.EndBatch(); // finally we call EndBatch , this will cause the GraphChart to redraw itself
@@ -183,7 +184,7 @@ public class ESStreamingGraph : MonoBehaviour
         InitGraph(bidChartObject.chart, "Bids");
         
         //InitPerAgentGraph(perAgentGraph, "Per Agent Inventory");
-        //InitPieChart(jobChart);
+        // InitPieChart(jobChart);
 
         lastX = 0;//TotalPoints;
         lastTime = Time.time;
@@ -209,7 +210,7 @@ public class ESStreamingGraph : MonoBehaviour
             if (rsc.name == "Labor")
                 continue;
             var yvalue = Mathf.Max(.01f, rsc.numAgents);
-            jobChart.DataSource.SetValue(rsc.name, yvalue);
+            jobChart.DataSource.SetValue(rsc.profession, yvalue);
         }
         //Add gov and bank and unemployed count
         var numGovEmployees = Mathf.Max(.01f, district.gov.NumEmployees);

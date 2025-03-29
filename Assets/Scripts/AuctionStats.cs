@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.Assertions;
 using UnityEngine;
@@ -292,6 +292,7 @@ public class AuctionStats : MonoBehaviour
 			float prod_multiplier = 0;
 			float set_price = 0;
 			float breakdown_chance = 1;
+			string producer_name = "none";
 			foreach (var field in item.Value)
 			{
 				if (field.Key == "Breakdown_chance")
@@ -330,12 +331,20 @@ public class AuctionStats : MonoBehaviour
 					continue;
 				}
 
+				if (field.Key.StartsWith("Producer_"))
+				{
+					var parts = field.Key.Split('_');
+					if (parts.Length == 2)
+						producer_name = parts[1].SplitPascalCase();
+					continue;
+				}
+
 				dep.Add(field.Key, field.Value);
 			}
 
 			Assert.IsNotNull(dep);
 			book.Add(item.Key,
-				new ResourceController(item.Key, prod_rate, base_rate, batch_rate, prod_multiplier, set_price,
+				new ResourceController(item.Key, producer_name, prod_rate, base_rate, batch_rate, prod_multiplier, set_price,
 					breakdown_chance, dep));
 		}
 
