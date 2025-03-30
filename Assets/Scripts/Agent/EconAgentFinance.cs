@@ -29,7 +29,6 @@ public partial class EconAgent
     public void Collect(float amount)
     {
         Cash += amount;
-        Assert.IsTrue(Cash >= 0, name + " has minus cash " + Cash.ToString("c2"));
     }
 
     public float TaxProfit(float taxRate)

@@ -134,7 +134,7 @@ public class AgentEntry
 		Employer = (agent.Employer == null) ? "Self employed" : agent.Employer.name + "-" + agent.Employer.outputName;
 		NumEmployees = (agent.Employees == null) ? 0 : agent.Employees.Count;
 		
-		Assert.IsFalse(agent.Employer != null && NumEmployees > 0);
+		Assert.IsFalse(agent.Employer != null && NumEmployees > 0, agent.name + " can't both have an employer and employees!");
 		//all inventory
 		foreach (var (com, numDepends) in agent.inventory)
 		{

@@ -274,26 +274,6 @@ public partial class QolAgent : EconAgent
         return 0;
     }
 
-    public virtual void HandleDeath()
-    {
-        var quants = inventory.Values.Select(item => item.Quantity);
-        //var msg = string.Join(",", quants);
-        var msg = $"{string.Join(",", inventory.Keys)}--{string.Join(",", inventory.Values.Select(item => item.Quantity))}";
-        //var msg = string.Join(",", inventory.SelectMany(t => t.Key, (t, i) => t.Key + ", " + t.Value.Quantity ));
-
-        Debug.Log(auctionStats.round + " " + name + " has died with " + msg);
-        Alive = false;
-        outputName = "Dead";
-        if (Employer != null)
-            Employer.EmployeeQuit(this);
-            
-        if (auctionStats.bank.QueryLoans(this) > 0f)
-        {
-            //liquidate assets
-            auctionStats.bank.LiquidateInventory(inventory);
-        }
-    }
-
     public override Offers CreateAsks()
     {
         //ask only enough where utility matches others

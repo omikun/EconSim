@@ -77,14 +77,7 @@ public class AgentManager
             var cash = agent.Tick(auctionHouse.gov, ref changedProfession, ref bankrupted, ref starving);
             if (agent.Alive == false)
             {
-                agent.gameObject.SetActive(false);
                 deadAgents.Add(agent);
-                if (agent.Employer != null)
-                    agent.Employer.EmployeeQuit(agent);
-                if (auctionHouse.district.bank.QueryLoans(agent) > 0)
-                    auctionHouse.district.bank.LiquidateInventory(agent.inventory);
-                else
-                    auctionHouse.gov.LiquidateInventory(agent.inventory);
                 continue;
             } else if (cash > 0)
             {
@@ -180,6 +173,7 @@ public class AgentManager
     public void KillAgent()
     {
         var agent = agents[killIndex];
+        agent.Quit();
         if (auctionHouse.district.bank.QueryLoans(agent) > 0)
             auctionHouse.district.bank.LiquidateInventory(agent.inventory);
         else

@@ -120,6 +120,7 @@ public partial class AuctionHouse : MonoBehaviour {
 		var maxStock = Mathf.Max(initStock, 200);
         gov.Init(config, district, buildable, initStock, maxStock);
 
+        district.gov = gov;
         AgentManager.agents.Add(gov);
 	}
 	

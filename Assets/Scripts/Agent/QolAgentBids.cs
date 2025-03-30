@@ -83,7 +83,6 @@ public partial class QolAgent
             item.CanOfferAdditionalThisRound = true;
         }
 
-        Assert.IsTrue(Cash > 0);
         var reason = "";
 
         DecideToHire();
@@ -386,6 +385,8 @@ public partial class QolAgent
         {
             var numNeeded = outputRsc.recipe[com];
             var fractionConsumed = book[com].breakdown_chance;
+            Debug.Log(name + " " + Profession + " per input batch needs " 
+                      + numNeeded + " * " + fractionConsumed + " " + com + "break down chance");
             var cost = inventory[com].GetPrice() * fractionConsumed; //rsc.avgBidPrice.Last();
             totalCost += numNeeded * cost;
         }

@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.Assertions;
 using UnityEngine;
@@ -9,6 +9,8 @@ using System.Security.Cryptography.X509Certificates;
 using System.Net.WebSockets;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
+using Sirenix.Utilities;
+using UnityEngine.UI;
 
 public class AuctionBook : Dictionary<string, ResourceController> { }
 
@@ -22,6 +24,7 @@ public class AuctionStats : MonoBehaviour
 	
 	public AuctionBook book { get; private set; }
 	public Bank bank;
+	public Government gov;
 	[Required]
 	public SimulationConfig config;
 	public Dictionary<string, List<GenericTransaction>> transactions = new();
@@ -298,6 +301,7 @@ public class AuctionStats : MonoBehaviour
 				if (field.Key == "Breakdown_chance")
 				{
 					breakdown_chance = field.Value;
+					Debug.Log(item.Key + " break down chance: " + breakdown_chance);
 					continue;
 				}
 

@@ -199,10 +199,14 @@ public partial class EconAgent : MonoBehaviour
 		foodExpense = 0;
 		inputs.Clear();
 		DaysStarving = 0;
+		Quit();
 		//foreach (var outputName in outputName)
 		{
 			if (!book.ContainsKey(outputName))
+			{
 				Debug.Log("commodity not recognized: " + outputName);
+				return;
+			}
 
 			var output = book[outputName];
 			if (output.recipe == null)
@@ -333,44 +337,6 @@ public partial class EconAgent : MonoBehaviour
 		return Mathf.Log10(scaledFood) / Mathf.Log10(scaledFood + 1);
 	}
 
-	public void BecomesUnemployed()
-	{
-		outputName = "Unemployed";
-		inventory["Labor"].Set(1);
-	}
-
-	public void SetEmployed()
-	{
-		outputName = "Labor";
-	}
-	public virtual void ChangeProfession(Government gov, bool bankrupted = true)
-	{
-		string bestGood = auctionStats.GetHottestGood();
-		float profit = 0f;
-		string mostDemand = auctionStats.GetMostProfitableProfession(ref profit, Profession);
-
-		if (bestGood != "invalid")
-		{
-			mostDemand = bestGood;
-		}
-
-		Debug.Log(auctionStats.round + " " + name + " changing from " + Profession + " to " + mostDemand +
-		          " --  bestGood: " + bestGood + " bestProfession: " + mostDemand);
-
-		string b = "";
-		var lastInProfession = book[Profession].numAgents == 1;
-		if (mostDemand != "invalid" && !lastInProfession)
-			b = mostDemand;
-		else
-			b = Profession;
-
-		if (config.clearInventory)
-		{
-			inventory.Clear();
-		}
-
-		Respawn(bankrupted, b, gov);
-	}
 
 	/*********** Trading ************/
 

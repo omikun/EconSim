@@ -86,4 +86,19 @@ public partial class EconAgent
 
         inventory.Add(name, new InventoryItem(this, auctionStats, name, num, max, rsc));
     }
+    
+    public void LiquidateInventory(Inventory agentInventory)
+    {
+        foreach (var (good, item) in agentInventory)
+        {
+	        if (good == "Labor")
+		        continue;
+	        
+            if (inventory.ContainsKey(good) == false)
+                AddToInventory(good, item.Quantity, maxStock, item.rsc);
+            else
+                inventory[good].Increase(item.Quantity);
+            item.Decrease(item.Quantity);
+        }
+    }
 }

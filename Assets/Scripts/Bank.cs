@@ -126,21 +126,6 @@ public partial class Bank : EconAgent
     }
 
 
-    public void LiquidateInventory(Inventory agentInventory)
-    {
-        foreach (var (good, item) in agentInventory)
-        {
-	        if (good == "Labor")
-		        continue;
-	        
-            if (inventory.ContainsKey(good) == false)
-                AddToInventory(good, item.Quantity, maxStock, item.rsc);
-            else
-                inventory[good].Increase(item.Quantity);
-            item.Decrease(item.Quantity);
-        }
-    }
-
     private static float BorrowAmount(float paymentByAgent, float agentMonies)
     {
         var shortFall = paymentByAgent - agentMonies;

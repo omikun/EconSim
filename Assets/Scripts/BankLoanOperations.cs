@@ -170,7 +170,7 @@ public partial class Bank
                     {
                         Debug.Log(auctionStats.round + " " + agent.name 
                                   + " is bankrupt, max defaults, to be liquidated ");
-                        agent.BecomesUnemployed();
+                        agent.Quit();
                         LiquidateInventory(agent.inventory);
                     }
                 }
