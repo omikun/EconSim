@@ -172,6 +172,7 @@ public partial class Bank
                                   + " is bankrupt, max defaults, to be liquidated ");
                         agent.Quit();
                         LiquidateInventory(agent.inventory);
+                        break;
                     }
                 }
                 continue;

@@ -98,6 +98,7 @@ public partial class EconAgent
                 AddToInventory(good, item.Quantity, maxStock, item.rsc);
             else
                 inventory[good].Increase(item.Quantity);
+            item.offersThisRound = 0;
             item.Decrease(item.Quantity);
         }
     }
