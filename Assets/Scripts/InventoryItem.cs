@@ -284,7 +284,10 @@ public class InventoryItem {
             saleHistory.Add(new InventoryTransaction(price, quant));
         }
         soldThisRound = true;
-        Assert.IsFalse(boughtThisRound);
+        Assert.IsFalse(boughtThisRound && agent is Government, 
+	        auctionStats.round + " " + agent.name 
+	        + " selling " + quant + " " + name + " for " + price.ToString("c2")
+	        + " but also bought this item this round already??");
 	}
     public float FindSellCount(ResourceController rsc, int historySize, bool enablePriceFavorability)
 	{

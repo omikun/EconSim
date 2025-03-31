@@ -249,16 +249,17 @@ Reduction of social welfare spending: Cutting back on social programs, which all
                 tax += (bracket.max - bracket.min) * (bracket.taxRate);
             }
         }
-
         var finalTaxRate = tax / income;
+
+        Debug.Log(auctionStats.round + " income " + agent.name + " has "
+            + agent.Cash.ToString("c2") + " income " + income.ToString("c2")
+            + " taxed " + tax.ToString("c2") + " at rate of " + finalTaxRate.ToString("P2"));
+        
         //what is this?? tax += agent.PayTax(finalTaxRate);
         Assert.IsTrue(tax >= 0);
         agent.Pay(tax);
         gov.Pay(-tax);
         taxed += tax;
-        Debug.Log(auctionStats.round + " income " + agent.name + " has "
-            + agent.Cash.ToString("c2") + " income " + income.ToString("c2")
-            + " taxed " + tax.ToString("c2") + " at rate of " + finalTaxRate.ToString("P2"));
     }
 
 }

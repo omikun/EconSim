@@ -9,9 +9,11 @@ using UnityEngine.Events;
 public class IncomeTaxControl : MonoBehaviour
 {
 	private SwitchManager enable;
+	private SwitchManager maxTax;
 	private List<RangeSliderControl> brackets = new();
 	private List<SliderControl> amounts = new();
 	private bool reset = true;
+	private bool saved = false;
 
 	void Awake()
 	{
@@ -22,12 +24,37 @@ public class IncomeTaxControl : MonoBehaviour
 		enable = content.transform.Find("Enable")
 			.GetComponent<SwitchManager>();
 		enable.onValueChanged.AddListener(UpdateEnable);
+		maxTax = content.transform.Find("MaxTax")
+			.GetComponent<SwitchManager>();
+		maxTax.onValueChanged.AddListener(UpdateMaxTax);
 		InitBrackets(content);
 		InitAmounts(content);
 	}
 	void UpdateEnable(bool value)
 	{
 		this.GetConfig().EnableIncomeTax = value;
+	}
+	
+	void UpdateMaxTax(bool value)
+	{
+		if (value == true)
+		{
+			foreach (var amount in amounts)
+			{
+				amount.SavedValue = amount.value;
+				amount.SetValue(1);
+			}
+			_updateAmounts();
+			saved = true;
+		}
+		else if (saved) 
+		{
+			foreach (var amount in amounts)
+				// Debug.Log("saved value: " + amount.SavedValue);
+				amount.SetValue(amount.SavedValue);
+			_updateAmounts();
+			saved = false;
+		}
 	}
 
 	protected RangeSlider FindRangeSlider(GameObject go, string name)
@@ -78,6 +105,7 @@ public class IncomeTaxControl : MonoBehaviour
 				.SetMinValue(0)
 				.SetValue(values[i])
 				.SetRoundValue(false);
+			sc.SavedValue = values[i];
 			amounts.Add(sc);
 		}
 		
@@ -88,14 +116,26 @@ public class IncomeTaxControl : MonoBehaviour
 
 	protected void UpdateAmounts(float value)
 	{
+		saved = false;
+		var msg = _updateAmounts();
+
+		if (value < 1)
+			maxTax.SetOff();
+		Debug.Log(msg);
+	}
+
+	private string _updateAmounts()
+	{
 		string msg = " Current value: ";
 		for (int i = 0; i < amounts.Count; i++)
 		{
 			this.GetConfig().taxBrackets[i].taxRate = amounts[i].value;
 			msg += name + ": " + amounts[i].value + " ";
 		}
-		Debug.Log(msg);
+
+		return msg;
 	}
+
 	protected void UpdateBrackets(int order)
 	{
 		if (!reset) //prevent infinite update callbacks

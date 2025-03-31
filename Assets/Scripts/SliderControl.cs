@@ -6,6 +6,7 @@ public class SliderControl
 {
 	[SerializeField] private SliderManager slider;
 	[SerializeField] private string name;
+	[SerializeField] public float SavedValue;
 
 	public SliderControl(SliderManager slider, string n)
 	{
