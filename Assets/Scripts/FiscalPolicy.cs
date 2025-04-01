@@ -233,10 +233,8 @@ Reduction of social welfare spending: Cutting back on social programs, which all
     {
         float tax = 0;
         var income = agent.Income;
-        if (income < 0)
+        if (income <= 0)
             return;
-        if (agent.name == "agent2")
-            Debug.Log("applying income tax to agent2");
         foreach (var bracket in ConfigManager.Config.taxBrackets)
         {
             if (income < bracket.min)
