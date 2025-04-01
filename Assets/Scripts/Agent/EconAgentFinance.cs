@@ -23,7 +23,8 @@ public partial class EconAgent
     public void Pay(float amount)
     {
         Cash -= amount;
-        Assert.IsTrue(Cash >= 0, name + " has minus cash " + Cash.ToString("c2"));
+        Assert.IsTrue(Cash >= 0, name + " has minus cash " + Cash.ToString("c2") 
+                                 + " trying to pay " + amount);
     }
 
     public void Collect(float amount)
@@ -48,10 +49,10 @@ public partial class EconAgent
         var delta = Cash - prevCash;
         var prevCash2 = prevCash;
         prevCash = Cash;
-        Income = delta;
         var cumDelta = delta + prevLosses;
         losses = Mathf.Min(0, cumDelta);
         TaxableProfit = Mathf.Max(0, cumDelta);
+        Income = TaxableProfit;
         Debug.Log(auctionStats.round + " income " + name + " prevCash " + prevCash2 + " has " + Cash + " profit this round: " + delta 
                   + " cumulative losses: " + losses
                   + " taxable profit: " + TaxableProfit);
