@@ -280,7 +280,7 @@ public partial class EconAgent : MonoBehaviour
 			{
 				Alive = false;
 			}
-			foodExpense = Mathf.Max(0, foodExpense - Mathf.Max(0, Income));
+			foodExpense = Mathf.Max(0, foodExpense - Mathf.Max(0, Income.Last()));
 		}
 
 		foreach (var entry in inventory)

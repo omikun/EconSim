@@ -5,7 +5,7 @@ public partial class EconAgent
 {
     protected float prevCash;
     protected internal float foodExpense = 0;
-    public float Income { get; protected set; }
+    public ESHistory Income = new();
     public float TaxableProfit { get; protected set; }
     private float taxesPaidThisRound = 0;
 
@@ -23,6 +23,8 @@ public partial class EconAgent
     public void Pay(float amount)
     {
         Cash -= amount;
+        if (name == "gov") //TODO agent.cashCanGoNegative
+            return;
         Assert.IsTrue(Cash >= 0, name + " has minus cash " + Cash.ToString("c2") 
                                  + " trying to pay " + amount);
     }
@@ -52,7 +54,7 @@ public partial class EconAgent
         var cumDelta = delta + prevLosses;
         losses = Mathf.Min(0, cumDelta);
         TaxableProfit = Mathf.Max(0, cumDelta);
-        Income = TaxableProfit;
+        Income.AddnUpdate(TaxableProfit);
         Debug.Log(auctionStats.round + " income " + name + " prevCash " + prevCash2 + " has " + Cash + " profit this round: " + delta 
                   + " cumulative losses: " + losses
                   + " taxable profit: " + TaxableProfit);

@@ -91,7 +91,12 @@ public class FiscalPolicy
             return 0;
         float subsidyRate = config.SubsidiesRate[com];
         float subsidy = quant * price * subsidyRate;
-        
+
+        if (gov.Cash < subsidy)
+        {
+            Debug.Log(auctionStats.round + " " + gov.name 
+                      + " out of money " + gov.Cash + " to pay subsidy " + subsidy + " to " + buyer.name);
+        }
         buyer.Collect(subsidy);
         gov.Pay(subsidy);
         subsidized += subsidy;
@@ -232,7 +237,7 @@ Reduction of social welfare spending: Cutting back on social programs, which all
     void applyIncomeTax(AuctionBook book, EconAgent agent)
     {
         float tax = 0;
-        var income = agent.Income;
+        var income = agent.Income.Last();
         if (income <= 0)
             return;
         foreach (var bracket in ConfigManager.Config.taxBrackets)

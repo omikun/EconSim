@@ -68,26 +68,26 @@ public class ResourceController
 		recipe = r;
 		demand = 1;
 
-		buyers.Add(1);
-		sellers.Add(1);
-		bids.Add(1);
-		asks.Add(1);
-		trades.Add(1);
-		inventory.Add(1);
-		cash.Add(1);
-		avgAskPrice.Add(setPrice);
-		avgBidPrice.Add(setPrice);
-		minAskPrice.Add(setPrice);
-		minBidPrice.Add(setPrice);
-		maxAskPrice.Add(setPrice);
-		maxBidPrice.Add(setPrice);
-		avgClearingPrice.Add(setPrice);
-		minClearingPrice.Add(setPrice);
-		maxClearingPrice.Add(setPrice);
-		incomes.Add(1);
-		bankrupted.Add(1);
-		starving.Add(1);
-		changedProfession.Add(1);
+		buyers.AddnUpdate(1);
+		sellers.AddnUpdate(1);
+		bids.AddnUpdate(1);
+		asks.AddnUpdate(1);
+		trades.AddnUpdate(1);
+		inventory.AddnUpdate(1);
+		cash.AddnUpdate(1);
+		avgAskPrice.AddnUpdate(setPrice);
+		avgBidPrice.AddnUpdate(setPrice);
+		minAskPrice.AddnUpdate(setPrice);
+		minBidPrice.AddnUpdate(setPrice);
+		maxAskPrice.AddnUpdate(setPrice);
+		maxBidPrice.AddnUpdate(setPrice);
+		avgClearingPrice.AddnUpdate(setPrice);
+		minClearingPrice.AddnUpdate(setPrice);
+		maxClearingPrice.AddnUpdate(setPrice);
+		incomes.AddnUpdate(1);
+		bankrupted.AddnUpdate(1);
+		starving.AddnUpdate(1);
+		changedProfession.AddnUpdate(1);
 	}
 	public void Update(float p, float dem)
 	{

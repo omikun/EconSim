@@ -373,42 +373,42 @@ public class AuctionStats : MonoBehaviour
 		var quantityToBuy = bids.Sum(item => item.offerQuantity);
 		var quantityToSell = asks.Sum(item => item.offerQuantity);
 
-		rsc.bids.Add(quantityToBuy);
-		rsc.asks.Add(quantityToSell);
-		rsc.buyers.Add(bids.Count);
-		rsc.sellers.Add(asks.Count);
+		rsc.bids.AddnUpdate(quantityToBuy);
+		rsc.asks.AddnUpdate(quantityToSell);
+		rsc.buyers.AddnUpdate(bids.Count);
+		rsc.sellers.AddnUpdate(asks.Count);
 
 		var avgAskPrice = (quantityToSell == 0) ? rsc.avgAskPrice.Last() : asks.Sum((x) => x.offerPrice * x.offerQuantity) / quantityToSell;
-		rsc.avgAskPrice.Add(avgAskPrice);
+		rsc.avgAskPrice.AddnUpdate(avgAskPrice);
 		var maxAskPrice = (stats.maxAskPrice == 0f) ? rsc.maxAskPrice.Last() : stats.maxAskPrice;
-		rsc.maxAskPrice.Add(maxAskPrice);
+		rsc.maxAskPrice.AddnUpdate(maxAskPrice);
 		var minAskPrice = (stats.minAskPrice == float.MaxValue) ? rsc.minAskPrice.Last() : stats.minAskPrice;
-		rsc.minAskPrice.Add(minAskPrice);
+		rsc.minAskPrice.AddnUpdate(minAskPrice);
 
 		var avgBidPrice = (quantityToBuy == 0) ? rsc.avgBidPrice.Last() : bids.Sum((x) => x.offerPrice * x.offerQuantity) / quantityToBuy;
-		rsc.avgBidPrice.Add(avgBidPrice);
+		rsc.avgBidPrice.AddnUpdate(avgBidPrice);
 		var maxBidPrice = (stats.maxBidPrice == 0f) ? rsc.maxBidPrice.Last() : stats.maxBidPrice;
-		rsc.maxBidPrice.Add(maxBidPrice);
+		rsc.maxBidPrice.AddnUpdate(maxBidPrice);
 		var minBidPrice = (stats.minBidPrice == float.MaxValue) ? rsc.minBidPrice.Last() : stats.minBidPrice;
-		rsc.minBidPrice.Add(minBidPrice);
+		rsc.minBidPrice.AddnUpdate(minBidPrice);
 
 		var averagePrice = (stats.goodsExchangedThisRound == 0) ? rsc.avgClearingPrice.Last() : stats.moneyExchangedThisRound / stats.goodsExchangedThisRound;
 
 		Debug.Log(round + " " + rsc.name + " avgprice: " + averagePrice.ToString("c2") + " goods exchanged: " + stats.goodsExchangedThisRound.ToString("n2") + " money exchanged: " + stats.moneyExchangedThisRound.ToString("c2"));
 		Assert.IsTrue(averagePrice >= 0f);
-		rsc.avgClearingPrice.Add(averagePrice);
+		rsc.avgClearingPrice.AddnUpdate(averagePrice);
 		var maxClearingPrice = (stats.maxClearingPrice == 0f) ? rsc.maxClearingPrice.Last() : stats.maxClearingPrice;
-		rsc.maxClearingPrice.Add(maxClearingPrice );
+		rsc.maxClearingPrice.AddnUpdate(maxClearingPrice );
 		var minClearingPrice = (stats.minClearingPrice == float.MaxValue) ? rsc.minClearingPrice.Last() : stats.minClearingPrice;
-		rsc.minClearingPrice.Add(minClearingPrice);
-		rsc.trades.Add(stats.goodsExchangedThisRound);
+		rsc.minClearingPrice.AddnUpdate(minClearingPrice);
+		rsc.trades.AddnUpdate(stats.goodsExchangedThisRound);
 		var marketPrice = averagePrice;
 		if (stats.goodsExchangedThisRound == 0)
 			marketPrice = rsc.marketPrice;
 		rsc.Update(marketPrice, agentDemandRatio);
 
 		var totalInventory = auctionHouse.AgentManager.agents.Sum(agent => (agent.inventory.Keys.Contains(rsc.name)) ? agent.inventory[rsc.name].Quantity : 0f);
-		rsc.inventory.Add(totalInventory);
+		rsc.inventory.AddnUpdate(totalInventory);
 
 		var totalCash = auctionHouse.AgentManager.agents.Sum(agent => (agent.outputName == rsc.name) ? agent.Cash : 0f)
 		                + auctionHouse.bank.Deposits.Sum(entry => (entry.Key.outputName == rsc.name) ? entry.Value : 0f);
@@ -420,7 +420,7 @@ public class AuctionStats : MonoBehaviour
 		}
 
 		Debug.Log(round + ": " + rsc.name + " cash list:\n " + msg);
-		rsc.cash.Add(totalCash);
+		rsc.cash.AddnUpdate(totalCash);
 		
 		foreach (var ask in asks)
 			ask.agent.UpdateSellerPriceBelief(ask, rsc);

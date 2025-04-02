@@ -242,7 +242,7 @@ public class ESStreamingGraph : MonoBehaviour
                 newMaxY = Math.Max(newMaxY, value);
             }
         }
-        perAgentValues.Add((float)newMaxY);
+        perAgentValues.AddnUpdate((float)newMaxY);
         newMaxY = Math.Max(newMaxY, perAgentValues.Max);
 
         perAgentGraph.DataSource.VerticalViewSize = nearestBracket(vaxisPerAgentGraph, newMaxY);

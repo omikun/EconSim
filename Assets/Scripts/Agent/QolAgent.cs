@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.Assertions;
 using System.Linq;
@@ -218,14 +219,18 @@ public partial class QolAgent : EconAgent
     {
         if (Alive == false)
             return 0;
-        
+
         if (Employees != null)
+        {
+            var pay = Income.Last() / NumEmployees * .95f;
+            pay = Math.Min(book["Food"].marketPrice, pay);
+            
             foreach (var (employee,wage) in Employees)
             {
-                var pay = book["Food"].marketPrice * .5f;
                 employee.Collect(pay);
                 Cash -= pay;
             }
+        }
         
         gov.Welfare(this);
         

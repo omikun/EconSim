@@ -66,7 +66,7 @@ public class InventoryItem {
 	    get { return " offering: " + offersThisRound.ToString("n2") + " " + name; }
     }
 
-    public float quantityTradedThisRound = 0;
+    public ESHistory tradeQuantity = new(10);
 	public float meanPriceThisRound; //total cost spent to acquire stock
     public float costThisRound = 0;
     
@@ -188,6 +188,7 @@ public class InventoryItem {
 		ProductionPerBatch = _production;
 		BaseProduction = _baseProduction;
 		batchRate = _batchRate;
+		tradeQuantity.Add(0);
 	}
 	public void Tick()
 	{
@@ -237,7 +238,8 @@ public class InventoryItem {
     public void ClearRoundStats() 
     {
         costThisRound = 0;
-        quantityTradedThisRound = 0;
+        tradeQuantity.UpdateExpAverage();
+        tradeQuantity.Add(0);
         soldThisRound = false;
         boughtThisRound = false;
     }
@@ -249,9 +251,9 @@ public class InventoryItem {
         OfferQuantity = Mathf.Max(0, OfferQuantity);
         bidQuantity -= quant;
 
-        quantityTradedThisRound += quant;
+        tradeQuantity.Last() += quant;
         costThisRound += price * quant;
-        meanPriceThisRound = (quantityTradedThisRound == 0) ? 0 : costThisRound / quantityTradedThisRound;
+        meanPriceThisRound = (tradeQuantity.Last() == 0) ? 0 : costThisRound / tradeQuantity.Last();
 
         //may buy multiple times per round
         if (boughtThisRound)
@@ -273,9 +275,9 @@ public class InventoryItem {
         OfferQuantity += quant; //offerQuantity is negative for sales
 		Quantity -= quant;
         askQuantity -= quant;
-        quantityTradedThisRound += quant;
+        tradeQuantity.Last() += quant;
         costThisRound += price * quant;
-        meanPriceThisRound = (quantityTradedThisRound == 0) ? 0 : costThisRound / quantityTradedThisRound;
+        meanPriceThisRound = (tradeQuantity.Last() == 0) ? 0 : costThisRound / tradeQuantity.Last();
         
         if (soldThisRound)
         {
@@ -433,7 +435,9 @@ public class InventoryItem {
         var urgency = Quantity / maxQuantity; //if 5 remaining, 
         
         var displacement = deltaMean / historicalMeanPrice;
-        Assert.IsTrue(historicalMeanPrice >= 0);
+        Assert.IsTrue(historicalMeanPrice >= 0, 
+	        auctionStats.round + " " + agent.name + " " + name 
+	        + " negative historical mean price: " + historicalMeanPrice.ToString("c2"));
         string reason_msg = "no reason";
 
         var prevPriceBelief = priceBelief; 

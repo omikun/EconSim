@@ -47,7 +47,7 @@ public class FixedCircularList<T>
         if (count < buffer.Length) count++;
     }
 
-    public ref T Last()
+    public virtual ref T Last()
     {
         var idx = (index + buffer.Length - 1) % buffer.Length;
         return ref buffer[idx];
@@ -80,17 +80,24 @@ public class ESHistory : FixedCircularList<float>
     public float ExpAverage {
         get{ return ema;}
     }
-    public ESHistory() : base(21) { }
+    public ESHistory(int size = 21) : base(size) { }
 
     public float Min { get { return buffer.Min(); } }
     public float Max { get { return buffer.Max(); } }
 
-    new public void Add(float num)
+    public void AddnUpdate(float num)
     {
         base.Add(num);
-        float period = 3;
-        ema = (num - ema) * 2 / (period + 1) + ema;
+        UpdateExpAverage();
     }
+
+    public float UpdateExpAverage()
+    {
+        float period = 3;
+        ema = (Last() - ema) * 2 / (period + 1) + ema;
+        return ema;
+    }
+
     // public float LastHighest(int history)
     // {
     //     if (base.Count == 0)

@@ -68,10 +68,10 @@ public class AgentManager
                 if (agent.CalcMinProduction() < 1)
                     book[profession].numNoInput++;
 			
-                if (agent.Income < 0)
+                if (agent.Income.Last() < 0)
                     book[profession].numNegProfit++;
 
-                book[profession].incomes.Last() += agent.Income;
+                book[profession].incomes.Last() += agent.Income.Last();
             }
 			
             var cash = agent.Tick(auctionHouse.gov, ref changedProfession, ref bankrupted, ref starving);
@@ -101,6 +101,13 @@ public class AgentManager
             // Debug.Log(agent.name + " total cash line: " + agents.Sum(x => x.cash).ToString("c2") + amount.ToString("c2"));
 
             agent.ClearRoundStats();
+        }
+
+        foreach (var (com, rsc) in book)
+        {
+            rsc.starving.UpdateExpAverage();
+            rsc.bankrupted.UpdateExpAverage();
+            rsc.changedProfession.UpdateExpAverage();
         }
 
         foreach (var agent in deadAgents)
@@ -134,7 +141,7 @@ public class AgentManager
 
         inflation /= 5f;//(float)book.Count;
         inflation = (!float.IsNaN(inflation) && !float.IsInfinity(inflation)) ? inflation : 0;
-        auctionHouse.district.inflation.Add(inflation);
+        auctionHouse.district.inflation.AddnUpdate(inflation);
         auctionHouse.district.happiness = approval / agents.Count;
         auctionHouse.district.approval = approval / agents.Count;
         auctionHouse.district.gini = GetGini(GetWealthOfAgents());

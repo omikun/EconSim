@@ -65,11 +65,21 @@ public partial class QolAgent
         var maxBatchRate = outputItem.GetMaxBatchRate() + numEmployees;
         var maxProduceable = outputItem.GetMaxProductionRate(maxBatchRate);
         var maxRecentlyProduced = Mathf.Max(numUnitsProducedLastRound, numUnitsProducedThisRound);
+        
         var excessProduceable = maxProduceable - maxRecentlyProduced;
+        var tq = inventory[outputName].tradeQuantity.ExpAverage;
+        var profitPerOutput = (tq == 0) ? 0 : Income.ExpAverage / tq;
+        var potentialProfit = profitPerOutput * excessProduceable;
+        
+        var hireCost = Mathf.Min(inventory["Labor"].priceBelief, potentialProfit * .95f);
+        inventory["Labor"].priceBelief = hireCost;
+        
         if (excessDemand - excessProduceable > 0) //should be in excess of cost of an additional laborer
         {
             inventory["Labor"].offersThisRound++;
-            Debug.Log(name + " bids labor | excessDemand=" + excessDemand + " excessProduceable=" + excessProduceable);
+            Debug.Log(name + " bids labor | excessDemand=" + excessDemand.ToString("n2") + " excessProduceable=" + excessProduceable.ToString("n2")
+            + " profit/output: " + profitPerOutput.ToString("c2") + " potential profit" + potentialProfit.ToString("c2")
+            + " hire cost: " + hireCost.ToString("c2"));
         }
     }
 
