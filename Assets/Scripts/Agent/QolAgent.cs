@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Assertions;
 using System.Linq;
@@ -47,44 +48,6 @@ public partial class QolAgent : EconAgent
         // Assert.AreEqual(numProduced, numProduced2);
     }
 
-    // public virtual void decideOffers()
-    public void testing()
-    {
-        //decide how much to buy and sell
-        //how many inputs to buy at their respective price beliefs?
-        //if input price is high, can current sell price be worth it?
-        //how much was sold last round?
-        //TODO what if none was sold last round??
-        //can sell price go higher?
-        //compute tollerable input price
-        //get num food produced in batch
-        var numOutputPerBatch = inventory[outputName].ProductionPerBatch;
-        var outputPrice = inventory[outputName].GetPrice();
-        var revenuePerBatch = numOutputPerBatch * outputPrice;
-        var recipe = book[outputName].recipe;
-        var inputCost = recipe.Sum(pair => inventory[pair.Key].GetPrice() * pair.Value);
-        var foodCost = inventory["Food"].meanCost;
-        float profitbility = revenuePerBatch / (inputCost + foodCost);
-        foreach (var (com, numNeeded) in recipe)
-        {
-            var perBatchCost = inventory[com].meanCost * numNeeded;
-            float cashAfford = Cash / perBatchCost;
-            //how to combine buyPressure, cash to afford, and profitibility??
-        }
-        
-        //TODO how to split buying food vs buying inputs?
-        //if no other inputs, then buy all the food at current price belief
-        //else buy enough for one batch if affordable
-        //don't buy if already have one batch of inputs?
-        //what about outputs?
-        //think of inputs and outputs as batches of production
-        //if total = 1 batch, buy another batch
-        //if total = 2 batches, buy another batch if it is cheaper (by how much?)
-        //don't care if it's all inputs or outputs
-        //if last round sold 1 batch, buy another batch
-        //if last round sold more than 1 batch, 
-    }
-    
     public float NumBatchesProduceable(ResourceController rsc, InventoryItem outputItem)
     {
 		float numBatches = float.MaxValue;
@@ -104,7 +67,7 @@ public partial class QolAgent : EconAgent
 	    var realProductionRate = outputItem.GetMaxProductionRate(numBatches);
 	    var realBatchRate = Mathf.Ceil(realProductionRate / outputItem.ProductionPerBatch);
 		Debug.Log(auctionStats.round + " " + name
-		          + " can ultimately produce " + realBatchRate + " batches of " + outputItem.name);
+		          + " produceable " + realBatchRate + " batches of " + outputItem.name);
 
         return realBatchRate;
     }
@@ -191,7 +154,54 @@ public partial class QolAgent : EconAgent
         
         // return productionStrategy.Produce();
         var output = inventory[outputName];
-        var numProduced = output.GetMaxProductionRate(numBatches);
+        var numProducedPerLabor = output.GetMaxProductionRate(numBatches); //per labor
+        var numProduceable = numProducedPerLabor * (NumEmployees + 1);
+        
+        //determine how much is actually produced AND how much was consumed in the process
+        float numBatchesProduceable = numBatches;
+        Dictionary<string, float> consumed = new();
+        
+        foreach (var (com, numNeeded) in book[outputName].recipe)
+        {
+            var bdChance = book[com].breakdown_chance;
+            if (book[com].breakdown_chance == 1)
+            {
+                // For 100% breakdown chance, we can only produce as many batches as our limiting input
+                var maxBatchesByCom = inventory[com].Quantity / numNeeded;
+                numBatchesProduceable = Mathf.Min(numBatchesProduceable, maxBatchesByCom);
+                consumed[com] = numNeeded * numBatchesProduceable;
+            }
+            else
+            {
+                // For partial breakdown chance, simulate each batch
+                int nbpByCom = 0;
+                consumed[com] = 0;
+                float remainingInventory = inventory[com].Quantity;
+                
+                while (nbpByCom < numBatchesProduceable && remainingInventory >= numNeeded)
+                {
+                    if (UnityEngine.Random.value < bdChance)
+                        consumed[com] += numNeeded;
+                    
+                    nbpByCom++;
+                }
+
+                numBatchesProduceable = Mathf.Min(numBatchesProduceable, nbpByCom);
+            }
+        }
+        
+        foreach (var (com, numConsumed) in consumed)
+        {
+            inventory[com].Decrease(numConsumed);
+        }
+        
+        var numProduced = numBatchesProduceable * output.ProductionPerBatch;
+        var msg = "";
+        foreach (var (com, numConsumed) in consumed)
+            msg += "  " + numConsumed + " " + com + "\n";
+        Debug.Log(auctionStats.round + " " + name + " produced " + numProduced + " " + outputName 
+                  + " from " + numBatchesProduceable + " batches"
+                  + "\nConsumed:" + msg);
         //produce less if sold less
         // var numSoldLastRound = item.saleHistory[^1].quantity;
         // var smoothedProduction = Mathf.Round((numSoldLastRound + maxProduction) / 2f);

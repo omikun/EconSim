@@ -61,8 +61,7 @@ public partial class QolAgent
         var excessDemand = demand - supply;
         
         var outputItem = inventory[outputName];
-        var numEmployees = (Employees == null) ? 0 : Employees.Count;
-        var maxBatchRate = outputItem.GetMaxBatchRate() + numEmployees;
+        var maxBatchRate = outputItem.GetMaxBatchRate() + NumEmployees;
         var maxProduceable = outputItem.GetMaxProductionRate(maxBatchRate);
         var maxRecentlyProduced = Mathf.Max(numUnitsProducedLastRound, numUnitsProducedThisRound);
         
@@ -335,7 +334,7 @@ public partial class QolAgent
             {
                 float priceOfGood = inventory[input].GetPrice();
                 cashEquivalent += priceOfGood * inventory[input].Quantity;
-                batchCost += priceOfGood * amount;
+                batchCost += priceOfGood * amount * book[input].breakdown_chance;
             }
             float totalCashEquivalent = cashEquivalent + allocatedFunds;
             float bidNumBatches = Mathf.Floor(totalCashEquivalent / batchCost);

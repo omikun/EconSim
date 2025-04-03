@@ -27,6 +27,7 @@ public class IncomeTaxControl : MonoBehaviour
 		maxTax = content.transform.Find("MaxTax")
 			.GetComponent<SwitchManager>();
 		maxTax.onValueChanged.AddListener(UpdateMaxTax);
+		maxTax.SetOff();
 		InitBrackets(content);
 		InitAmounts(content);
 	}
