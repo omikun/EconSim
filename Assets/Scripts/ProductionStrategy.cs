@@ -56,7 +56,7 @@ public abstract class ProductionStrategy
 
 			stock.Produced(numProduced, agent.GetCostOf(rsc)); 
 			agent.producedThisRound[outputName] = numProduced;
-			agent.numUnitsProducedThisRound = numProduced;
+			agent.numUnitsProduced.ThisRound = numProduced;
 
 			Debug.Log(agent.auctionStats.round + " " + agent.name 
 				+ " has " + agent.Cash.ToString("c2") 

@@ -11,11 +11,9 @@ public partial class EconAgent
     protected internal Dictionary<string, float> producedThisRound = new();
 
     [FormerlySerializedAs("numProducedThisRound")]
-    public float numUnitsProducedThisRound = 0;
+    public ES2Float numUnitsProduced = new();
 
-    public float numUnitsProducedLastRound = 0;
-    public float numBatchesProducedThisRound = 0;
-    public float numBatchesProducedLastRound = 0;
+    public ES2Float numBatchesProduced = new();
 
     public virtual void ConsumeGoods()
     {

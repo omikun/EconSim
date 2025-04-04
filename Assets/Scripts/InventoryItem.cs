@@ -732,6 +732,6 @@ public class InventoryItem {
 
 	public float NumProduceable(ResourceController rsc)
 	{
-		return Quantity / rsc.recipe[name];
+		return Quantity / rsc.recipe[name] / rsc.breakdown_chance;
 	}
 }

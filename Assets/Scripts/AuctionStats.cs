@@ -294,6 +294,7 @@ public class AuctionStats : MonoBehaviour
 			float base_rate = 0;
 			float prod_multiplier = 0;
 			float set_price = 0;
+			float starting_cash = -1;  // Default value of 100
 			float breakdown_chance = 1;
 			string producer_name = "none";
 			foreach (var field in item.Value)
@@ -343,13 +344,19 @@ public class AuctionStats : MonoBehaviour
 					continue;
 				}
 
+				if (field.Key == "Starting_cash")
+				{
+					starting_cash = field.Value;
+					continue;
+				}
+
 				dep.Add(field.Key, field.Value);
 			}
 
 			Assert.IsNotNull(dep);
 			book.Add(item.Key,
 				new ResourceController(item.Key, producer_name, prod_rate, base_rate, batch_rate, prod_multiplier, set_price,
-					breakdown_chance, dep));
+					breakdown_chance, dep, starting_cash));
 		}
 
 		foreach (var com in book.Keys)

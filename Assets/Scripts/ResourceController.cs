@@ -54,7 +54,8 @@ public class ResourceController
 	float avgPrice = 1;
     public float setPrice = 1; //predetermined price from initializer for sanity check
     public float breakdown_chance = 1;
-	public ResourceController(string n, string prof, float p, float bp, float br, float pm, float sp, float bc, Recipe r)
+	public float startingCash = -1;
+	public ResourceController(string n, string prof, float p, float bp, float br, float pm, float sp, float bc, Recipe r, float sc = -1)
 	{
 		name = n;
 		profession = prof;
@@ -67,6 +68,7 @@ public class ResourceController
 		marketPrice = sp;
 		recipe = r;
 		demand = 1;
+		startingCash = sc;
 
 		buyers.AddnUpdate(1);
 		sellers.AddnUpdate(1);

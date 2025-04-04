@@ -120,6 +120,9 @@ public partial class EconAgent : MonoBehaviour
 			if (!book.ContainsKey(outputName))
 				Debug.Log("commodity not recognized: " + outputName);
 
+			if (book[outputName].startingCash != -1)
+				Cash = book[outputName].startingCash;
+
 			if (book[outputName].recipe == null)
 				Debug.Log(outputName + ": null dep!");
 

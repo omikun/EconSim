@@ -63,7 +63,7 @@ public partial class QolAgent
         var outputItem = inventory[outputName];
         var maxBatchRate = outputItem.GetMaxBatchRate() + NumEmployees;
         var maxProduceable = outputItem.GetMaxProductionRate(maxBatchRate);
-        var maxRecentlyProduced = Mathf.Max(numUnitsProducedLastRound, numUnitsProducedThisRound);
+        var maxRecentlyProduced = Mathf.Max(numUnitsProduced.LastRound, numUnitsProduced.ThisRound);
         
         var excessProduceable = maxProduceable - maxRecentlyProduced;
         var tq = inventory[outputName].tradeQuantity.ExpAverage;

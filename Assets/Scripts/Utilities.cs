@@ -72,7 +72,20 @@ public class FixedCircularList<T>
     }
 }
 
-
+public class ES2Float
+{
+    private float _thisRound;
+    public float ThisRound
+    {
+        get { return _thisRound; }
+        set
+        {
+            LastRound = _thisRound;
+            _thisRound = value;
+        }
+    }
+    public float LastRound { get; private set; }
+}
 public class ESHistory : FixedCircularList<float> 
 {
     float avg;

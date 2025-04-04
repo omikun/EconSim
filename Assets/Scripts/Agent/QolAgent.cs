@@ -33,11 +33,10 @@ public partial class QolAgent : EconAgent
             var numBatches = NumBatchesProduceable(rsc, stock);
             // var minInputBatches = productionStrategy.NumBatchesProduceable(rsc, inventory[outputName]);
             var numProduced = Produce(numBatches);
-            numUnitsProducedLastRound = numUnitsProducedThisRound;
-            numUnitsProducedThisRound = numProduced;
-            numBatchesProducedLastRound = numBatchesProducedThisRound;
-            numBatchesProducedThisRound = numBatches;
+            numUnitsProduced.ThisRound = numProduced;
+            numBatchesProduced.ThisRound = numBatches;
             ConsumeGoods(numBatches);
+            // ConsumeGoods(0);
             Debug.Log(auctionStats.round + " " + name + " produced " + numProduced + " " + rsc.name);
         }
         else
@@ -154,8 +153,11 @@ public partial class QolAgent : EconAgent
         
         // return productionStrategy.Produce();
         var output = inventory[outputName];
-        var numProducedPerLabor = output.GetMaxProductionRate(numBatches); //per labor
-        var numProduceable = numProducedPerLabor * (NumEmployees + 1);
+        var numProducedTemp= output.GetMaxProductionRate(numBatches); //total
+        
+        output.Increase(numProducedTemp);
+        Debug.Log(auctionStats.round + " " + name + " produced " + numProducedTemp + " " + outputName);
+        return numBatches * (NumEmployees + 1);
         
         //determine how much is actually produced AND how much was consumed in the process
         float numBatchesProduceable = numBatches;
@@ -214,7 +216,7 @@ public partial class QolAgent : EconAgent
     public bool IsDying(ref bool starving)
     {
         // starving = inventory.Values.Any(item => item.Quantity <= 5);
-        var farmerStarving = numUnitsProducedThisRound == 0 && outputName == "Food" && FoodInv() <= 0;
+        var farmerStarving = numUnitsProduced.ThisRound == 0 && outputName == "Food" && FoodInv() <= 0;
         var nonFarmerstarving = FoodInv() <= 0 && outputName != "Food";
         starving = farmerStarving || nonFarmerstarving;
         if (starving)
