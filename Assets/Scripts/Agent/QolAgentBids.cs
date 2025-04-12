@@ -68,12 +68,13 @@ public partial class QolAgent
         var excessProduceable = maxProduceable - maxRecentlyProduced;
         var tq = inventory[outputName].tradeQuantity.ExpAverage;
         var profitPerOutput = (tq == 0) ? 0 : Income.ExpAverage / tq;
-        var potentialProfit = profitPerOutput * excessProduceable;
+        var potentialProfit = profitPerOutput * excessProduceable / book[outputName].productionPerBatch;
+        potentialProfit = Mathf.Max(0, potentialProfit);
         
         var hireCost = Mathf.Min(inventory["Labor"].priceBelief, potentialProfit * .95f);
-        inventory["Labor"].priceBelief = hireCost;
+        inventory["Labor"].priceBelief = Mathf.Min(inventory["Labor"].priceBelief, hireCost);
         
-        if (excessDemand - excessProduceable > 0) //should be in excess of cost of an additional laborer
+        if (excessDemand - excessProduceable > 0 || hireCost > 0) //should be in excess of cost of an additional laborer
         {
             inventory["Labor"].offersThisRound++;
             Debug.Log(name + " bids labor | excessDemand=" + excessDemand.ToString("n2") + " excessProduceable=" + excessProduceable.ToString("n2")
@@ -147,6 +148,9 @@ public partial class QolAgent
         //add numBatchInput - item.numbatches + minbatch
         {
             var cashForInputs = Cash - numFoodToBid * foodMarketPrice;
+            var outputItem = inventory[outputName];
+            var maxInputCost = Mathf.Max(inputBatchCost, outputItem.tradeQuantity.Last() * outputItem.meanPriceThisRound);
+            cashForInputs = Mathf.Min(cashForInputs, maxInputCost);
             // var cashForInputs = numBatchInputToBid * inputBatchCost - inputCashEquivalent;
             var bids = fillInputBids(cashForInputs);
             reason += " #inputs " + numBatchInputToBid.ToString("n2")  
@@ -195,7 +199,7 @@ public partial class QolAgent
 
             reason += " is farmer ";
         }
-        //buy input first if no input and no output
+        //buy input first if not starving
         //else buy food first
         else if (foodItem.Quantity > 1f) //bid on input first if have enough food
         {

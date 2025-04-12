@@ -6,6 +6,7 @@ public partial class EconAgent
     protected float prevCash;
     protected internal float foodExpense = 0;
     public ESHistory Income = new();
+    public ESHistory Revenue = new();
     public float TaxableProfit { get; protected set; }
     private float taxesPaidThisRound = 0;
 

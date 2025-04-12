@@ -56,7 +56,7 @@ public class AgentManager
             if (agent is not Government && agent is not Bank)
                 approval += agent.EvaluateHappiness();
             
-            if (profession != "Unemployed")
+            if (profession != "Unemployed" && profession != "Labor")
             {
                 book[profession].numAgents++;
                 book[profession].numAgents += agent.NumEmployees;

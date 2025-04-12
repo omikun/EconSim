@@ -39,7 +39,7 @@ public class InventoryItem {
 	const float highInventory = 2f;
 	public TransactionHistory buyHistory;
 	public TransactionHistory saleHistory;
-	public float unitCost = 1;
+	public float unitCost;
 	public float wobble = .02f;
 	public float Quantity { get; private set; }
 	public string QuantityString
@@ -71,8 +71,22 @@ public class InventoryItem {
     public float costThisRound = 0;
     
 	public float maxQuantity;
-	public float priceBelief;
-    public float meanCost; 
+	private float _priceBelief = 0;
+
+	public float priceBelief
+	{
+		get
+		{
+			return _priceBelief;
+		}
+		set
+		{
+			Debug.Log(agent.auctionStats.round + " " + agent.name + " " + name + " setting price belief = " + value);
+			_priceBelief = value;
+		}
+	}
+
+	public float meanCost; 
 	//number of units produced per turn = production * productionRate
 	public float ProductionPerBatch = 1; //num produced per batch
 	public float BaseProduction = 0; //num produced per batch
@@ -183,6 +197,7 @@ public class InventoryItem {
 		maxQuantity = _maxQuantity;
         Assert.IsTrue(_meanPrice >= 0); //TODO really should never be 0???
         priceBelief = _meanPrice;
+        unitCost = _meanPrice;
 		meanPriceThisRound = _meanPrice;
         meanCost = _meanPrice;
 		ProductionPerBatch = _production;
@@ -286,10 +301,13 @@ public class InventoryItem {
             saleHistory.Add(new InventoryTransaction(price, quant));
         }
         soldThisRound = true;
-        Assert.IsFalse(boughtThisRound && agent is Government, 
-	        auctionStats.round + " " + agent.name 
+        if (boughtThisRound)
+	        // Assert.IsFalse(boughtThisRound && agent is Government, 
+        {
+	        Debug.Log(auctionStats.round + " " + agent.name 
 	        + " selling " + quant + " " + name + " for " + price.ToString("c2")
 	        + " but also bought this item this round already??");
+        }
 	}
     public float FindSellCount(ResourceController rsc, int historySize, bool enablePriceFavorability)
 	{
@@ -460,27 +478,29 @@ public class InventoryItem {
 	    bool moreDemand = (supplyRatio < 0.8f); 
 	    bool equalDemand = (supplyRatio <= 1.2f); 
 	    bool moreSupply = supplyRatio > 1.2f;
+
+        string reason = "";
 	    
 	    if (name == "Wood")
 		    Debug.Log("wood buy");
 	    if (quantityBought == 1 && trade.offerQuantity == 1)
 	    {
 		    priceBelief *= Mathf.Min(1, logRatio(supplyRatio, 3));
+		    reason = "wood buy";
 	    } else if (boughtRatio == 0)
 	    {
 		    // var upbid = Mathf.Pow(1.07f, Mathf.Sqrt(agent.DaysStarving*2));
-		    var upbid = Mathf.Max(1.1f,logQuantity(Quantity));
-		    // if (maxClearingPrice > priceBelief)
-			   //  priceBelief = maxClearingPrice;
-		    if (supply < 1)
-			    priceBelief = historicalMeanPrice * upbid * 2;
-		    else
-			    priceBelief *= upbid;
-		    Debug.Log(agent.name + " bought no " + name 
+		    var upbid = 1f + .2f * Mathf.Exp(-.125f * Quantity); //exponential decay from 1.2 to 1 as Q->inf
+		    priceBelief *= upbid;
+		    //if price belief is still under the min ask price, set it to that
+		    if (priceBelief < minAskPrice)
+			    priceBelief = minAskPrice;
+                
+            reason += " bought no " + name 
 		              + " quantity: " + Quantity
 		              + "; price belief: " + priceBelief.ToString("c2") 
-		              + " max clearing price: " + maxClearingPrice.ToString("c2") 
-		              + " upbid: " + upbid.ToString("n2"));
+		              + " min ask price: " + minAskPrice.ToString("c2")
+		              + " upbid: " + upbid.ToString("n2");
 	    } else if (boughtRatio < 0.9f) //didn't buy it all / potentially no supply, raise price to signal
         {
 	        var delta = 1 + agent.config.sellPriceDelta;
@@ -497,6 +517,7 @@ public class InventoryItem {
 	            priceBelief = historicalMeanPrice * logRatio(supplyRatio);
 	        if (supply > trade.offerQuantity)
 		        priceBelief *= delta;
+            reason += " bought less than 90% " + name + " supply " + supply.ToString("n2") + " demand " + demand.ToString("n2") + " supply ratio " + supplyRatio.ToString("n2") + " quantityBought " + quantityBought.ToString("n2") + " trade.offerQuantity " + trade.offerQuantity.ToString("n2");
         }
         else //bought all or bought enough
         {
@@ -510,6 +531,7 @@ public class InventoryItem {
 	        // priceBelief = Mathf.Max(priceBelief, agent.book[name].marketPrice);
 	        priceBelief = agent.book[name].marketPrice;
 	        priceBelief *= (1 + .01f * Mathf.Pow(agent.config.minItemRaiseBuyPrice - Quantity, 2));
+            reason += " bought less than minItemRaiseBuyPrice " + name + " quantity " + Quantity.ToString("n2") + " minItemRaiseBuyPrice " + agent.config.minItemRaiseBuyPrice.ToString("c2");
         }
 
         string demandstr = moreDemand ? "more demand" : equalDemand ? "equal demand" : "more supply";
@@ -629,6 +651,7 @@ public class InventoryItem {
         {
 	        var delta = 1 + agent.config.sellPriceDelta;
 	        priceBelief *= delta;
+            reason += " sold all ";
         }
         // Case 2: Did not sell any quantity, snap to highest bid
         else if (quantitySold == 0)
@@ -636,7 +659,6 @@ public class InventoryItem {
             // Calculate a discount based on starvation days
             var power = 1 + agent.DaysStarving * Mathf.Log(supplyRatio*10)/10f;
             var delta = Mathf.Pow(.99f, power);
-	        reason += " sold none / delta: " + delta + " .99 ^ " + power + " ";
             
             // Apply discount to the minimum clearing price if available
 	        if (avgBidPrice < priceBelief)
@@ -644,6 +666,7 @@ public class InventoryItem {
 		        priceBelief = avgBidPrice;
 	        }
 	        priceBelief *= delta;
+	        reason += " sold none / delta: " + delta + " .99 ^ " + power + " " + avgBidPrice.ToString("c2") + " -> " + priceBelief.ToString("c2");
         } 
         // General case: Adjust based on sell performance
         else
@@ -658,19 +681,42 @@ public class InventoryItem {
         }
 
 	    // Additional constraint: Ensure minimum sell price based on costs
-	    if (agent.config.minSellPrice)
+        if (name == "Labor")
+        {
+            priceBelief = Mathf.Max(priceBelief, agent.book["Food"].marketPrice
+                / (agent.config.maxDaysAliveWhileStarving - 2));
+            priceBelief = Mathf.Min(priceBelief, agent.book["Food"].marketPrice * 2);
+        } else if (agent.config.minSellPrice && name == agent.outputName)
 	    {
 		    // Calculate total input costs
 		    var otherCosts = agent.inventory.Values
 			    .Where(item => agent.inputs.Contains(item.name))
-			    .Sum(item => agent.book[item.name].marketPrice);
-		    otherCosts += agent.book["Food"].marketPrice * 2 ;
+			    .Sum(item => agent.book[item.name].marketPrice * agent.book[agent.outputName].recipe[item.name]);
+
+            //if inventory is high and demand is low, sell enough to buy food, if food is low, sell enough to buy food
+            float foodCost = 0;
+            if (Quantity > rsc.productionPerBatch && demand > supply && agent.inventory["Food"].Quantity < 2)
+                foodCost = agent.book["Food"].marketPrice * 1;
+            otherCosts += foodCost;
                 
 		    // Compute amortized quantity for cost per unit
-		    var amortizedQuantity = Mathf.Max(rsc.productionPerBatch, Quantity * 0.8f);
+            var expectedSellable = (demand + tradeQuantity.Last()) / 2f;
+		    var amortizedQuantity = Mathf.Min(expectedSellable, Quantity);
+            amortizedQuantity = Mathf.Max(amortizedQuantity, 1);
 		    var minCost = otherCosts / amortizedQuantity;
 		    // Ensure price is at least the cost
-		    reason += " raise min cost " + minCost.ToString("c2") + " price belief: " + priceBelief.ToString("c2");
+		    reason += "\n raise min cost " + minCost.ToString("c2") + " price belief: " + priceBelief.ToString("c2") + " other costs: " + otherCosts.ToString("c2") + " food cost: " + foodCost.ToString("c2");
+
+            reason += "\n inputs: ";
+            foreach(var item in agent.inventory.Values)
+            {
+                if (!agent.inputs.Contains(item.name))
+                    continue;
+                var numNeeded = agent.book[agent.outputName].recipe[item.name];
+                var price = agent.book[item.name].marketPrice;
+                var cost = numNeeded * price;
+                reason += "\n " + item.name + " numNeeded: " + numNeeded + " market price: " + price.ToString("c2") + " cost: " + cost.ToString("c2");
+            }
 		    priceBelief = Mathf.Max(minCost, priceBelief);
 	    }
 
@@ -685,44 +731,45 @@ public class InventoryItem {
                   + " sold ratio " + soldRatio.ToString("n2")
 				  + reason);
         return;
-       /* 
-        string reason_msg = "none";
-        if (weight == 0)
-        {
-            priceBelief -= displacement / 6;
-            reason_msg = "seller_sold_none";
-        }
-        else if (market_share < .75f)
-        {
-            priceBelief -= displacement / 7;
-            reason_msg = "seller_market_share_<.75";
-        }
-        else if (offerPrice < trade.clearingPrice)
-        {
-            var underbid = trade.clearingPrice - offerPrice;
-            priceBelief += underbid * 1.2f;
-            reason_msg = "seller_under_bid";
-        }
-        else if (rsc.bids[^1] > rsc.asks[^1])     //demand > supply
-        {
-            //translate belief range up 1/5th of historical mean price
-            priceBelief += historicalMeanPrice/5;
-            reason_msg = "seller_demand>supply";
-        } else {
-            //translate belief range down 1/5th of historical mean price
-            priceBelief -= historicalMeanPrice/5;
-            reason_msg = "seller_demand<=supply";
-        }
+    // }
+    // public void UpdateSellerPriceBeliefOrig(String agentName, in Offer trade, in ResourceController rsc)
+    // {
+        // string reason_msg = "none";
+        // if (weight == 0)
+        // {
+        //     priceBelief -= displacement / 6;
+        //     reason_msg = "seller_sold_none";
+        // }
+        // else if (market_share < .75f)
+        // {
+        //     priceBelief -= displacement / 7;
+        //     reason_msg = "seller_market_share_<.75";
+        // }
+        // else if (offerPrice < trade.clearingPrice)
+        // {
+        //     var underbid = trade.clearingPrice - offerPrice;
+        //     priceBelief += underbid * 1.2f;
+        //     reason_msg = "seller_under_bid";
+        // }
+        // else if (rsc.bids[^1] > rsc.asks[^1])     //demand > supply
+        // {
+        //     //translate belief range up 1/5th of historical mean price
+        //     priceBelief += historicalMeanPrice/5;
+        //     reason_msg = "seller_demand>supply";
+        // } else {
+        //     //translate belief range down 1/5th of historical mean price
+        //     priceBelief -= historicalMeanPrice/5;
+        //     reason_msg = "seller_demand<=supply";
+        // }
 		
-        //ensure buildable price at least cost of input commodities
+        // //ensure buildable price at least cost of input commodities
 
-		SanePriceBeliefs();
-		// Assert.IsFalse(float.IsNaN(minPriceBelief));
-        // UnityEngine.Debug.Log("seller " + agentName + " stock: " + commodityName + " min price belief: " + prevMinPriceBelief + " -> " + minPriceBelief);
-        // UnityEngine.Debug.Log("seller " + agentName + " stock: " + commodityName + " max price belief: " + prevMaxPriceBelief + " -> " + maxPriceBelief);
-        // Assert.IsTrue(minPriceBelief < priceBelief);
-        debug_msgs.Add(reason_msg);
-        */
+		// SanePriceBeliefs();
+		// // Assert.IsFalse(float.IsNaN(minPriceBelief));
+        // // UnityEngine.Debug.Log("seller " + agentName + " stock: " + commodityName + " min price belief: " + prevMinPriceBelief + " -> " + minPriceBelief);
+        // // UnityEngine.Debug.Log("seller " + agentName + " stock: " + commodityName + " max price belief: " + prevMaxPriceBelief + " -> " + maxPriceBelief);
+        // // Assert.IsTrue(minPriceBelief < priceBelief);
+        // debug_msgs.Add(reason_msg);
 	}
 	//TODO change quantity based on historical price ranges & deficit
 	public float Deficit() { 

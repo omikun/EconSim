@@ -85,7 +85,7 @@ public partial class QolAgent : EconAgent
             
             var offers = (selling) ? asks : bids;
             
-            item.CalculateSellPrice(item.offersThisRound);
+            // item.CalculateSellPrice(item.offersThisRound);
             var price = item.GetPrice();
             offers.Add(itemName, new Offer(itemName, price, item.offersThisRound, this));
             item.offersThisRound = 0;
@@ -234,13 +234,14 @@ public partial class QolAgent : EconAgent
 
         if (Employees != null)
         {
-            var pay = Income.Last() / NumEmployees * .95f;
+            var pay = Income.Last() / NumEmployees * .4f;
             pay = Math.Min(book["Food"].marketPrice, pay);
             
             foreach (var (employee,wage) in Employees)
             {
                 employee.Collect(pay);
                 Cash -= pay;
+                Debug.Log(auctionStats.round + " " + name + " paid " + pay + " to " + employee.name);
             }
         }
         
@@ -248,7 +249,7 @@ public partial class QolAgent : EconAgent
         
         var dying = IsDying(ref starving);
 
-        if (config.changeProfession && dying)
+        if (config.changeProfession && starving)
         {
             bankrupted = Cash < book["Food"].marketPrice;
             ChangeProfession(gov, bankrupted);

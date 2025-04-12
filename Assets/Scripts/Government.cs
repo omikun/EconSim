@@ -103,6 +103,9 @@ public class Government : EconAgent {
         //replenish depended commodities
         foreach (var (com,item) in inventory)
 		{
+			if (item.offersThisRound > 0)
+				continue;
+
 	        if (ConfigManager.Config.Reserves.ContainsKey(com))
 		        item.TargetQuantity = ConfigManager.Config.Reserves[com];
 	        
@@ -122,19 +125,21 @@ public class Government : EconAgent {
 
         foreach (var (com,item) in inventory)
         {
-	        if (ConfigManager.Config.Reserves.ContainsKey(com))
+			item.offersThisRound = 0;
+
+			if (ConfigManager.Config.Reserves.ContainsKey(com))
 		        item.TargetQuantity = ConfigManager.Config.Reserves[com];
 	        
 			if ((int)item.TargetQuantity >= (int)item.Quantity)
 				continue;
 
-			var offerQuantity = item.Quantity - item.TargetQuantity;
+			item.offersThisRound = item.Quantity - item.TargetQuantity;
 			var offerPrice = book[com].marketPrice * 1.1f;
 			// if (item.OfferQuantity > 0)
-			if (offerQuantity > 0)
+			if (item.offersThisRound > 0)
 			{
-				asks.Add(com, new Offer(com, offerPrice, offerQuantity, this));
-				Debug.Log(auctionStats.round + " gov asked " + offerQuantity.ToString("n2") + " " + item.name);
+				asks.Add(com, new Offer(com, offerPrice, item.offersThisRound, this));
+				Debug.Log(auctionStats.round + " gov asked " + item.offersThisRound.ToString("n2") + " " + item.name);
 			}
 		}
 		return asks;
