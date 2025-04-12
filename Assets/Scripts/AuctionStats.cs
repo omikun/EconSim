@@ -285,78 +285,10 @@ public class AuctionStats : MonoBehaviour
 			if (book.ContainsKey(item.Key))
 			{
 				Debug.Log("Failed to add commodity; duplicate?");
-				continue;
+				return;
 			}
-
-			Recipe dep = new Recipe();
-			float batch_rate = 0;
-			float prod_rate = 0;
-			float base_rate = 0;
-			float prod_multiplier = 0;
-			float set_price = 0;
-			float starting_cash = -1;  // Default value of 100
-			float breakdown_chance = 1;
-			string producer_name = "none";
-			foreach (var field in item.Value)
-			{
-				if (field.Key == "Breakdown_chance")
-				{
-					breakdown_chance = field.Value;
-					Debug.Log(item.Key + " break down chance: " + breakdown_chance);
-					continue;
-				}
-
-				if (field.Key == "Prod_rate")
-				{
-					prod_rate = field.Value;
-					continue;
-				}
-
-				if (field.Key == "Base_rate")
-				{
-					base_rate = field.Value;
-					continue;
-				}
-
-				if (field.Key == "Prod_multiplier")
-				{
-					prod_multiplier = field.Value;
-					continue;
-				}
-
-				if (field.Key == "Set_price")
-				{
-					set_price = field.Value;
-					continue;
-				}
-
-				if (field.Key == "Batch_rate")
-				{
-					batch_rate = field.Value;
-					continue;
-				}
-
-				if (field.Key.StartsWith("Producer_"))
-				{
-					var parts = field.Key.Split('_');
-					if (parts.Length == 2)
-						producer_name = parts[1].SplitPascalCase();
-					continue;
-				}
-
-				if (field.Key == "Starting_cash")
-				{
-					starting_cash = field.Value;
-					continue;
-				}
-
-				dep.Add(field.Key, field.Value);
-			}
-
-			Assert.IsNotNull(dep);
-			book.Add(item.Key,
-				new ResourceController(item.Key, producer_name, prod_rate, base_rate, batch_rate, prod_multiplier, set_price,
-					breakdown_chance, dep, starting_cash));
+			// CreateRsc(item);
+			book.Add(item.Key, new ResourceController(item.Key, item.Value));
 		}
 
 		foreach (var com in book.Keys)
@@ -366,7 +298,80 @@ public class AuctionStats : MonoBehaviour
 
 		transactions.Add("Cash", new());
 	}
-	
+
+	private void CreateRsc(KeyValuePair<string, SerializedDictionary<string, float>> item)
+	{
+		Recipe dep = new Recipe();
+		float batch_rate = 0;
+		float prod_rate = 0;
+		float base_rate = 0;
+		float prod_multiplier = 0;
+		float set_price = 0;
+		float starting_cash = -1;  // Default value of 100
+		float breakdown_chance = 1;
+		string producer_name = "none";
+		foreach (var field in item.Value)
+		{
+			if (field.Key == "Breakdown_chance")
+			{
+				breakdown_chance = field.Value;
+				Debug.Log(item.Key + " break down chance: " + breakdown_chance);
+				continue;
+			}
+
+			if (field.Key == "Prod_rate")
+			{
+				prod_rate = field.Value;
+				continue;
+			}
+
+			if (field.Key == "Base_rate")
+			{
+				base_rate = field.Value;
+				continue;
+			}
+
+			if (field.Key == "Prod_multiplier")
+			{
+				prod_multiplier = field.Value;
+				continue;
+			}
+
+			if (field.Key == "Set_price")
+			{
+				set_price = field.Value;
+				continue;
+			}
+
+			if (field.Key == "Batch_rate")
+			{
+				batch_rate = field.Value;
+				continue;
+			}
+
+			if (field.Key.StartsWith("Producer_"))
+			{
+				var parts = field.Key.Split('_');
+				if (parts.Length == 2)
+					producer_name = parts[1].SplitPascalCase();
+				continue;
+			}
+
+			if (field.Key == "Starting_cash")
+			{
+				starting_cash = field.Value;
+				continue;
+			}
+
+			dep.Add(field.Key, field.Value);
+		}
+
+		Assert.IsNotNull(dep);
+		book.Add(item.Key,
+			new ResourceController(item.Key, producer_name, prod_rate, base_rate, batch_rate, prod_multiplier, set_price,
+				breakdown_chance, dep, starting_cash));
+	}
+
 	// Update is called once per frame
 	void Update()
 	{

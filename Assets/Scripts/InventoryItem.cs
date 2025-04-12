@@ -7,6 +7,7 @@ using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.WindowsRuntime;
 using DG.Tweening;
 using JetBrains.Annotations;
+using Sirenix.OdinInspector.Editor.ValueResolvers;
 using UnityEngine;
 using UnityEngine.Android;
 using UnityEngine.Assertions;
@@ -644,7 +645,7 @@ public class InventoryItem {
         {
 	        reason += "	market_share " + market_share.ToString("f2");
 	        if (quantitySold > 1)
-		        priceBelief *= 1.10f;
+		        priceBelief *= 1.05f;
         }
         // Case 1: Sold all quantity offered
         else if (quantitySold == trade.offerQuantity)
@@ -674,7 +675,7 @@ public class InventoryItem {
 	        reason += " sold " + quantitySold.ToString("f2") + " ratio " + soldRatio.ToString("f2");
 	        var translator = -logRatio(soldRatio);//1.4f * soldRatio - 1f);
 	        //TODO how does market price adjust this logic?
-	        var sellPriceMultiplier = 1 + agent.config.sellPriceDelta * translator;
+	        var sellPriceMultiplier = .7f + .7f * Mathf.Pow(soldRatio, .4f);
 	        Assert.IsTrue(sellPriceMultiplier > .5f && sellPriceMultiplier < 1.5f);
 	        priceBelief *= sellPriceMultiplier;
 	        tempPriceBelief = priceBelief;
@@ -689,23 +690,9 @@ public class InventoryItem {
         } else if (agent.config.minSellPrice && name == agent.outputName)
 	    {
 		    // Calculate total input costs
-		    var otherCosts = agent.inventory.Values
-			    .Where(item => agent.inputs.Contains(item.name))
-			    .Sum(item => agent.book[item.name].marketPrice * agent.book[agent.outputName].recipe[item.name]);
+		    var otherCosts = 0f;
+            var inputCosts = 0f;
 
-            //if inventory is high and demand is low, sell enough to buy food, if food is low, sell enough to buy food
-            float foodCost = 0;
-            if (Quantity > rsc.productionPerBatch && demand > supply && agent.inventory["Food"].Quantity < 2)
-                foodCost = agent.book["Food"].marketPrice * 1;
-            otherCosts += foodCost;
-                
-		    // Compute amortized quantity for cost per unit
-            var expectedSellable = (demand + tradeQuantity.Last()) / 2f;
-		    var amortizedQuantity = Mathf.Min(expectedSellable, Quantity);
-            amortizedQuantity = Mathf.Max(amortizedQuantity, 1);
-		    var minCost = otherCosts / amortizedQuantity;
-		    // Ensure price is at least the cost
-		    reason += "\n raise min cost " + minCost.ToString("c2") + " price belief: " + priceBelief.ToString("c2") + " other costs: " + otherCosts.ToString("c2") + " food cost: " + foodCost.ToString("c2");
 
             reason += "\n inputs: ";
             foreach(var item in agent.inventory.Values)
@@ -714,9 +701,35 @@ public class InventoryItem {
                     continue;
                 var numNeeded = agent.book[agent.outputName].recipe[item.name];
                 var price = agent.book[item.name].marketPrice;
-                var cost = numNeeded * price;
+                var chance = agent.book[item.name].breakdown_chance;
+                var cost = numNeeded * price * chance;
+                inputCosts += cost;
                 reason += "\n " + item.name + " numNeeded: " + numNeeded + " market price: " + price.ToString("c2") + " cost: " + cost.ToString("c2");
             }
+
+            //if inventory is high and demand is low, sell enough to buy food, if food is low, sell enough to buy food
+            float foodCost = 0;
+            if (Quantity > rsc.productionPerBatch && demand > supply &&
+                (agent.outputName != "Food" && agent.inventory["Food"].Quantity < 2))
+                foodCost = agent.book["Food"].marketPrice * 1;
+
+            otherCosts = inputCosts + foodCost;
+            var losses = -agent.Losses.Last();
+
+            if (agent.Losses.Last() < 0f)
+                otherCosts += losses;
+                
+		    // Compute amortized quantity for cost per unit
+            var expectedSellable = Mathf.Max(demand, tradeQuantity.Last());
+		    var amortizedQuantity = Mathf.Min(expectedSellable, Quantity);
+            amortizedQuantity = (tradeQuantity.Last() == 0) ? 1 : amortizedQuantity;
+            var profitMargin = 1.05f;
+		    var minCost = otherCosts / amortizedQuantity * profitMargin;
+		    // Ensure price is at least the cost
+		    reason += 
+                " demand: " + demand.ToString("n2") + " tradeQuantity: " + tradeQuantity.Last().ToString("n2")
+			    + "\nexpected sellable: " + expectedSellable.ToString("n2") + " amortized quantity: " + amortizedQuantity.ToString("n2")
+                + "\n raise min cost " + minCost.ToString("c2") + " price belief: " + priceBelief.ToString("c2") + " other costs: " + otherCosts.ToString("c2") + "  = food cost: " + foodCost.ToString("c2") + " + losses: " + losses.ToString("c2") + " + input costs: " + inputCosts.ToString("c2");
 		    priceBelief = Mathf.Max(minCost, priceBelief);
 	    }
 

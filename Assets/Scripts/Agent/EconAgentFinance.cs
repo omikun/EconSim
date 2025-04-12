@@ -6,6 +6,7 @@ public partial class EconAgent
     protected float prevCash;
     protected internal float foodExpense = 0;
     public ESHistory Income = new();
+    public ESHistory Losses = new();
     public ESHistory Revenue = new();
     public float TaxableProfit { get; protected set; }
     private float taxesPaidThisRound = 0;
@@ -44,20 +45,19 @@ public partial class EconAgent
         return taxAmt;
     }
 
-    private float losses = 0;
 
     public void CalculateProfit()
     {
-        var prevLosses = losses;
         var delta = Cash - prevCash;
         var prevCash2 = prevCash;
         prevCash = Cash;
-        var cumDelta = delta + prevLosses;
-        losses = Mathf.Min(0, cumDelta);
+        var cumDelta = delta + Losses.LastLast();
+        Losses.AddnUpdate(Mathf.Min(0, cumDelta));
         TaxableProfit = Mathf.Max(0, cumDelta);
         Income.AddnUpdate(TaxableProfit);
-        Debug.Log(auctionStats.round + " income " + name + " prevCash " + prevCash2 + " has " + Cash + " profit this round: " + delta 
-                  + " cumulative losses: " + losses
+        Debug.Log(auctionStats.round + " income " + name + " prevCash " + prevCash2 + " has " + Cash +
+                  " profit this round: " + delta
+                  + " cumulative losses: " + Losses.Last()
                   + " taxable profit: " + TaxableProfit);
     }
 

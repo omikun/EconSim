@@ -83,6 +83,7 @@ public partial class QolAgent
         }
     }
 
+    
     protected void PopulateOffers()
     {
         //reset

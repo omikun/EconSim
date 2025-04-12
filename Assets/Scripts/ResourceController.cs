@@ -4,7 +4,9 @@ using UnityEngine.Assertions;
 using UnityEngine;
 using System.Linq;
 using System;
+using AYellowpaper.SerializedCollections;
 using Sirenix.OdinInspector;
+using Sirenix.Utilities;
 
 public class Recipe : Dictionary<string, float>
 {
@@ -55,6 +57,7 @@ public class ResourceController
     public float setPrice = 1; //predetermined price from initializer for sanity check
     public float breakdown_chance = 1;
 	public float startingCash = -1;
+	public string Type { get; private set; }
 	public ResourceController(string n, string prof, float p, float bp, float br, float pm, float sp, float bc, Recipe r, float sc = -1)
 	{
 		name = n;
@@ -67,9 +70,13 @@ public class ResourceController
 		setPrice = sp; //initial price at start of simulation
 		marketPrice = sp;
 		recipe = r;
-		demand = 1;
 		startingCash = sc;
 
+		Init();
+	}
+	public void Init()
+	{
+		demand = 1;
 		buyers.AddnUpdate(1);
 		sellers.AddnUpdate(1);
 		bids.AddnUpdate(1);
@@ -90,6 +97,35 @@ public class ResourceController
 		bankrupted.AddnUpdate(1);
 		starving.AddnUpdate(1);
 		changedProfession.AddnUpdate(1);
+	}
+	public ResourceController(string n, SerializedDictionary<string, float> init)
+	{
+		name = n;
+		recipe = new ();
+		foreach (var field in init)
+		{
+
+			if (field.Key == "Prod_rate") productionPerBatch = field.Value;
+			else if (field.Key == "Base_rate") baseProduction = field.Value;
+			else if (field.Key == "Batch_rate") batchRate = field.Value;
+			else if (field.Key == "Prod_multiplier") productionMultiplier = field.Value;
+			else if (field.Key == "Breakdown_chance") breakdown_chance = field.Value;
+			else if (field.Key == "Starting_cash") startingCash = field.Value;
+			else if (field.Key == "Set_price") setPrice = field.Value;
+			else if (field.Key.StartsWith("Producer_"))
+			{
+				var parts = field.Key.Split('_');
+				if (parts.Length == 2)
+					profession = parts[1].SplitPascalCase();
+				continue;
+			} else {
+				recipe.Add(field.Key, field.Value);
+			}
+		}
+
+		Assert.IsNotNull(recipe);
+		marketPrice = setPrice;
+		Init();
 	}
 	public void Update(float p, float dem)
 	{
