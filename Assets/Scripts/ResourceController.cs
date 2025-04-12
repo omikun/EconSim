@@ -58,22 +58,6 @@ public class ResourceController
     public float breakdown_chance = 1;
 	public float startingCash = -1;
 	public string Type { get; private set; }
-	public ResourceController(string n, string prof, float p, float bp, float br, float pm, float sp, float bc, Recipe r, float sc = -1)
-	{
-		name = n;
-		profession = prof;
-		productionPerBatch = p;
-		baseProduction = bp;
-		batchRate = br;
-		productionMultiplier = pm;
-		breakdown_chance = bc;
-		setPrice = sp; //initial price at start of simulation
-		marketPrice = sp;
-		recipe = r;
-		startingCash = sc;
-
-		Init();
-	}
 	public void Init()
 	{
 		demand = 1;
