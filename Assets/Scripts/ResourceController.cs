@@ -96,6 +96,9 @@ public class ResourceController
 			else if (field.Key == "Breakdown_chance") breakdown_chance = field.Value;
 			else if (field.Key == "Starting_cash") startingCash = field.Value;
 			else if (field.Key == "Set_price") setPrice = field.Value;
+			else if (field.Key == "Necessity") Type = "Necessity";
+			else if (field.Key == "Everyday") Type = "Everyday";
+			else if (field.Key == "Luxury") Type = "Luxury";
 			else if (field.Key.StartsWith("Producer_"))
 			{
 				var parts = field.Key.Split('_');

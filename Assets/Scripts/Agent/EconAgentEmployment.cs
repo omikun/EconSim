@@ -46,6 +46,7 @@ public partial class EconAgent
         exEmployer?.EmployeeQuit(this);
 		outputName = "Unemployed";
 		inventory["Labor"].Set(1);
+		inventory["Labor"].priceBelief = Mathf.Min(book["Labor"].marketPrice, book["Food"].marketPrice / 2f);
 		if (NumEmployees > 0)
 		{
 			Disband();

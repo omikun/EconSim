@@ -1,15 +1,21 @@
+using System;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 public class Value
 {
     protected float _value;
     protected EconAgent agent;
     protected InventoryItem item;
-    
 
-    public virtual float ComputeValue
+
+    public virtual float ComputeValue(float in_value)
     {
-        get { return _value; }
+        return _value;
+    }
+    public virtual float Get
+    {
+        get { return ComputeValue(item.Quantity); }
         private set 
         { 
             _value = value;
@@ -30,13 +36,10 @@ public class ValueNecessary : Value
     {
     }
 
-    public override float ComputeValue
+    public override float ComputeValue(float in_value)
     {
-        get
-        {
-            _value = 2f * Mathf.Pow(float.Epsilon, 10 / (item.Quantity + 7f)) - 3f;
-            return _value;
-        }
+        _value = 2f * Mathf.Pow(MathF.E, 10 / (in_value + 7f)) - 3f;
+        return _value;
     }
 }
 public class ValueEveryday : Value
@@ -45,13 +48,10 @@ public class ValueEveryday : Value
     {
     }
 
-    public override float ComputeValue
+    public override float ComputeValue(float in_value)
     {
-        get
-        {
-            _value = 2 - item.Quantity * .4f;
-            return _value;
-        }
+        _value = 2 - in_value * .4f;
+        return _value;
     }
 }
 public class ValueLuxury : Value
@@ -60,13 +60,66 @@ public class ValueLuxury : Value
     {
     }
 
-    public override float ComputeValue
+    public override float ComputeValue(float in_value)
     {
-        get
-        {
-            _value = Mathf.Pow(float.Epsilon, 30 / (item.Quantity + 15f)); 
-            return _value;
+        _value = Mathf.Pow(MathF.E, 30 / (in_value + 15f)); 
+        return _value;
+    }
+}
+
+public class ValueCash : Value
+{
+    public ValueCash(float initialValue, EconAgent agent, InventoryItem item) : base(initialValue, agent, item)
+    {
+    }
+    
+    public override float ComputeValue(float in_value)
+    {
+        return 1f;
+        var interestRate = agent.auctionStats.bank.interestRate;
+        var bankDeposit = agent.auctionStats.bank.CheckAccountBalance(agent);
+        var compoundedInterest = Mathf.Pow(1 + interestRate, 30);
+        var futureDeposit = bankDeposit * compoundedInterest;
+        return Mathf.Pow(MathF.E, -0.01f * in_value) * (futureDeposit / bankDeposit);
+    }
+    public virtual float Get
+    {
+        get { return ComputeValue(agent.Wealth); }
+        private set 
+        { 
+            _value = value;
         }
     }
 }
 
+public class ValueInput : Value
+{
+    public ValueInput(float initialValue, EconAgent agent, InventoryItem item) : base(initialValue, agent, item)
+    {
+    }
+
+    public override float ComputeValue(float in_value)
+    {
+        var rsc = agent.book[agent.outputName];
+        var outputItem = agent.inventory[agent.outputName];
+        var recipe = rsc.recipe;
+        var batchSize = rsc.productionPerBatch;
+
+        Assert.IsTrue(recipe != null && recipe.ContainsKey(item.name));
+        // Calculate minimum number of batches possible from all inputs
+        float minBatches = float.MaxValue;
+        foreach (var ingredient in recipe)
+        {
+            var inputItem = agent.inventory[ingredient.Key];
+            var chance = agent.book[ingredient.Key].breakdown_chance;
+            float batchesFromThisInput = inputItem.Quantity / ingredient.Value / chance;
+            minBatches = Mathf.Min(minBatches, batchesFromThisInput);
+        }
+
+        // Add current output inventory to get total batches
+        // Account for batch size (multiple output items per batch)
+        float totalBatches = Mathf.Floor(outputItem.Quantity / batchSize) + minBatches;
+
+        return Mathf.Max(0.1f, 5f - Mathf.Floor(totalBatches));
+    }
+}

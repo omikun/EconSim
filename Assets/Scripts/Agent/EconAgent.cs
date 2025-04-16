@@ -22,6 +22,11 @@ public partial class EconAgent : MonoBehaviour
 	public static int uid_idx = 0;
 	public int uid { get; protected set; }
 	public float Cash { get; protected set; }
+	protected ValueCash cashValue;
+	
+	public float Wealth { 
+		get { return Cash + auctionStats.bank.CheckAccountBalance(this); }
+	}
 
 	public void ResetCash()
 	{
@@ -95,6 +100,7 @@ public partial class EconAgent : MonoBehaviour
 		outputName = b;
 		
 		Cash = (cash == -1f) ? config.initCash : cash;
+		cashValue = new ValueCash(1, this, null);
 		prevCash = Cash;
 		inputs.Clear();
 		//foreach (var buildable in outputName)

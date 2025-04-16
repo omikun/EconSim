@@ -84,6 +84,7 @@ public class InventoryItem {
 		{
 			Debug.Log(agent.auctionStats.round + " " + agent.name + " " + name + " setting price belief = " + value);
 			_priceBelief = value;
+			SanePriceBeliefs();
 		}
 	}
 
@@ -104,6 +105,7 @@ public class InventoryItem {
     public float askQuantity = 0;
     public int askOrder = 0;
     public int bidOrder = 0;
+    public Value value;
 
     public float Availability()
     {
@@ -205,6 +207,10 @@ public class InventoryItem {
 		BaseProduction = _baseProduction;
 		batchRate = _batchRate;
 		tradeQuantity.Add(0);
+
+        if (rsc.Type == "Necessity") value = new ValueNecessary(0, agent, this);
+        else if (rsc.Type == "Everyday") value = new ValueEveryday(0, agent, this);
+        else if (rsc.Type == "Luxury") value = new ValueLuxury(0, agent, this);
 	}
 	public void Tick()
 	{
@@ -429,7 +435,7 @@ public class InventoryItem {
 	void SanePriceBeliefs()
 	{
 		//minPriceBelief = Mathf.Max(cost, minPriceBelief); TODO maybe consider this eventually?
-		priceBelief = Mathf.Clamp(priceBelief, 0.01f, 1000f);
+		_priceBelief = Mathf.Clamp(priceBelief, 0.01f, 1000f);
 		// priceBelief = Mathf.Max(minPriceBelief*1.1f, priceBelief);
 		// priceBelief = Mathf.Clamp(priceBelief, 1.1f, 1000f);
         // Assert.IsTrue(minPriceBelief < priceBelief);
@@ -482,8 +488,6 @@ public class InventoryItem {
 
         string reason = "";
 	    
-	    if (name == "Wood")
-		    Debug.Log("wood buy");
 	    if (quantityBought == 1 && trade.offerQuantity == 1)
 	    {
 		    priceBelief *= Mathf.Min(1, logRatio(supplyRatio, 3));
@@ -709,27 +713,27 @@ public class InventoryItem {
 
             //if inventory is high and demand is low, sell enough to buy food, if food is low, sell enough to buy food
             float foodCost = 0;
-            if (Quantity > rsc.productionPerBatch && demand > supply &&
-                (agent.outputName != "Food" && agent.inventory["Food"].Quantity < 2))
-                foodCost = agent.book["Food"].marketPrice * 1;
+            // if (Quantity > rsc.productionPerBatch && demand > supply &&
+            if (agent.outputName != "Food") //&& agent.inventory["Food"].Quantity < 2)
+	            foodCost = agent.book["Food"].marketPrice * Mathf.Pow(MathF.E, 2 / agent.FoodInv())*.2f;
 
             otherCosts = inputCosts + foodCost;
             var losses = -agent.Losses.Last();
 
-            if (agent.Losses.Last() < 0f)
-                otherCosts += losses;
-                
 		    // Compute amortized quantity for cost per unit
-            var expectedSellable = Mathf.Max(demand, tradeQuantity.Last());
+            var expectedSellable = Mathf.Max(demand, tradeQuantity.ExpAverage);
 		    var amortizedQuantity = Mathf.Min(expectedSellable, Quantity);
-            amortizedQuantity = (tradeQuantity.Last() == 0) ? 1 : amortizedQuantity;
+            amortizedQuantity = Mathf.Max(1, amortizedQuantity);
             var profitMargin = 1.05f;
 		    var minCost = otherCosts / amortizedQuantity * profitMargin;
 		    // Ensure price is at least the cost
 		    reason += 
                 " demand: " + demand.ToString("n2") + " tradeQuantity: " + tradeQuantity.Last().ToString("n2")
 			    + "\nexpected sellable: " + expectedSellable.ToString("n2") + " amortized quantity: " + amortizedQuantity.ToString("n2")
-                + "\n raise min cost " + minCost.ToString("c2") + " price belief: " + priceBelief.ToString("c2") + " other costs: " + otherCosts.ToString("c2") + "  = food cost: " + foodCost.ToString("c2") + " + losses: " + losses.ToString("c2") + " + input costs: " + inputCosts.ToString("c2");
+                + "\n raise min cost " + minCost.ToString("c2") + " price belief: " + priceBelief.ToString("c2") 
+                + " other costs: " + otherCosts.ToString("c2") 
+                + "  = food cost: " + foodCost.ToString("c2")  + " foodInv: " + agent.FoodInv().ToString("n2")
+                + " + losses: " + losses.ToString("c2") + " + input costs: " + inputCosts.ToString("c2");
 		    priceBelief = Mathf.Max(minCost, priceBelief);
 	    }
 

@@ -84,6 +84,44 @@ public partial class QolAgent
     }
 
     
+    protected float ComputeOffers()
+    {
+        // Sort inventory items by value 
+        var sortedItems = inventory.Values
+            .OrderByDescending(item => { return item.value.Get; })
+            .ToList();
+
+        //buy necessary items first
+        //buy inputs second
+        //buy everday items and luxuries last
+        float remainingWealth = Wealth;
+        foreach (var item in sortedItems)
+        {
+            if (remainingWealth <= 0) break;
+
+            var marketPrice = book[item.name].marketPrice;
+            if (marketPrice <= 0) continue;
+
+            // How many units we can afford to buy with remaining wealth
+            float affordableUnits = Mathf.Floor(remainingWealth / marketPrice);
+            
+            // Add to offers and reduce remaining wealth
+            while (affordableUnits > 0)
+            {
+                var value = item.value.Get;
+                var valuePerCash = cashValue.ComputeValue(remainingWealth);
+                
+                if (value > valuePerCash)
+                {
+                    item.offersThisRound++;
+                    affordableUnits--;
+                    remainingWealth -= marketPrice;
+                }
+            }
+        }
+        return Wealth - remainingWealth;
+
+    }
     protected void PopulateOffers()
     {
         //reset
@@ -97,6 +135,10 @@ public partial class QolAgent
         var reason = "";
 
         DecideToHire();
+
+        // ComputeOffers();
+        // return;
+
         // float outputPressure = buyOutputPressure(minQuant);
         float numBatchInputToBid = 0;
         // var inputFood = foodEquivalent.GetInputFood();
